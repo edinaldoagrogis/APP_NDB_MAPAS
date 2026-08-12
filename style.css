@@ -1072,7 +1072,7 @@ body.disable-map-hover .leaflet-interactive {
 
 /* Elevate bottom-right controls so they don't hide behind mobile bottom bar */
 .leaflet-bottom.leaflet-right {
-    margin-bottom: 20px !important;
+    margin-bottom: 45px !important;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
