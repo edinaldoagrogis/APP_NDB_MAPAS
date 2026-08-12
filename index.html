@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agrogis_NDB</title>
+    
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e85d04">
+    <link rel="apple-touch-icon" href="ndb_logo.png">
+    <link rel="icon" type="image/png" href="ndb_logo.png">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+     
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+     
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css?v=2.3">
+
+    <!-- Chart.js -->
+    <script src="chart.js"></script>
+    
+    <!-- Offline Map Config -->
+    <script src="offline_images_config.js"></script>
+    
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    
+    <!-- Turf.js for spatial calculations -->
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    
+    <!-- GeoJSON Data fallbacks with Cloud Sync for Desktop App -->
+    <script>
+        (function() {
+            var localSrc = 'layers_data.js';
+            var remoteSrc = 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.js';
+            
+            if (window.location.protocol === 'file:') {
+                // Desktop App: Tenta nuvem primeiro. Se falhar, cai pro local.
+                var s = document.createElement('script');
+                s.src = remoteSrc + '?t=' + new Date().getTime();
+                s.onerror = function() {
+                    var sLocal = document.createElement('script');
+                    sLocal.src = localSrc;
+                    document.head.appendChild(sLocal);
+                };
+                document.head.appendChild(s);
+            } else {
+                // PWA/Website: Já está na nuvem
+                var s = document.createElement('script');
+                s.src = localSrc;
+                document.head.appendChild(s);
+            }
+        })();
+    </script>
+    
+    <!-- Authentication Logic -->
+    <script src="auth.js"></script>
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111418; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <div class="login-container" style="background: rgba(255,255,255,0.03); padding: 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 320px;">
+            <img src="logo.png.jpg" alt="AGROGIS Logo" style="width: 250px; margin-bottom: 30px; mix-blend-mode: screen;">
+            
+            <form id="login-form" style="width: 100%; position: relative;">
+                <input type="text" id="login-username" autocomplete="username" placeholder="Usuário (ndb_mapa)" style="width: 100%; padding: 12px 15px; margin-bottom: 15px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff; font-size: 14px; box-sizing: border-box; outline: none; transition: border-color 0.3s;">
+                
+                <div style="position: relative; width: 100%; margin-bottom: 10px;">
+                    <input type="password" id="login-password" autocomplete="current-password" placeholder="Senha" style="width: 100%; padding: 12px 15px; padding-right: 40px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff; font-size: 14px; box-sizing: border-box; outline: none; transition: border-color 0.3s;">
+                    <button type="button" id="toggle-password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #fff; opacity: 0.6; cursor: pointer; font-size: 16px;">👁</button>
+                </div>
+                
+                <label style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; color: #a8b8b0; font-size: 13px; margin-bottom: 20px; cursor: pointer;">
+                    <input type="checkbox" id="login-save-password" style="accent-color: #e85d04; width: 16px; height: 16px; cursor: pointer;">
+                    Salvar senha no próprio aplicativo
+                </label>
+                
+                <div id="login-error" style="color: #ff4d4d; font-size: 12px; margin-bottom: 15px; display: none;">Credenciais inválidas!</div>
+                
+                <button type="button" onclick="if(window.performLogin) window.performLogin();" id="btn-login" style="width: 100%; padding: 12px; border-radius: 6px; background: linear-gradient(90deg, #e85d04, #f48c06); color: #fff; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s, box-shadow 0.2s;">Entrar</button>
+            </form>
+            <button id="btn-install" style="width: 100%; padding: 12px; margin-top: 15px; border-radius: 6px; background: transparent; color: #e85d04; border: 1px solid #e85d04; cursor: pointer; text-transform: uppercase; font-weight: bold; display: none;">📥 Instalar no Celular</button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Light Theme Topbar -->
+        <header class="topbar-light">
+            <div class="topbar-left">
+            </div>
+            <div class="topbar-center">
+                <div style="display: flex; align-items: center;">
+                    <img src="logo.png.jpg" alt="AGROGIS Logo" style="height: 80px; mix-blend-mode: screen; margin-top: 10px;">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="user-menu">
+                    <button id="btn-logout" class="text-btn">Sair do Sistema</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Map Container -->
+            <main class="map-wrapper">
+                <div id="map"></div>
+            <!-- Floating Top Right Wrapper -->
+            <div class="top-right-wrapper" style="position: absolute; top: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; align-items: flex-end; gap: 12px;">
+                
+                <!-- Mobile Menu Button and Dropdown -->
+                <div style="position: relative;">
+                    <button id="mobile-menu-btn" class="mobile-only-btn" title="Menu Principal">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <div id="mobile-menu-dropdown" style="display: none; position: absolute; top: 0; right: 100%; margin-right: 8px; background: rgba(5,8,7,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1001; padding: 5px; flex-direction: row; align-items: center; gap: 5px;">
+                        <button id="btn-info-app" style="background: none; border: none; color: #fff; padding: 8px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'" title="Informações do App">
+                            <img src="icone_info.png" style="width: 22px; height: 22px; filter: invert(1);">
+                        </button>
+                        <button id="btn-install-mobile" style="background: none; border: none; color: #2ec4b6; padding: 8px; cursor: pointer; border-radius: 4px; display: none; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'" title="Instalar App">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        </button>
+                        <button id="btn-refresh-app" style="background: none; border: none; color: #fff; padding: 8px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'" title="Atualizar App">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        </button>
+                        <button id="btn-logout-mobile" style="background: none; border: none; color: #ff4d4d; padding: 8px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'" title="Sair do Sistema">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Gray Panel: Search + Basemap -->
+                <div class="top-right-controls" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Search Box -->
+                    <div class="search-container floating" style="margin-bottom: 0;">
+                        <input type="text" id="layer-search" list="fazendas-list" placeholder="Localizar Fazenda...">
+                        <datalist id="fazendas-list"></datalist>
+                        <span class="search-icon">🔍</span>
+                    </div>
+
+                    <!-- BaseMap Selector Floating Card -->
+                    <div class="basemap-selector" style="margin-bottom: 0;">
+                        <button class="basemap-btn active" id="basemap-sat">Satélite</button>
+                        <button class="basemap-btn" id="basemap-osm">Mapa (OSM)</button>
+                    </div>
+                </div>
+
+                <!-- Floating Layers Menu (Now physically separated from the gray panel) -->
+                <div class="floating-layers-wrapper" style="position: relative;">
+                    <button id="floating-layers-btn" title="Camadas Vetoriais" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(5, 8, 7, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); color: #fff; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                            <polyline points="2 12 12 17 22 12"></polyline>
+                            <polyline points="2 17 12 22 22 17"></polyline>
+                        </svg>
+                    </button>
+
+                    <div id="floating-layers-panel" style="display: none; position: absolute; top: 52px; right: 0; width: 340px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden; z-index: 100;">
+                        <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+                            <h3 style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: #fff;">CAMADAS VETORIAIS</h3>
+                        </div>
+                        <div style="max-height: 60vh; overflow-y: auto; padding: 8px 0;" class="custom-scroll">
+                            <ul class="layer-list" id="dynamic-layer-list" style="margin: 0; padding: 0;">
+                                <!-- Dynamic items will be generated here by app.js -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Tools Menu -->
+                <div class="floating-tools-wrapper" style="position: relative;">
+                    <button id="floating-tools-btn" title="Ferramentas" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(5, 8, 7, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); color: #fff; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                    </button>
+
+                    <div id="floating-tools-panel" style="display: none; position: absolute; top: 52px; right: 0; width: 280px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden; z-index: 100;">
+                        <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+                            <h3 style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: #fff;">FERRAMENTAS</h3>
+                        </div>
+                        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+                            <button id="tool-measure-btn" class="tool-action-btn" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                </svg>
+                                <span style="font-size: 13px; font-weight: 500;">Medição (Área/Distância)</span>
+                            </button>
+                            
+                            <button id="tool-route-btn" class="tool-action-btn app-only" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                <span style="font-size: 13px; font-weight: 500;">Traçar Rota Automática</span>
+                            </button>
+
+                            <button id="tool-draw-btn" class="tool-action-btn app-only" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.17 3.25a2.5 2.5 0 0 0-3.54 0L4.5 16.38V20h3.62L21.24 6.87a2.5 2.5 0 0 0-.07-3.62Z"></path>
+                                    <path d="m14 7 3 3"></path>
+                                </svg>
+                                <span style="font-size: 13px; font-weight: 500;">Desenhar Ponto/Área</span>
+                            </button>
+                            
+                            <button id="tool-record-btn" class="tool-action-btn app-only" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                <span style="font-size: 13px; font-weight: 500;">Gravar Rota (GPS)</span>
+                            </button>
+
+                            <!-- Separador -->
+                            <div style="height: 1px; background: rgba(255,0,0,0.2); margin: 4px 0;"></div>
+
+                            <!-- Botão Análise de Satélite -->
+                            <button id="tool-weed-btn" class="tool-action-btn" style="display: flex; align-items: center; gap: 12px; background: rgba(255,0,0,0.08); border: 1px solid rgba(255,0,0,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" title="Identificar infestação de ervas daninhas por satélite">
+                                <div style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                                        <path d="m4.93 4.93 2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/>
+                                        <circle cx="12" cy="12" r="7" stroke-dasharray="2 2"/>
+                                    </svg>
+                                </div>
+                                <div style="flex: 1; text-align: left;">
+                                    <div style="font-size: 13px; font-weight: 600; color: #ff6666;">🛰️ Detecção de Infestação</div>
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px;">Sentinel-2 · Análise por Fazenda</div>
+                                </div>
+                                <div id="weed-tool-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #555;" title="Status do servidor"></div>
+                            </button>
+
+                            <!-- Separador -->
+                            <div style="height: 1px; background: rgba(0,200,100,0.2); margin: 4px 0;"></div>
+
+                            <!-- Botão Linhas de Plantio -->
+                            <button id="tool-planting-lines-btn" class="tool-action-btn" style="display: flex; align-items: center; gap: 12px; background: rgba(0,200,100,0.08); border: 1px solid rgba(0,200,100,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" title="Restituir linhas de plantio de cana via ortomosaico de drone">
+                                <div style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00c864" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="3" y1="3" x2="21" y2="3"></line>
+                                        <line x1="3" y1="8" x2="21" y2="8"></line>
+                                        <line x1="3" y1="13" x2="21" y2="13"></line>
+                                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                                        <line x1="3" y1="23" x2="21" y2="23"></line>
+                                    </svg>
+                                </div>
+                                <div style="flex: 1; text-align: left;">
+                                    <div style="font-size: 13px; font-weight: 600; color: #00c864;">🌾 Linhas de Plantio</div>
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px;">Ortomosaico · Restituição Automática</div>
+                                </div>
+                            </button>
+
+                        </div>
+
+                    </div>
+              </div>
+
+
+            </div> <!-- end right-controls -->
+
+            <!-- ====== PAINEL LINHAS DE PLANTIO ====== -->
+            <div id="planting-lines-panel" style="
+                display: none;
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                width: 380px;
+                background: rgba(10, 14, 12, 0.95);
+                backdrop-filter: blur(16px);
+                border: 1px solid rgba(0, 200, 100, 0.2);
+                border-radius: 16px;
+                color: #fff;
+                z-index: 1100;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                max-height: calc(100vh - 120px);
+                overflow-y: auto;
+            ">
+                <!-- Header -->
+                <div style="padding: 18px 20px 14px; border-bottom: 1px solid rgba(0,200,100,0.15); display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 22px;">🌾</span>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 700; color: #00c864;">Linhas de Plantio</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4);">Restituição automática via Ortomosaico</div>
+                        </div>
+                    </div>
+                    <button id="planting-panel-close" style="background: none; border: none; color: rgba(255,255,255,0.4); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">✕</button>
+                </div>
+
+                <!-- Upload Zone -->
+                <div id="planting-upload-zone" style="padding: 16px 20px;">
+                    <div id="planting-dropzone" style="
+                        border: 2px dashed rgba(0,200,100,0.3);
+                        border-radius: 12px;
+                        padding: 30px 20px;
+                        text-align: center;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        background: rgba(0,200,100,0.03);
+                    ">
+                        <div style="font-size: 36px; margin-bottom: 8px;">📁</div>
+                        <div style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7);">Arraste o Ortomosaico aqui</div>
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 4px;">ou clique para selecionar</div>
+                        <div style="font-size: 10px; color: rgba(0,200,100,0.5); margin-top: 8px;">Formato: GeoTIFF (.tif) · Até 3 GB</div>
+                        <input type="file" id="planting-file-input" accept=".tif,.tiff" style="display: none;">
+                    </div>
+
+                    <!-- Parâmetros -->
+                    <div style="margin-top: 14px; display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 10px; color: rgba(255,255,255,0.4); display: block; margin-bottom: 4px;">Espaçamento (m)</label>
+                            <input type="number" id="planting-spacing" value="1.5" step="0.1" min="0.5" max="5.0" style="
+                                width: 100%; padding: 8px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;
+                            ">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 10px; color: rgba(255,255,255,0.4); display: block; margin-bottom: 4px;">GSD (cm/px)</label>
+                            <input type="number" id="planting-gsd" value="3.0" step="0.5" min="1.0" max="20.0" style="
+                                width: 100%; padding: 8px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;
+                            ">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Progress -->
+                <div id="planting-upload-progress" style="display: none; padding: 0 20px 12px;">
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 6px;">Enviando ortomosaico...</div>
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                        <div id="planting-upload-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00c864, #00e676); border-radius: 3px; transition: width 0.3s;"></div>
+                    </div>
+                    <div id="planting-upload-percent" style="font-size: 10px; color: rgba(0,200,100,0.7); margin-top: 4px; text-align: right;">0%</div>
+                </div>
+
+                <!-- Processing Status -->
+                <div id="planting-processing-area" style="display: none; padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <div id="planting-spinner" style="width: 18px; height: 18px; border: 2px solid rgba(0,200,100,0.3); border-top-color: #00c864; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        <div>
+                            <div id="planting-status-text" style="font-size: 13px; font-weight: 600; color: #00c864;">Processando...</div>
+                            <div id="planting-status-detail" style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px;">Etapa 1/3</div>
+                        </div>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;">
+                        <div id="planting-process-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00c864, #00e676); border-radius: 4px; transition: width 0.5s;"></div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div id="planting-results-area" style="display: none; padding: 14px 20px; border-top: 1px solid rgba(0,200,100,0.15);">
+                    <div style="font-size: 14px; font-weight: 700; color: #00c864; margin-bottom: 12px;">✅ Processamento Concluído</div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 14px;">
+                        <div style="flex: 1; background: rgba(0,200,100,0.08); border: 1px solid rgba(0,200,100,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+                            <div id="planting-result-fields" style="font-size: 20px; font-weight: 700; color: #00c864;">0</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4);">Talhões</div>
+                        </div>
+                        <div style="flex: 1; background: rgba(0,200,100,0.08); border: 1px solid rgba(0,200,100,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+                            <div id="planting-result-lines" style="font-size: 20px; font-weight: 700; color: #00c864;">0</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4);">Linhas</div>
+                        </div>
+                    </div>
+                    
+                    <button id="planting-export-btn" style="
+                        width: 100%;
+                        padding: 12px;
+                        background: linear-gradient(135deg, #00c864, #00965e);
+                        border: none;
+                        border-radius: 8px;
+                        color: #fff;
+                        font-size: 14px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        transition: all 0.2s;
+                        box-shadow: 0 4px 12px rgba(0,200,100,0.3);
+                    ">
+                        📥 Exportar Shapefiles (.shp)
+                    </button>
+                    
+                    <div style="font-size: 9px; color: rgba(255,255,255,0.3); margin-top: 8px; text-align: center;">
+                        O ortomosaico será automaticamente excluído do servidor após a exportação
+                    </div>
+                </div>
+
+                <!-- Error Area -->
+                <div id="planting-error-area" style="display: none; padding: 14px 20px; border-top: 1px solid rgba(255,0,0,0.2);">
+                    <div style="font-size: 13px; color: #ff4444; font-weight: 600;">❌ Erro no Processamento</div>
+                    <div id="planting-error-msg" style="font-size: 11px; color: rgba(255,100,100,0.7); margin-top: 6px;"></div>
+                    <button id="planting-retry-btn" style="margin-top: 10px; padding: 8px 16px; background: rgba(255,0,0,0.1); border: 1px solid rgba(255,0,0,0.3); border-radius: 6px; color: #ff6666; font-size: 12px; cursor: pointer;">🔄 Tentar Novamente</button>
+                </div>
+            </div>
+
+            <!-- ====== PAINEL ANÁLISE DE SATÉLITE (Desktop) ====== -->
+            <div id="weed-analysis-panel" style="
+                display: none;
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                width: 340px;
+                background: rgba(10, 14, 12, 0.95);
+                backdrop-filter: blur(16px);
+                border: 1px solid rgba(255, 0, 0, 0.3);
+                border-radius: 16px;
+                overflow: hidden;
+                z-index: 1500;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 30px rgba(255,0,0,0.1);
+                font-family: 'Inter', sans-serif;
+            ">
+                <!-- Cabeçalho -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,0,0,0.15);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,0,0,0.15); border: 1px solid rgba(255,0,0,0.4); display: flex; align-items: center; justify-content: center; font-size: 18px;">🛰️</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; color: #fff; line-height: 1.2;">Detecção de Infestação</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4); line-height: 1.4;">Sentinel-2 · Análise por Fazenda</div>
+                        </div>
+                    </div>
+                    <button id="weed-panel-close" style="background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 18px; line-height: 1; padding: 4px;">✕</button>
+                </div>
+
+                <!-- Abas de Navegação -->
+                <div style="display: flex; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <button id="weed-tab-map" onclick="weedSwitchTab('map')" style="flex:1; padding: 10px; background: rgba(255,0,0,0.12); border: none; border-bottom: 2px solid #ff1744; color: #ff6666; font-size: 11px; font-weight: 600; cursor: pointer;">🗺️ Pelo Mapa</button>
+                    <button id="weed-tab-search" onclick="weedSwitchTab('search')" style="flex:1; padding: 10px; background: none; border: none; border-bottom: 2px solid transparent; color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 600; cursor: pointer;">🔎 Buscar</button>
+                    <button id="weed-tab-general" onclick="weedSwitchTab('general')" style="flex:1; padding: 10px; background: none; border: none; border-bottom: 2px solid transparent; color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 600; cursor: pointer;">🌎 Geral</button>
+                </div>
+
+                <!-- ABA: Pelo Mapa -->
+                <div id="weed-tab-content-map" style="padding: 16px;">
+                    <!-- Info da Fazenda/Talhão selecionado -->
+                    <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.06);">
+                        <div id="weed-talhao-name" style="font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px;">—</div>
+                        <div id="weed-talhao-info" style="font-size: 11px; color: rgba(255,255,255,0.5);">Clique em qualquer talhão no mapa para selecionar a fazenda</div>
+                        <div id="weed-fazenda-badge" style="display:none; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; background: rgba(255,0,0,0.1); border: 1px solid rgba(255,0,0,0.3); border-radius: 20px; padding: 3px 10px; font-size: 10px; color: #ff6666; font-weight: 600;">
+                            🏠 <span id="weed-fazenda-talhoes-count">—</span> talhões serão analisados
+                        </div>
+                    </div>
+
+                    <!-- Botão de Análise -->
+                    <button id="btn-weed-analyze" style="
+                        width: 100%; padding: 13px; border-radius: 10px;
+                        background: linear-gradient(135deg, #c62828, #ff1744);
+                        border: none; color: #fff; font-size: 13px; font-weight: 700;
+                        cursor: pointer; display: flex; align-items: center;
+                        justify-content: center; gap: 8px; transition: all 0.2s;
+                        box-shadow: 0 4px 12px rgba(255,23,68,0.3);
+                    " disabled>
+                        <span id="weed-btn-icon">🔍</span>
+                        <span id="weed-btn-text">Identificar Infestação na Fazenda</span>
+                    </button>
+
+                    <!-- Status / Loading -->
+                    <div id="weed-status-area" style="display: none; margin-top: 14px; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px;">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.3); margin-bottom: 8px; letter-spacing: 1px;">PROCESSANDO ANÁLISE...</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="weed-step" id="step-search" style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,0.3);">
+                                <span class="step-icon">⏳</span> Buscando imagem Sentinel-2...
+                            </div>
+                            <div class="weed-step" id="step-download" style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,0.3);">
+                                <span class="step-icon">⬇️</span> Baixando bandas espectrais...
+                            </div>
+                            <div class="weed-step" id="step-ndvi" style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,0.3);">
+                                <span class="step-icon">📊</span> Calculando NDVI + Z-Score...
+                            </div>
+                            <div class="weed-step" id="step-detect" style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,0.3);">
+                                <span class="step-icon">🔍</span> Detectando reboleiras...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resultado -->
+                    <div id="weed-result-area" style="display: none; margin-top: 14px;">
+                        <div id="weed-result-msg" style="font-size: 12px; color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; margin-bottom: 12px; line-height: 1.5; border-left: 3px solid #ff1744;"></div>
+                        <div id="weed-result-stats" style="display: none; margin-bottom: 12px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div style="background: rgba(255,23,68,0.1); border: 1px solid rgba(255,23,68,0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                                    <div id="weed-stat-ha" style="font-size: 20px; font-weight: 800; color: #ff1744;">—</div>
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px;">Área Infestada (ha)</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; text-align: center;">
+                                    <div id="weed-stat-count" style="font-size: 20px; font-weight: 800; color: #ff9f1c;">—</div>
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px;">Focos Detectados</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 12px; font-size: 11px; color: rgba(255,255,255,0.6); text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px; padding: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                                <div>🛰️ Imagem Sentinel-2: <strong id="weed-stat-date" style="color: #4CAF50;">—</strong></div>
+                                <div style="margin-top: 4px;">Nuvens no local: <strong id="weed-stat-cloud" style="color: #fff;">—</strong>%</div>
+                            </div>
+                        </div>
+                        <div id="weed-export-btns" style="display: none; flex-direction: row; gap: 8px;">
+                            <button id="btn-export-geojson" style="flex: 1; padding: 8px; border-radius: 8px; background: rgba(46,196,182,0.1); border: 1px solid #2ec4b6; color: #2ec4b6; font-size: 11px; font-weight: 600; cursor: pointer;">📥 GeoJSON</button>
+                            <button id="btn-export-kml" style="flex: 1; padding: 8px; border-radius: 8px; background: rgba(255,159,28,0.1); border: 1px solid #ff9f1c; color: #ff9f1c; font-size: 11px; font-weight: 600; cursor: pointer;">📥 KML</button>
+                            <button id="btn-clear-weed" style="padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); font-size: 11px; cursor: pointer;" title="Limpar camada">🗑️</button>
+                        </div>
+                    </div>
+
+                    <!-- Aviso API offline -->
+                    <div id="weed-api-offline" style="display: none; margin-top: 12px; font-size: 11px; color: #ff9f1c; background: rgba(255,159,28,0.08); border: 1px solid rgba(255,159,28,0.3); border-radius: 8px; padding: 10px; line-height: 1.6;">
+                        ⚠️ Servidor offline.<br>
+                        <span style="opacity:0.7;">Iniciando em segundo plano. Por favor, aguarde alguns segundos e tente novamente.</span>
+                    </div>
+                </div>
+
+                <!-- ABA: Pesquisar Fazenda -->
+                <div id="weed-tab-content-search" style="display:none; padding: 16px;">
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 10px;">Digite o nome da fazenda para analisá-la:</div>
+                    <div style="position: relative; margin-bottom: 12px;">
+                        <input id="weed-search-input" type="text" placeholder="Ex: FAZ. PLANALTO III..." list="weed-fazendas-datalist"
+                            style="width: 100%; box-sizing: border-box; padding: 11px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: #fff; font-size: 13px; outline: none; font-family: 'Inter', sans-serif;">
+                        <datalist id="weed-fazendas-datalist"></datalist>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button id="btn-weed-search-analyze" style="
+                            flex: 1; padding: 13px; border-radius: 10px;
+                            background: linear-gradient(135deg, #c62828, #ff1744);
+                            border: none; color: #fff; font-size: 13px; font-weight: 700;
+                            cursor: pointer; display: flex; align-items: center;
+                            justify-content: center; gap: 8px; transition: all 0.2s;
+                            box-shadow: 0 4px 12px rgba(255,23,68,0.3);
+                        ">
+                            🔍 Analisar Esta Fazenda
+                        </button>
+                        <button id="btn-weed-search-clear" style="
+                            padding: 13px; border-radius: 10px;
+                            background: rgba(255,255,255,0.05);
+                            border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 13px; font-weight: 600;
+                            cursor: pointer; display: flex; align-items: center;
+                            justify-content: center; transition: all 0.2s;
+                        " title="Limpar pesquisa">
+                            ❌
+                        </button>
+                    </div>
+                    <div id="weed-search-result-area" style="display:none; margin-top: 14px;">
+                        <div id="weed-search-result-msg" style="font-size: 12px; color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; border-left: 3px solid #ff1744; line-height: 1.5;"></div>
+                        <div id="weed-search-result-stats" style="display:none; margin-top: 10px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div style="background: rgba(255,23,68,0.1); border: 1px solid rgba(255,23,68,0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                                    <div id="weed-search-stat-ha" style="font-size: 20px; font-weight: 800; color: #ff1744;">—</div>
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px;">Área Infestada (ha)</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; text-align: center;">
+                                    <div id="weed-search-stat-count" style="font-size: 20px; font-weight: 800; color: #ff9f1c;">—</div>
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px;">Focos Detectados</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 12px; font-size: 11px; color: rgba(255,255,255,0.6); text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px; padding: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                                <div>🛰️ Imagem Sentinel-2: <strong id="weed-search-stat-date" style="color: #4CAF50;">—</strong></div>
+                                <div style="margin-top: 4px;">Nuvens no local: <strong id="weed-search-stat-cloud" style="color: #fff;">—</strong>%</div>
+                            </div>
+                            <div style="display:flex; gap:8px; margin-top: 12px;">
+                                <button id="btn-export-search-geojson" style="flex:1; padding: 8px; border-radius: 8px; background: rgba(46,196,182,0.1); border: 1px solid #2ec4b6; color: #2ec4b6; font-size: 11px; font-weight: 600; cursor: pointer;">📥 GeoJSON</button>
+                                <button id="btn-export-search-kml" style="flex:1; padding: 8px; border-radius: 8px; background: rgba(255,159,28,0.1); border: 1px solid #ff9f1c; color: #ff9f1c; font-size: 11px; font-weight: 600; cursor: pointer;">📥 KML</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="weed-search-api-offline" style="display: none; margin-top: 12px; font-size: 11px; color: #ff9f1c; background: rgba(255,159,28,0.08); border: 1px solid rgba(255,159,28,0.3); border-radius: 8px; padding: 10px;">
+                        ⚠️ Servidor offline. Iniciando em segundo plano, aguarde alguns segundos...
+                    </div>
+                </div>
+
+                <!-- ABA: Geral (Todas as Fazendas) -->
+                <div id="weed-tab-content-general" style="display: none; padding: 16px;">
+                    <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px;">Analisar Todas as Fazendas</div>
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.5);">Esta ação analisará iterativamente todas as fazendas carregadas no mapa.</div>
+                    </div>
+
+                    <div style="display: flex; gap: 8px;">
+                        <button id="btn-weed-analyze-general" onclick="runGlobalAnalysis()" style="
+                            flex: 2; padding: 13px; border-radius: 10px;
+                            background: linear-gradient(135deg, #c62828, #ff1744);
+                            border: none; color: #fff; font-size: 13px; font-weight: 700;
+                            cursor: pointer; display: flex; align-items: center;
+                            justify-content: center; gap: 8px; transition: all 0.2s;
+                            box-shadow: 0 4px 12px rgba(255,23,68,0.3);
+                        ">
+                            <span id="weed-btn-icon-general">🌎</span>
+                            <span id="weed-btn-text-general">Iniciar Análise Global</span>
+                        </button>
+                        
+                        <button id="btn-weed-cancel-general" onclick="cancelGlobalAnalysis()" style="
+                            display: none; flex: 1; padding: 13px; border-radius: 10px;
+                            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                            color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
+                            cursor: pointer; align-items: center; justify-content: center; transition: all 0.2s;
+                        ">
+                            🛑 Cancelar
+                        </button>
+                    </div>
+
+                    <!-- Progresso Geral -->
+                    <div id="weed-general-status-area" style="display: none; margin-top: 14px; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px;">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.3); margin-bottom: 8px; letter-spacing: 1px;">PROGRESSO GLOBAL</div>
+                        <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 8px;">
+                            <div id="weed-general-progress-bar" style="height: 100%; width: 0%; background: #ff1744; transition: width 0.3s;"></div>
+                        </div>
+                        <div id="weed-general-progress-text" style="font-size: 11px; color: #ff6666; font-weight: 600; text-align: center;">0 / 0 Fazendas</div>
+                        
+                        <ul id="weed-general-log" style="margin: 10px 0 0 0; padding-left: 14px; font-size: 10px; color: rgba(255,255,255,0.4); max-height: 80px; overflow-y: auto;">
+                            <!-- logs -->
+                        </ul>
+                    </div>
+
+                    <!-- Resultado Global -->
+                    <div id="weed-general-result-area" style="display: none; margin-top: 14px; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px; border: 1px solid rgba(255,23,68,0.3);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                            <div style="font-size: 18px;">✅</div>
+                            <div style="font-size: 12px; font-weight: 700; color: #fff;">Análise Concluída</div>
+                        </div>
+                        <div id="weed-general-result-msg" style="font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.4;"></div>
+                        <div style="display:flex; gap:8px; margin-top: 12px;">
+                            <button onclick="downloadGlobalGeoJSON()" style="flex:1; padding: 8px; border-radius: 8px; background: rgba(46,196,182,0.1); border: 1px solid #2ec4b6; color: #2ec4b6; font-size: 11px; font-weight: 600; cursor: pointer;">📥 Baixar Tudo (GeoJSON)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ====== FIM PAINEL SATÉLITE ====== -->
+
+            <!-- ====== PAINEL INTEGRAÇÃO DJI ====== -->
+            <div id="dji-integration-panel" style="
+                display: none;
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                width: 340px;
+                background: rgba(10, 14, 12, 0.95);
+                backdrop-filter: blur(16px);
+                border: 1px solid rgba(0, 255, 100, 0.3);
+                border-radius: 16px;
+                overflow: hidden;
+                z-index: 1500;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 30px rgba(0,255,100,0.1);
+                font-family: 'Inter', sans-serif;
+            ">
+                <!-- Cabeçalho -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 12px; border-bottom: 1px solid rgba(0,255,100,0.15);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0,255,100,0.15); border: 1px solid rgba(0,255,100,0.4); display: flex; align-items: center; justify-content: center; font-size: 18px;">🛸</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; color: #fff; line-height: 1.2;">Integração DJI</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4); line-height: 1.4;">SmartFarm -> XAG Converter</div>
+                        </div>
+                    </div>
+                    <button id="dji-panel-close" style="background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 18px; line-height: 1; padding: 4px;">✕</button>
+                </div>
+
+                <div style="padding: 16px;">
+                    <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.4;">
+                            Clique abaixo para sincronizar os mapas compartilhados com a conta robô do sistema.
+                        </div>
+                    </div>
+
+                    <button id="btn-dji-sync" style="
+                        width: 100%; padding: 13px; border-radius: 10px;
+                        background: linear-gradient(135deg, #00853c, #00ff66);
+                        border: none; color: #000; font-size: 13px; font-weight: 700;
+                        cursor: pointer; display: flex; align-items: center;
+                        justify-content: center; gap: 8px; transition: all 0.2s;
+                        box-shadow: 0 4px 12px rgba(0,255,100,0.3);
+                    ">
+                        <span id="dji-sync-icon">🔄</span>
+                        <span id="dji-sync-text">Sincronizar Mapas da DJI</span>
+                    </button>
+
+                    <!-- Lista de Mapas Recebidos -->
+                    <div id="dji-map-list-container" style="display: none; margin-top: 14px;">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 8px;">Mapas Recentes:</div>
+                        <div id="dji-map-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
+                            <!-- Items serão injetados via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Area de Ação do Mapa Selecionado -->
+                    <div id="dji-action-area" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div id="dji-selected-map-name" style="font-size: 13px; font-weight: 600; color: #00ff66; margin-bottom: 10px; text-align: center;">—</div>
+                        <button id="btn-dji-convert-xag" style="
+                            width: 100%; padding: 13px; border-radius: 10px;
+                            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2);
+                            color: #fff; font-size: 13px; font-weight: 600;
+                            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
+                        ">
+                            📥 Baixar Shapefile (XAG)
+                        </button>
+                    </div>
+
+                    <!-- Loading / Error Msgs -->
+                    <div id="dji-status-msg" style="display: none; margin-top: 14px; font-size: 11px; color: #ff9f1c; background: rgba(255,159,28,0.08); border: 1px solid rgba(255,159,28,0.3); border-radius: 8px; padding: 10px; text-align: center;"></div>
+                </div>
+            </div>
+            <!-- ====== FIM PAINEL INTEGRAÇÃO DJI ====== -->
+
+
+                <script>
+                    document.getElementById('floating-layers-btn').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const panel = document.getElementById('floating-layers-panel');
+                        if (panel.style.display === 'none') {
+                            panel.style.display = 'block';
+                            document.getElementById('floating-tools-panel').style.display = 'none'; // Close other panel
+                        } else {
+                            panel.style.display = 'none';
+                        }
+                    });
+                    
+                    document.getElementById('floating-tools-btn').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const panel = document.getElementById('floating-tools-panel');
+                        if (panel.style.display === 'none') {
+                            panel.style.display = 'block';
+                            document.getElementById('floating-layers-panel').style.display = 'none'; // Close other panel
+                        } else {
+                            panel.style.display = 'none';
+                        }
+                    });
+
+                    // Close panel when clicking outside map or in other empty areas
+                    document.addEventListener('click', function(e) {
+                        const panelLayers = document.getElementById('floating-layers-panel');
+                        const btnLayers = document.getElementById('floating-layers-btn');
+                        if (panelLayers && panelLayers.style.display === 'block' && !panelLayers.contains(e.target) && !btnLayers.contains(e.target)) {
+                            panelLayers.style.display = 'none';
+                        }
+                        
+                        const panelTools = document.getElementById('floating-tools-panel');
+                        const btnTools = document.getElementById('floating-tools-btn');
+                        if (panelTools && panelTools.style.display === 'block' && !panelTools.contains(e.target) && !btnTools.contains(e.target)) {
+                            panelTools.style.display = 'none';
+                        }
+                    });
+                </script>
+            </div>
+
+            <!-- Floating Measure Result Window -->
+            <div id="measure-result" style="display: none; position: absolute; bottom: 40px; left: calc(50% - 150px); z-index: 1000; width: 300px; padding: 16px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-size: 13px; color: #a8b8b0; flex-direction: column;">
+                <div id="measure-drag-handle" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 4px; cursor: move;">
+                    <span style="font-weight: 600; color: #fff; letter-spacing: 1px;">FERRAMENTA DE MEDIÇÃO</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button id="tool-measure-clear-icon" style="background: none; border: none; color: #f48c06; cursor: pointer; font-size: 16px; padding: 0 4px;" title="Reiniciar Medição">🔄</button>
+                        <button id="min-measure-btn" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 24px; padding: 0 4px; line-height: 0.5;" title="Minimizar">-</button>
+                        <button id="close-measure-btn" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 20px; padding: 0; line-height: 1;" title="Fechar">&times;</button>
+                    </div>
+                </div>
+                <div id="measure-body" style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span>Distância:</span> <strong id="measure-distance" style="color: #fff;">0 m</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span>Área:</span> <strong id="measure-area" style="color: #fff;">0 ha</strong>
+                    </div>
+                    <div style="font-size: 11px; color: #ffeb3b; text-align: center; margin-top: 6px; line-height: 1.4;">Clique Esquerdo: desenhar pontos.<br>Clique Direito: encerrar desenho.<br>Após encerrar, clique no mapa para fechar.</div>
+                    <button id="tool-measure-clear" style="width: 100%; padding: 10px; margin-top: 4px; background: rgba(232, 93, 4, 0.2); border: 1px solid #e85d04; color: #fff; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: all 0.2s; text-transform: uppercase;">Limpar Medição</button>
+                </div>
+            </div>
+
+            <!-- Floating Route Window -->
+            <div id="route-panel" style="display: none; position: absolute; bottom: 40px; left: calc(50% - 150px); z-index: 1000; width: 300px; padding: 16px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-size: 13px; color: #a8b8b0; flex-direction: column;">
+                <div id="route-drag-handle" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 4px; cursor: move;">
+                    <span style="font-weight: 600; color: #fff; letter-spacing: 1px;">TRAÇAR ROTA</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button id="tool-route-clear-icon" style="background: none; border: none; color: #f48c06; cursor: pointer; font-size: 16px; padding: 0 4px;" title="Reiniciar Rota">🔄</button>
+                        <button id="min-route-btn" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 24px; padding: 0 4px; line-height: 0.5;" title="Minimizar">-</button>
+                        <button id="close-route-btn" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 20px; padding: 0; line-height: 1;" title="Fechar">&times;</button>
+                    </div>
+                </div>
+                <div id="route-body" style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; gap: 4px;">
+                            <input type="text" id="route-search-origin" list="fazendas-list" placeholder="📍 Buscar Origem..." style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 4px; font-size: 12px; transition: all 0.2s;" autocomplete="off">
+                        </div>
+                        <button id="route-btn-myloc" style="width: 100%; padding: 8px; background: rgba(33,150,243,0.2); border: 1px solid #2196F3; color: #fff; border-radius: 4px; text-align: center; cursor: pointer; font-size: 11px; transition: all 0.2s; margin-top: -4px;">🎯 Usar Minha Localização Atual</button>
+                        
+                        <div style="display: flex; gap: 4px;">
+                            <input type="text" id="route-search-dest" list="fazendas-list" placeholder="📍 Buscar Destino..." style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 4px; font-size: 12px; transition: all 0.2s;" autocomplete="off">
+                        </div>
+                    </div>
+                    <div id="route-info" style="display: none; padding: 10px; margin-top: 4px; background: rgba(232, 93, 4, 0.1); border: 1px solid rgba(232, 93, 4, 0.3); border-radius: 6px; text-align: center; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 11px; color: #f48c06; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Resumo da Rota</span>
+                        <div><span style="font-size: 12px; color: #a8b8b0;">Distância Total:</span> <strong id="route-distance-text" style="color: #fff; font-size: 14px; margin-left: 5px;">Calculando...</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Draw Window -->
+            <div id="draw-panel" style="display: none; position: absolute; bottom: 40px; left: calc(50% - 150px); z-index: 1000; width: 300px; padding: 16px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-size: 13px; color: #a8b8b0; flex-direction: column;">
+                <div id="draw-drag-handle" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 8px; cursor: move;">
+                    <span style="font-weight: 600; color: #fff; letter-spacing: 1px;">DESENHAR NO MAPA</span>
+                    <button id="close-draw-btn" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 20px; padding: 0; line-height: 1;" title="Fechar">&times;</button>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button id="draw-mode-point" style="flex: 1; padding: 10px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 8px; cursor: pointer; font-size: 12px; transition: all 0.2s;">
+                        📍 Ponto
+                    </button>
+                    <button id="draw-mode-area" style="flex: 1; padding: 10px; background: rgba(46, 196, 182, 0.2); border: 1px solid #2ec4b6; color: #fff; border-radius: 8px; cursor: pointer; font-size: 12px; transition: all 0.2s;">
+                        📐 Área
+                    </button>
+                </div>
+                <div id="draw-status" style="font-size: 11px; text-align: center; color: #f4a261; display: none; margin-bottom: 10px;"></div>
+                <button id="draw-finish-area" style="display: none; width: 100%; padding: 10px; background: #2ec4b6; border: none; color: #000; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                    Concluir Área (Polígono)
+                </button>
+            </div>
+
+            <!-- Floating Record Window -->
+            <div id="record-panel" style="display: none; position: absolute; bottom: 40px; left: calc(50% - 150px); z-index: 1000; width: 300px; padding: 16px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-size: 13px; color: #a8b8b0; flex-direction: column;">
+                <div id="record-drag-handle" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 12px; cursor: move;">
+                    <span style="font-weight: 600; color: #fff; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;">
+                        <span id="record-indicator" style="display:inline-block; width:10px; height:10px; background:#e71d36; border-radius:50%; transition: opacity 0.5s;"></span>
+                        GRAVAR ROTA
+                    </span>
+                    <button id="close-record-btn" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 20px; padding: 0; line-height: 1;" title="Fechar">&times;</button>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase;">Distância Percorrida</span>
+                        <span id="record-distance" style="font-size: 18px; font-weight: bold; color: #fff;">0.00 km</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; text-align: right;">
+                        <span style="font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase;">Tempo</span>
+                        <span id="record-time" style="font-size: 18px; font-weight: bold; color: #ff9f1c;">00:00</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button id="record-start-btn" style="flex: 1; padding: 12px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        INICIAR
+                    </button>
+                    <button id="record-save-btn" disabled style="flex: 1; padding: 12px; background: rgba(46, 196, 182, 0.1); border: 1px solid rgba(46, 196, 182, 0.3); color: rgba(255,255,255,0.3); font-weight: bold; border-radius: 8px; cursor: not-allowed; transition: all 0.2s;">
+                        SALVAR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Custom Name Modal -->
+            <div id="custom-name-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+                <div style="background: #121212; padding: 24px; border-radius: 12px; width: 90%; max-width: 320px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+                    <h3 id="custom-name-title" style="margin: 0 0 16px 0; color: #fff; font-size: 16px;">Salvar Item</h3>
+                    <input type="text" id="custom-name-input" placeholder="Digite o nome..." style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 8px; font-size: 14px; margin-bottom: 20px;" autocomplete="off">
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button id="custom-name-cancel" style="padding: 10px 16px; background: transparent; border: none; color: #a8b8b0; cursor: pointer; font-size: 13px; font-weight: 500;">Cancelar</button>
+                        <button id="custom-name-confirm" style="padding: 10px 20px; background: #2ec4b6; border: none; color: #000; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold;">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div> <!-- /main-content -->
+</div> <!-- /app-container -->
+
+<!-- App Info Modal -->
+<div id="info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; flex-direction: column;">
+    <div style="background: #1a1f24; padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); width: 300px; max-width: 90%; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; color: #e85d04;">Descrição do aplicativo</h3>
+        <p style="margin: 8px 0; font-size: 15px;"><strong>Nome:</strong> NDB_Mapas</p>
+        <p style="margin: 8px 0; font-size: 15px;"><strong>Autor:</strong> Agrogis</p>
+        <p style="margin: 8px 0; font-size: 15px;"><strong>Atualização:</strong> v1_11082026</p>
+        
+        <div style="text-align: right; margin-top: 25px;">
+            <button onclick="document.getElementById('info-modal').style.display='none'" style="background: #00965e; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.3s;" onmouseover="this.style.background='#007a4c'" onmouseout="this.style.background='#00965e'">OK</button>
+        </div>
+    </div>
+</div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+     
+    <!-- Leaflet Rotate Plugin -->
+    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
+    
+    <!-- Leaflet Routing Machine JS -->
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    
+    <!-- Custom JS App -->
+    <script src="app.js?v=3.8"></script>
+    <script src="app_info.js?v=1"></script>
+    <script src="planting_lines.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const menuDropdown = document.getElementById('mobile-menu-dropdown');
+            if (menuBtn && menuDropdown) {
+                menuBtn.addEventListener('click', (e) => {
+                    menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'flex' : 'none';
+                    e.stopPropagation();
+                });
+                document.addEventListener('click', (e) => {
+                    if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target)) {
+                        menuDropdown.style.display = 'none';
+                    }
+                });
+                
+                document.getElementById('btn-info-app').addEventListener('click', () => {
+                    const modal = document.getElementById('info-modal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                    }
+                });
+                
+                document.getElementById('btn-refresh-app').addEventListener('click', () => {
+                    if ('serviceWorker' in navigator && caches) {
+                        caches.keys().then(function(names) {
+                            for (let name of names) {
+                                caches.delete(name);
+                            }
+                        }).then(() => {
+                            window.location.reload(true);
+                        }).catch(() => {
+                            window.location.reload(true);
+                        });
+                    } else {
+                        window.location.reload(true);
+                    }
+                });
+            }
+
+            // Minimize Panels logic
+            const minMeasureBtn = document.getElementById('min-measure-btn');
+            const measureBody = document.getElementById('measure-body');
+            if(minMeasureBtn && measureBody) {
+                minMeasureBtn.addEventListener('click', () => {
+                    if (measureBody.style.display === 'none') {
+                        measureBody.style.display = 'flex';
+                        minMeasureBtn.innerHTML = '-';
+                    } else {
+                        measureBody.style.display = 'none';
+                        minMeasureBtn.innerHTML = '+';
+                    }
+                });
+            }
+            
+            const minRouteBtn = document.getElementById('min-route-btn');
+            const routeBody = document.getElementById('route-body');
+            if(minRouteBtn && routeBody) {
+                minRouteBtn.addEventListener('click', () => {
+                    if (routeBody.style.display === 'none') {
+                        routeBody.style.display = 'flex';
+                        minRouteBtn.innerHTML = '-';
+                    } else {
+                        routeBody.style.display = 'none';
+                        minRouteBtn.innerHTML = '+';
+                    }
+                });
+            }
+        });
+
+        // Register PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('PWA Service Worker Registrado!'))
+                    .catch(err => console.error('Erro no PWA Service Worker', err));
+            });
+        }
+        // PWA Install Prompt Logic
+        const installBtn = document.getElementById('btn-install');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            // Store globally so auth.js can trigger it after login
+            window._deferredInstallPrompt = e;
+            // Show on login screen
+            if(installBtn) installBtn.style.display = 'block';
+        });
+
+        if(installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (window._deferredInstallPrompt) {
+                    window._deferredInstallPrompt.prompt();
+                    await window._deferredInstallPrompt.userChoice;
+                    window._deferredInstallPrompt = null;
+                    installBtn.style.display = 'none';
+                }
+            });
+        }
+
+        // Hide install button if app is already installed
+        window.addEventListener('appinstalled', () => {
+            if(installBtn) installBtn.style.display = 'none';
+            window._deferredInstallPrompt = null;
+        });
+    </script>
+</body>
+</html>

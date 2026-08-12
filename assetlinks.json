@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.app_ndb_mapas.twa",
+        "sha256_cert_fingerprints": ["C5:64:83:9F:66:AB:59:D9:B8:80:8E:28:88:52:4B:EE:34:3B:2B:D9:F6:91:1C:2D:D5:67:1B:B0:17:FA:EA:63"]
+      }
+    }]
