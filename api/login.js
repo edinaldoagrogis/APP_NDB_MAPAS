@@ -20,8 +20,8 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Usuário ou senha em branco' });
         }
         
-        // Strict password check
-        if (password !== 'ndb_mapas' && password !== 'NDB_MAPA' && password !== 'NDB_MAPAS') {
+        const passLower = password.toLowerCase();
+        if (passLower !== 'ndb_mapas' && passLower !== 'ndb_mapa') {
             return res.status(401).json({ error: 'Senha incorreta' });
         }
         
