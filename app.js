@@ -449,7 +449,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 onEachFeature: (feature, layer) => {
                     const props = feature.properties || {};
-                    const title = props.nome || props.NOME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || 'Elemento';
+                    
+                    // Helper function to find property case-insensitively
+                    const getProp = (props, possibleNames) => {
+                        if (!props) return '';
+                        const keys = Object.keys(props);
+                        for (const name of possibleNames) {
+                            const upperName = name.toUpperCase();
+                            for (const key of keys) {
+                                if (key.toUpperCase().trim() === upperName) {
+                                    return props[key];
+                                }
+                            }
+                        }
+                        return '';
+                    };
+
+                    const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'TALHAO', 'ID', 'DESIGNACAO']);
+                    const title = titleRaw || 'Elemento';
+                    
                     // Popup is now bound dynamically on click so it doesn't interfere with routing clicks
                     if (isFazenda) {
                         if (!window.labeledFazendas) window.labeledFazendas = new Set();
@@ -472,11 +490,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     if (isTalhao) {
-                        const cod = props.COD_TALHAO || props.TALHAO || '';
-                        const area = parseFloat(props.TALHAO_ARE || props.AREA_TOTAL || props['DL AREA'] || 0).toFixed(2);
-                        const varName = props['DL VARIEDADE'] || props.VARIEDADE || '';
+                        const cod = getProp(props, ['COD_TALHAO', 'TALHAO', 'CODIGO', 'NOME', 'ID']);
+                        const areaVal = getProp(props, ['TALHAO_ARE', 'AREA_TOTAL', 'DL AREA', 'AREA', 'AREA_HA', 'HECTARES']);
+                        const area = parseFloat(areaVal || 0).toFixed(2);
+                        const varName = getProp(props, ['DL VARIEDADE', 'VARIEDADE', 'VAR', 'CULTURA']);
                         
-                        const corteRaw = props['DL CORTE'];
+                        const corteRaw = getProp(props, ['DL CORTE', 'CORTE', 'ESTAGIO', 'CICLO', 'CORTES']);
                         const corte = corteRaw ? (String(corteRaw).toUpperCase().includes('C') ? corteRaw : corteRaw + 'C') : '';
                         
                         if (cod) {
