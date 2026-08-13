@@ -147,6 +147,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Save actual username used
                 localStorage.setItem('agrogis_current_user', data.user);
+                
+                // Save feature flag for updates
+                if (data.receiveUpdates) {
+                    localStorage.setItem('agrogis_updates_enabled', 'true');
+                } else {
+                    localStorage.removeItem('agrogis_updates_enabled');
+                }
 
                 // Grant access (using level 2 for everything now as per new rules)
                 grantAccess(2);

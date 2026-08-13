@@ -43,15 +43,24 @@ export default async function handler(req, res) {
         
         let userData;
         if (!userDataStr) {
+            // Check if this is the very first user in the database
+            const existingKeys = await redis.keys('user:*');
+            const isFirstUser = existingKeys.length === 0;
+
             // Auto register as ACTIVE on first login
             userData = {
                 name: cleanUser,
                 active: true,
+                receiveUpdates: isFirstUser, // First user gets updates by default
                 createdAt: Date.now()
             };
             await redis.set(userKey, JSON.stringify(userData));
         } else {
             userData = JSON.parse(userDataStr);
+            // Ensure older users have the property
+            if (userData.receiveUpdates === undefined) {
+                userData.receiveUpdates = false;
+            }
         }
         
         // Check if blocked
@@ -60,7 +69,11 @@ export default async function handler(req, res) {
         }
         
         // Allowed
-        return res.status(200).json({ success: true, user: userData.name });
+        return res.status(200).json({ 
+            success: true, 
+            user: userData.name,
+            receiveUpdates: userData.receiveUpdates 
+        });
     } catch (e) {
         console.error(e);
         return res.status(500).json({ error: 'Erro interno no servidor de login.' });

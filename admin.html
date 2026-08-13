@@ -169,7 +169,30 @@
         input:checked + .slider {
             background-color: var(--primary);
         }
-        input:checked + .slider:before {
+        /* Switch for Updates (Blue) */
+        .slider-update {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider-update:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-update {
+            background-color: #00bcd4; /* Cyan/Blue */
+        }
+        input:checked + .slider-update:before {
             transform: translateX(26px);
         }
 
@@ -227,6 +250,7 @@
                     <th>Usuário</th>
                     <th>Status</th>
                     <th>Acesso Liberado?</th>
+                    <th>Liberar Atualização?</th>
                 </tr>
             </thead>
             <tbody id="users-body">
@@ -301,7 +325,7 @@
                 const data = await res.json();
                 
                 if (data.users.length === 0) {
-                    usersBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
+                    usersBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
                     document.getElementById('total-users').style.display = 'none';
                 } else {
                     document.getElementById('total-users').textContent = `Total: ${data.users.length} usuário${data.users.length > 1 ? 's' : ''}`;
@@ -322,6 +346,12 @@
                                 <label class="switch">
                                     <input type="checkbox" onchange="toggleUser('${u.name}', this.checked)" ${u.active ? 'checked' : ''} ${disabled}>
                                     <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <label class="switch">
+                                    <input type="checkbox" onchange="toggleUpdate('${u.name}', this.checked)" ${u.receiveUpdates ? 'checked' : ''}>
+                                    <span class="slider-update"></span>
                                 </label>
                             </td>
                         `;
@@ -355,6 +385,29 @@
                     }
                 } else {
                     alert('Falha ao alterar status!');
+                    loadUsers(); // Refresh to original state
+                }
+            } catch (e) {
+                alert('Erro na conexão!');
+                loadUsers();
+            }
+        };
+
+        window.toggleUpdate = async function(username, receives) {
+            try {
+                const res = await fetch('/api/toggleUpdate', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ username, receiveUpdates: receives })
+                });
+                
+                if (res.ok) {
+                    showToast(`Atualizações ${receives ? 'liberadas' : 'bloqueadas'} para ${username}!`);
+                } else {
+                    alert('Falha ao alterar status de atualização!');
                     loadUsers(); // Refresh to original state
                 }
             } catch (e) {
