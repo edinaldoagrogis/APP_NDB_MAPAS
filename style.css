@@ -656,12 +656,13 @@ body, html {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer;
     }
     .app-container {
-        display: block;
+        display: flex;
+        flex-direction: column;
     }
     .map-wrapper {
         padding: 0;
-        height: 100%;
-        width: 100%;
+        flex: 1;
+        width: 100vw;
     }
     .sidebar {
         position: absolute;
