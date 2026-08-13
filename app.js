@@ -824,7 +824,9 @@ tryInitLayers();
     let myLayers = {
         pontos: null,
         areas: null,
-        rotas: null
+        rotas: null,
+        medicao_area: null,
+        medicao_distancia: null
     };
 
     function saveCustomFeature(type, geoJsonFeature) {
@@ -849,17 +851,7 @@ tryInitLayers();
 
     function deleteCustomFeature(type, id) {
         if (!confirm('Deseja realmente excluir este item?')) return;
-        const key = `agrogis_custom_${type}`;
-        let existing = localStorage.getItem(key);
-        if (existing) {
-            try { 
-                let fc = JSON.parse(existing);
-                fc.features = fc.features.filter(f => f.properties.id !== id);
-                localStorage.setItem(key, JSON.stringify(fc));
-                loadCustomLayer(type, fc);
-                renderCustomFeaturesList(type);
-            } catch(e){}
-        }
+        deleteCustomFeatures(type, [id]);
     }
 
     function editCustomFeatureName(type, id, oldName) {
@@ -1301,6 +1293,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             <div class="layer-submenu" style="display: none; margin-top: 10px; margin-left: 35px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; padding-bottom: 5px;">
                 ${createSubLayerToggle('pontos', 'Pontos Marcados', '#e71d36')}
                 ${createSubLayerToggle('areas', 'Áreas Desenhadas', '#2ec4b6')}
+                ${createSubLayerToggle('medicao_area', 'Medição (Área)', '#2196f3')}
+                ${createSubLayerToggle('medicao_distancia', 'Medição (Distância)', '#9c27b0')}
                 ${createSubLayerToggle('rotas', 'Rotas Gravadas', '#ff9f1c')}
             </div>
         `;
@@ -1310,6 +1304,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         // Render initial lists
         renderCustomFeaturesList('pontos');
         renderCustomFeaturesList('areas');
+        renderCustomFeaturesList('medicao_area');
+        renderCustomFeaturesList('medicao_distancia');
         renderCustomFeaturesList('rotas');
         
         const mainRow = li.querySelector('.layer-main-row');
@@ -1326,7 +1322,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }
         });
         
-        ['pontos', 'areas', 'rotas'].forEach(type => {
+        ['pontos', 'areas', 'rotas', 'medicao_area', 'medicao_distancia'].forEach(type => {
             const cb = li.querySelector(`#toggle-custom-${type}`);
             if (cb) {
                 if (cb.checked) {
@@ -1356,6 +1352,23 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         });
     }
 
+    function deleteCustomFeatures(type, idsArray) {
+        const key = `agrogis_custom_${type}`;
+        let existing = localStorage.getItem(key);
+        if (existing) {
+            try { 
+                let fc = JSON.parse(existing);
+                fc.features = fc.features.filter(f => !idsArray.includes(f.properties.id));
+                localStorage.setItem(key, JSON.stringify(fc));
+                loadCustomLayer(type, fc);
+                renderCustomFeaturesList(type);
+                // Manter a aba aberta
+                const listDiv = document.getElementById(`list-custom-${type}`);
+                if (listDiv) listDiv.style.display = 'block';
+            } catch(e){}
+        }
+    }
+
     function renderCustomFeaturesList(type) {
         const listDiv = document.getElementById(`list-custom-${type}`);
         if (!listDiv) return; // Might not exist if DOM not ready, but called later
@@ -1372,6 +1385,31 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 listDiv.innerHTML = '<div style="font-style: italic; opacity: 0.5;">Nenhuma feição salva.</div>';
                 return;
             }
+            
+            // Bulk Actions
+            const bulkDiv = document.createElement('div');
+            bulkDiv.style.display = 'flex';
+            bulkDiv.style.gap = '8px';
+            bulkDiv.style.marginBottom = '8px';
+            bulkDiv.innerHTML = `
+                <button class="bulk-del-sel" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Selecionados</button>
+                <button class="bulk-del-all" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Todas</button>
+            `;
+            listDiv.appendChild(bulkDiv);
+            
+            bulkDiv.querySelector('.bulk-del-sel').addEventListener('click', () => {
+                const checked = listDiv.querySelectorAll('.feature-cb:checked');
+                if (checked.length === 0) return alert('Nenhum item selecionado.');
+                if (!confirm(`Deseja apagar ${checked.length} item(ns) selecionado(s)?`)) return;
+                const ids = Array.from(checked).map(cb => cb.dataset.id);
+                deleteCustomFeatures(type, ids);
+            });
+            
+            bulkDiv.querySelector('.bulk-del-all').addEventListener('click', () => {
+                if (!confirm(`Deseja apagar TODAS as feições desta categoria?`)) return;
+                const ids = fc.features.map(f => f.properties.id);
+                deleteCustomFeatures(type, ids);
+            });
             
             fc.features.forEach(f => {
                 const name = f.properties.NOME || 'Sem Nome';
@@ -1398,7 +1436,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 }
                 
                 itemDiv.innerHTML = `
-                    <span style="flex-grow: 1; cursor: pointer; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: #a8b8b0;">${name}</span>
+                    <label class="custom-checkbox" style="font-size: 12px; display: flex; align-items: center; margin: 0 8px 0 0; min-width: 20px;">
+                        <input type="checkbox" class="feature-cb" data-id="${id}">
+                        <span class="checkmark" style="--layer-color: #e71d36; width: 14px; height: 14px; min-width: 14px;"></span>
+                    </label>
+                    <span class="feature-name-span" style="flex-grow: 1; cursor: pointer; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: #a8b8b0;">${name}</span>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         ${btnWapp}
                         <button class="btn-edit" style="background:none; border:none; color:#2ec4b6; cursor:pointer;" title="Editar Nome">✏️</button>
@@ -1407,7 +1449,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 `;
                 
                 // Pan to feature on name click
-                const spanName = itemDiv.querySelector('span');
+                const spanName = itemDiv.querySelector('.feature-name-span');
                 spanName.addEventListener('click', () => {
                     let mapLayer;
                     myLayers[type].eachLayer(l => {
@@ -1427,7 +1469,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     editCustomFeatureName(type, id, name);
                 });
                 itemDiv.querySelector('.btn-delete').addEventListener('click', () => {
-                    deleteCustomFeature(type, id);
+                    if (!confirm('Deseja realmente excluir este item?')) return;
+                    deleteCustomFeatures(type, [id]);
                 });
                 
                 listDiv.appendChild(itemDiv);
@@ -1667,7 +1710,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         if (measurePoints.length > 2) {
             // Polygon (Area)
-            type = 'areas';
+            type = 'medicao_area';
             coords.push([measurePoints[0].lng, measurePoints[0].lat]); // close polygon
             valueStr = document.getElementById('measure-area').textContent;
             feature = {
@@ -1677,7 +1720,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             };
         } else {
             // Line (Distance)
-            type = 'rotas';
+            type = 'medicao_distancia';
             valueStr = document.getElementById('measure-distance').textContent;
             feature = {
                 type: 'Feature',
