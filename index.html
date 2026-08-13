@@ -860,18 +860,37 @@
 
                 
                 document.getElementById('btn-refresh-app').addEventListener('click', () => {
+                    // Show updating overlay
+                    let updateOverlay = document.getElementById('update-overlay');
+                    if (!updateOverlay) {
+                        updateOverlay = document.createElement('div');
+                        updateOverlay.id = 'update-overlay';
+                        updateOverlay.style = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 20, 24, 0.95); z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px);";
+                        
+                        updateOverlay.innerHTML = `
+                            <div style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #e85d04; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+                            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+                            <h2 style="color: #fff; font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 2px; margin: 0;">ATUALIZANDO...</h2>
+                            <p style="color: rgba(255,255,255,0.6); font-family: 'Inter', sans-serif; font-size: 14px; margin-top: 10px;">Limpando cache e buscando nova versão</p>
+                        `;
+                        document.body.appendChild(updateOverlay);
+                    } else {
+                        updateOverlay.style.display = 'flex';
+                    }
+
+                    // Hide dropdown menu if open
+                    const menuDropdown = document.getElementById('mobile-menu-dropdown');
+                    if (menuDropdown) menuDropdown.style.display = 'none';
+
+                    // Cache clear logic
+                    const doReload = () => setTimeout(() => window.location.reload(true), 1500);
+
                     if ('serviceWorker' in navigator && caches) {
                         caches.keys().then(function(names) {
-                            for (let name of names) {
-                                caches.delete(name);
-                            }
-                        }).then(() => {
-                            window.location.reload(true);
-                        }).catch(() => {
-                            window.location.reload(true);
-                        });
+                            return Promise.all(names.map(name => caches.delete(name)));
+                        }).then(doReload).catch(doReload);
                     } else {
-                        window.location.reload(true);
+                        doReload();
                     }
                 });
             }
