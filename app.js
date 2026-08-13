@@ -1772,11 +1772,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             if (routeInfo) routeInfo.style.display = 'none';
             setRouteSelectionMode('origin');
             
-            // Auto enable compass
-            if (typeof window.toggleCompass === 'function') {
-                window.toggleCompass(true);
-            }
-            // Origin selection active
+            // Origin selection active (compass will auto-enable on dest selection)
         }
     });
 
@@ -1804,6 +1800,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (destInput) destInput.value = '';
         
         setRouteSelectionMode('origin');
+        
+        if (typeof window.toggleCompass === 'function') {
+            window.toggleCompass(false);
+        }
     }
     
     const routeClearIcon = document.getElementById('tool-route-clear-icon');
@@ -1868,6 +1868,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             // Fit map to route bounds to ensure visibility of the whole route
             if (routes && routes[0] && routes[0].coordinates) {
                 map.fitBounds(L.latLngBounds(routes[0].coordinates), { padding: [50, 50] });
+            }
+            
+            // Auto enable compass when route is calculated and shown on screen
+            if (typeof window.toggleCompass === 'function') {
+                window.toggleCompass(true);
             }
         });
 
