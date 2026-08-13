@@ -2084,6 +2084,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         map.getContainer().style.cursor = '';
         btnDrawPoint.style.boxShadow = 'none';
         btnDrawArea.style.boxShadow = 'none';
+        
+        const btnShareLoc = document.getElementById('tool-share-loc-btn');
+        if (btnShareLoc) {
+            btnShareLoc.style.background = 'rgba(255,255,255,0.05)';
+            btnShareLoc.style.borderColor = 'rgba(255,255,255,0.1)';
+        }
     }
 
     btnDraw.addEventListener('click', () => {
@@ -2132,6 +2138,24 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         drawMarkers.clearLayers();
     });
 
+    const btnShareLoc = document.getElementById('tool-share-loc-btn');
+    if (btnShareLoc) {
+        btnShareLoc.addEventListener('click', () => {
+            if (drawActive && drawMode === 'share-loc') {
+                resetDraw();
+            } else {
+                resetDraw();
+                drawActive = true;
+                window.drawActive = true;
+                drawMode = 'share-loc';
+                btnShareLoc.style.background = 'rgba(37, 211, 102, 0.2)';
+                btnShareLoc.style.borderColor = '#25d366';
+                map.getContainer().style.cursor = 'crosshair';
+                document.getElementById('floating-tools-panel').style.display = 'none';
+            }
+        });
+    }
+
     map.on('click', (e) => {
         if (!drawActive || !drawMode) return;
 
@@ -2156,6 +2180,25 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 }
                 resetDraw();
             });
+        } else if (drawMode === 'share-loc') {
+            const latlng = e.latlng;
+            const tempMarker = L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: '#25d366',
+                color: '#fff',
+                weight: 2,
+                fillOpacity: 1
+            }).addTo(map);
+
+            setTimeout(() => {
+                if (confirm(`Deseja compartilhar esta localização no WhatsApp?`)) {
+                    const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
+                    const message = encodeURIComponent(`Veja esta localização: ${gmapsUrl}`);
+                    window.location.href = `whatsapp://send?text=${message}`;
+                }
+                map.removeLayer(tempMarker);
+                resetDraw();
+            }, 100);
         } else if (drawMode === 'area') {
             const latlng = e.latlng;
             currentPolygonPoints.push(latlng);
