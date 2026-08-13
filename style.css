@@ -779,6 +779,11 @@ body, html {
     display: none !important;
 }
 
+/* Hide right controls (zoom, GPS, compass) when measuring */
+body.measure-active .leaflet-right {
+    display: none !important;
+}
+
 /* Equipe Marker Styles */
 .equipe-marker {
     background: transparent;

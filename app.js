@@ -1601,7 +1601,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         btnMeasure.style.borderColor = 'rgba(255,255,255,0.1)';
         resultPanel.style.display = 'none';
         map.getContainer().style.cursor = '';
-        document.body.classList.remove('hide-equipes', 'disable-map-hover');
+        document.body.classList.remove('hide-equipes', 'disable-map-hover', 'measure-active');
         const wrapper = document.querySelector('.top-right-wrapper');
         if (wrapper) wrapper.style.display = 'flex';
         resetMeasure();
@@ -1618,7 +1618,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             btnMeasure.style.borderColor = '#e85d04';
             resultPanel.style.display = 'flex';
             map.getContainer().style.cursor = 'crosshair';
-            document.body.classList.add('hide-equipes', 'disable-map-hover');
+            document.body.classList.add('hide-equipes', 'disable-map-hover', 'measure-active');
             resetMeasure();
             
             // Auto-close tools panel so user can see map clearly
