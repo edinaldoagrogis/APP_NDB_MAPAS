@@ -1656,6 +1656,52 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
     });
 
+    document.getElementById('tool-measure-save').addEventListener('click', () => {
+        if (!measureActive || measurePoints.length < 2) {
+            alert('Por favor, faça uma medição no mapa antes de salvar.');
+            return;
+        }
+        
+        let type, feature, valueStr;
+        const coords = measurePoints.map(p => [p.lng, p.lat]);
+        
+        if (measurePoints.length > 2) {
+            // Polygon (Area)
+            type = 'areas';
+            coords.push([measurePoints[0].lng, measurePoints[0].lat]); // close polygon
+            valueStr = document.getElementById('measure-area').textContent;
+            feature = {
+                type: 'Feature',
+                geometry: { type: 'Polygon', coordinates: [coords] },
+                properties: {}
+            };
+        } else {
+            // Line (Distance)
+            type = 'rotas';
+            valueStr = document.getElementById('measure-distance').textContent;
+            feature = {
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: coords },
+                properties: {}
+            };
+        }
+        
+        feature.properties.NOME = valueStr;
+        feature.properties.TIPO = 'Medição OCG';
+        
+        saveCustomFeature(type, feature);
+        
+        // Also enable the layer in the map if it's not checked
+        const cb = document.getElementById(`toggle-custom-${type}`);
+        if (cb && !cb.checked) {
+            cb.checked = true;
+            cb.dispatchEvent(new Event('change'));
+        }
+        
+        alert('Medição salva com sucesso em Minhas Camadas!');
+        deactivateMeasure(); // Auto-close tool after saving
+    });
+
     function finishMeasurement() {
         measureFinished = true;
         tempLine.setLatLngs([]);
