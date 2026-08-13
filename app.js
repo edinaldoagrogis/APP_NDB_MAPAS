@@ -927,7 +927,8 @@ tryInitLayers();
                         // Rotulagem Permanente (Sempre visível no mapa)
                         layer.bindTooltip(featureName, {
                             permanent: true,
-                            direction: 'center',
+                            direction: 'top',
+                            offset: [0, -8],
                             className: 'custom-label-tooltip'
                         });
                         
@@ -957,19 +958,18 @@ tryInitLayers();
                                 // Close the single-click popup if it opened
                                 map.closePopup();
                                 showContextMenu(type, feature.properties.id, featureName, latlng);
-                            }, 600);
+                            }, 500); // Reduzido para 500ms para ser mais responsivo
                         };
 
                         const cancelPress = () => {
                             if (pressTimer) clearTimeout(pressTimer);
                         };
 
+                        // Não cancelamos no mousemove porque os dedos tremem levemente no celular
                         layer.on('mousedown', startPress);
                         layer.on('touchstart', startPress);
                         layer.on('mouseup', cancelPress);
                         layer.on('touchend', cancelPress);
-                        layer.on('mousemove', cancelPress);
-                        layer.on('touchmove', cancelPress);
                         
                         // Fallback para botão direito no Computador
                         layer.on('contextmenu', (e) => {
