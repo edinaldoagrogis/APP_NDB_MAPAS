@@ -1390,14 +1390,15 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         const key = `agrogis_custom_${type}`;
         let existing = localStorage.getItem(key);
-        if (!existing) return;
+        let fc = { features: [] };
+        if (existing) {
+            try { fc = JSON.parse(existing); } catch(e){}
+        }
         
-        try {
-            let fc = JSON.parse(existing);
-            if (!fc.features || fc.features.length === 0) {
-                listDiv.innerHTML = '<div style="font-style: italic; opacity: 0.5;">Nenhuma feição salva.</div>';
-                return;
-            }
+        if (!fc.features || fc.features.length === 0) {
+            listDiv.innerHTML = '<div style="font-style: italic; opacity: 0.5;">Nenhuma feição salva.</div>';
+            return;
+        }
             
             // Bulk Actions
             const bulkDiv = document.createElement('div');
@@ -1488,8 +1489,6 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 
                 listDiv.appendChild(itemDiv);
             });
-            
-        } catch(e){}
     }
 
     function createSubLayerToggle(id, label, color) {
