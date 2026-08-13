@@ -1561,10 +1561,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     let measureActive = false;
     let measureFinished = false;
     let measurePoints = [];
-    let measureLines = L.polyline([], {color: '#ffeb3b', weight: 3, dashArray: '5, 10'}).addTo(map);
-    let measurePolygon = L.polygon([], {color: '#ffeb3b', weight: 2, fillColor: '#ffeb3b', fillOpacity: 0.2}).addTo(map);
+    let measureLines = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10'}).addTo(map);
+    let measurePolygon = L.polygon([], {color: '#ff9f1c', weight: 3, fillColor: '#ffeb3b', fillOpacity: 0.6}).addTo(map);
     let measureMarkers = L.layerGroup().addTo(map);
-    let tempLine = L.polyline([], {color: '#ffeb3b', weight: 3, dashArray: '5, 10', opacity: 0.5}).addTo(map);
+    let tempLine = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', opacity: 0.8}).addTo(map);
     
     const btnMeasure = document.getElementById('tool-measure-btn');
     const resultPanel = document.getElementById('measure-result');
@@ -1693,9 +1693,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
 
         measureLines.setLatLngs(measurePoints);
+        measureLines.bringToFront();
         
         if (measurePoints.length > 2) {
             measurePolygon.setLatLngs(measurePoints);
+            measurePolygon.bringToFront();
         } else {
             measurePolygon.setLatLngs([]);
         }
