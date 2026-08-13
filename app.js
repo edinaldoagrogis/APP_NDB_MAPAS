@@ -720,6 +720,63 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(tryInitLayers, 200);
     }
 }
+
+// --- CARREGAMENTO ASSÍNCRONO DOS DADOS ---
+function loadLayersDataAsync() {
+    console.log("Iniciando carregamento assíncrono de layers_data em background...");
+    
+    // Add small visual indicator
+    const loadingEl = document.createElement('div');
+    loadingEl.id = "background-loading-indicator";
+    loadingEl.innerHTML = "Carregando dados do mapa...";
+    loadingEl.style = "position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 12px; z-index: 1000; pointer-events: none;";
+    document.body.appendChild(loadingEl);
+
+    // Create a Web Worker dynamically to parse the 21MB file off the main thread
+    const workerCode = `
+    self.onmessage = function(e) {
+        try {
+            importScripts(e.data.url);
+            self.postMessage({
+                success: true,
+                GEOPORTAL_LAYERS: typeof GEOPORTAL_LAYERS !== 'undefined' ? GEOPORTAL_LAYERS : null,
+                EQUIPES_DATA: typeof EQUIPES_DATA !== 'undefined' ? EQUIPES_DATA : null,
+                APP_VERSION: typeof APP_VERSION !== 'undefined' ? APP_VERSION : null
+            });
+        } catch(err) {
+            self.postMessage({ success: false, error: err.message });
+        }
+    };
+    `;
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+    
+    worker.onmessage = function(e) {
+        if (e.data.success) {
+            window.GEOPORTAL_LAYERS = e.data.GEOPORTAL_LAYERS;
+            window.EQUIPES_DATA = e.data.EQUIPES_DATA;
+            if (e.data.APP_VERSION) window.APP_VERSION = e.data.APP_VERSION;
+            console.log("Dados carregados com sucesso via Web Worker!");
+        } else {
+            console.error("Erro no Worker ao carregar dados:", e.data.error);
+            // Fallback gracefully: try standard script injection on main thread
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = 'layers_data.js';
+            document.head.appendChild(fallbackScript);
+        }
+        const indicator = document.getElementById("background-loading-indicator");
+        if (indicator) indicator.remove();
+        worker.terminate();
+    };
+    
+    const localUrl = new URL('layers_data.js', window.location.href).href;
+    const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.js';
+    const targetUrl = window.location.protocol === 'file:' ? remoteUrl : localUrl;
+    
+    worker.postMessage({ url: targetUrl });
+}
+
+loadLayersDataAsync();
 tryInitLayers();
 
     // --- CUSTOM LAYERS LOGIC ---

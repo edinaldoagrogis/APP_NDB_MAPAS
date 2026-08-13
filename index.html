@@ -39,29 +39,10 @@
     <!-- Turf.js for spatial calculations -->
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     
-    <!-- GeoJSON Data fallbacks with Cloud Sync for Desktop App -->
+    <!-- GeoJSON Data loading moved to Web Worker inside app.js for better startup performance -->
     <script>
-        (function() {
-            var localSrc = 'layers_data.js';
-            var remoteSrc = 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.js';
-            
-            if (window.location.protocol === 'file:') {
-                // Desktop App: Tenta nuvem primeiro. Se falhar, cai pro local.
-                var s = document.createElement('script');
-                s.src = remoteSrc + '?t=' + new Date().getTime();
-                s.onerror = function() {
-                    var sLocal = document.createElement('script');
-                    sLocal.src = localSrc;
-                    document.head.appendChild(sLocal);
-                };
-                document.head.appendChild(s);
-            } else {
-                // PWA/Website: Já está na nuvem
-                var s = document.createElement('script');
-                s.src = localSrc;
-                document.head.appendChild(s);
-            }
-        })();
+        // Store remote URL for app.js to use if needed
+        window.REMOTE_LAYERS_URL = 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.js';
     </script>
     
     <!-- Authentication Logic -->
