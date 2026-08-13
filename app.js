@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const layerStyles = {}; // Store generated styles
 
     function updateLabelVisibility() {
+        if (map) document.getElementById('map').setAttribute('data-zoom', map.getZoom());
         // Fazendas logic
         const toggleFazendas = document.getElementById('toggle-labels-fazendas');
         const fazendasEnabled = toggleFazendas ? toggleFazendas.checked : true;
