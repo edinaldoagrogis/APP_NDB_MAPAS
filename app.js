@@ -861,8 +861,8 @@ tryInitLayers();
             // Encode the coordinates into a Google Maps URL for WhatsApp sharing
             const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
             const message = encodeURIComponent(`Veja o ponto "${name}": ${gmapsUrl}`);
-            const wappUrl = `https://api.whatsapp.com/send?text=${message}`;
-            whatsappHtml = `<a href="${wappUrl}" target="_blank" style="display: block; width: 100%; text-align: left; background: none; border: none; color: #25d366; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px; text-decoration: none;">📲 Compartilhar (WhatsApp)</a>`;
+            const wappUrl = `whatsapp://send?text=${message}`;
+            whatsappHtml = `<a href="${wappUrl}" style="display: block; width: 100%; text-align: left; background: none; border: none; color: #25d366; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px; text-decoration: none;">📲 Compartilhar (WhatsApp)</a>`;
         }
 
         const content = document.createElement('div');
@@ -1345,8 +1345,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     if (coord && coord.length === 2) {
                         const gmapsUrl = `https://maps.google.com/?q=${coord[1]},${coord[0]}`;
                         const message = encodeURIComponent(`Veja o ponto "${name}": ${gmapsUrl}`);
-                        const wappUrl = `https://api.whatsapp.com/send?text=${message}`;
-                        btnWapp = `<a href="${wappUrl}" target="_blank" style="text-decoration:none; font-size:14px; margin-right:4px;" title="Compartilhar no WhatsApp">📲</a>`;
+                        const wappUrl = `whatsapp://send?text=${message}`;
+                        btnWapp = `<a href="${wappUrl}" style="text-decoration:none; font-size:14px; margin-right:4px;" title="Compartilhar no WhatsApp">📲</a>`;
                     }
                 }
                 
@@ -2131,7 +2131,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     if (confirm(`Ponto "${name}" salvo com sucesso!\n\nDeseja compartilhar a localização agora pelo WhatsApp?`)) {
                         const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
                         const message = encodeURIComponent(`Veja o ponto "${name}": ${gmapsUrl}`);
-                        window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
+                        window.location.href = `whatsapp://send?text=${message}`;
                     }
                 }
                 resetDraw();
