@@ -599,11 +599,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const safeId = layerName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
             const checkedAttr = isDefaultActive ? 'checked' : '';
             
+            const labelStateKey = `agrogis_label_state_${safeId}`;
+            const savedLabelState = localStorage.getItem(labelStateKey);
+            const isLabelChecked = savedLabelState === null ? true : savedLabelState === 'true';
+            const labelCheckedAttrStr = isLabelChecked ? 'checked' : '';
+
             // Add submenu (accordion)
             let extraControls = `
                 <div class="layer-submenu" style="display: none; margin-top: 10px; margin-left: 35px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
                     <label class="custom-checkbox" style="font-size: 11px; margin-bottom: 8px; display: flex; align-items: center;">
-                        <input type="checkbox" id="toggle-labels-${safeId}" checked>
+                        <input type="checkbox" id="toggle-labels-${safeId}" ${labelCheckedAttrStr}>
                         <span class="checkmark" style="--layer-color: #f6ea7c; width: 14px; height: 14px; min-width: 14px;"></span>
                         <span class="layer-name" style="margin-left: 8px; color: var(--text-main);">Exibir Rótulos</span>
                     </label>
@@ -653,10 +658,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Wire label toggle immediately if it is Fazenda (for now)
-            if (isFazenda) {
+            if (isFazenda || layerName.toUpperCase().includes('TALHOES')) {
                 const labelToggle = document.getElementById(`toggle-labels-${safeId}`);
                 if (labelToggle) {
-                    labelToggle.addEventListener('change', updateLabelVisibility);
+                    labelToggle.addEventListener('change', (e) => {
+                        localStorage.setItem(`agrogis_label_state_${safeId}`, e.target.checked);
+                        updateLabelVisibility();
+                    });
                 }
             }
 
@@ -923,9 +931,13 @@ tryInitLayers();
                 onEachFeature: (feature, layer) => {
                     if (feature.properties) {
                         const featureName = feature.properties.NOME || 'Sem Nome';
+                        let labelText = featureName;
+                        if (type === 'areas' && feature.properties.AREA_HA) {
+                            labelText += `<br><span style="font-size: 10px; color: #2ec4b6;">${feature.properties.AREA_HA} ha</span>`;
+                        }
                         
                         // Rotulagem Permanente (Sempre visível no mapa)
-                        layer.bindTooltip(featureName, {
+                        layer.bindTooltip(labelText, {
                             permanent: true,
                             direction: 'top',
                             offset: [0, -8],
@@ -1327,9 +1339,21 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 itemDiv.style.padding = '4px 0';
                 itemDiv.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
                 
+                let btnWapp = '';
+                if (type === 'pontos') {
+                    let coord = f.geometry.coordinates;
+                    if (coord && coord.length === 2) {
+                        const gmapsUrl = `https://maps.google.com/?q=${coord[1]},${coord[0]}`;
+                        const message = encodeURIComponent(`Veja o ponto "${name}": ${gmapsUrl}`);
+                        const wappUrl = `https://api.whatsapp.com/send?text=${message}`;
+                        btnWapp = `<a href="${wappUrl}" target="_blank" style="text-decoration:none; font-size:14px; margin-right:4px;" title="Compartilhar no WhatsApp">📲</a>`;
+                    }
+                }
+                
                 itemDiv.innerHTML = `
                     <span style="flex-grow: 1; cursor: pointer; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: #a8b8b0;">${name}</span>
-                    <div style="display: flex; gap: 6px;">
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        ${btnWapp}
                         <button class="btn-edit" style="background:none; border:none; color:#2ec4b6; cursor:pointer;" title="Editar Nome">✏️</button>
                         <button class="btn-delete" style="background:none; border:none; color:#e71d36; cursor:pointer;" title="Excluir">🗑️</button>
                     </div>
@@ -2102,7 +2126,13 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         properties: { NOME: name, TIPO: 'Ponto' }
                     };
                     saveCustomFeature('pontos', feature);
-                    alert(`Ponto "${name}" salvo! Verifique "Minhas Camadas".`);
+                    
+                    // Offer to share immediately
+                    if (confirm(`Ponto "${name}" salvo com sucesso!\n\nDeseja compartilhar a localização agora pelo WhatsApp?`)) {
+                        const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
+                        const message = encodeURIComponent(`Veja o ponto "${name}": ${gmapsUrl}`);
+                        window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
+                    }
                 }
                 resetDraw();
             });
