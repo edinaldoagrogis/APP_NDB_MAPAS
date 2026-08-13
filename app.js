@@ -1020,9 +1020,8 @@ tryInitLayers();
                 };
             } else if (type === 'rotas') {
                 options.style = {
-                    color: '#ff9f1c',
-                    weight: 4,
-                    dashArray: '5, 10'
+                    color: '#e85d04',
+                    weight: 4
                 };
             }
             
@@ -2011,9 +2010,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 .then(data => {
                     rotasNdbLayer = L.geoJSON(data, {
                         style: {
-                            color: '#ffeb3b', // Distinct yellow for internal roads
+                            color: '#e85d04',
                             weight: 4,
-                            dashArray: '8, 8',
                             opacity: 0.9
                         }
                     }).addTo(map);
@@ -2262,7 +2260,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     let isRecording = false;
     let watchId = null;
     let recordPoints = [];
-    let recordLine = L.polyline([], {color: '#e71d36', weight: 4}).addTo(map);
+    let recordLine = L.polyline([], {color: '#e85d04', weight: 4}).addTo(map);
     let recordStartTime = null;
     let recordTimerInterval = null;
 
