@@ -948,7 +948,32 @@ tryInitLayers();
                         });
                         
                         // Segurar o Dedo / Long-Press (Mostra menu de Editar, Excluir e Compartilhar)
+                        let pressTimer = null;
+                        
+                        const startPress = (e) => {
+                            if (pressTimer) clearTimeout(pressTimer);
+                            const latlng = e.latlng || map.mouseEventToLatLng(e.originalEvent);
+                            pressTimer = setTimeout(() => {
+                                // Close the single-click popup if it opened
+                                map.closePopup();
+                                showContextMenu(type, feature.properties.id, featureName, latlng);
+                            }, 600);
+                        };
+
+                        const cancelPress = () => {
+                            if (pressTimer) clearTimeout(pressTimer);
+                        };
+
+                        layer.on('mousedown', startPress);
+                        layer.on('touchstart', startPress);
+                        layer.on('mouseup', cancelPress);
+                        layer.on('touchend', cancelPress);
+                        layer.on('mousemove', cancelPress);
+                        layer.on('touchmove', cancelPress);
+                        
+                        // Fallback para botão direito no Computador
                         layer.on('contextmenu', (e) => {
+                            cancelPress();
                             showContextMenu(type, feature.properties.id, featureName, e.latlng);
                         });
                     }
