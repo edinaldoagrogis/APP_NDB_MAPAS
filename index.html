@@ -28,16 +28,16 @@
     <link rel="stylesheet" href="style.css?v=2.3">
 
     <!-- Chart.js -->
-    <script src="chart.js"></script>
+    <script defer src="chart.js"></script>
     
     <!-- Offline Map Config -->
-    <script src="offline_images_config.js"></script>
+    <script defer src="offline_images_config.js"></script>
     
     <!-- PDF.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     
     <!-- Turf.js for spatial calculations -->
-    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script defer src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     
     <!-- GeoJSON Data loading moved to Web Worker inside app.js for better startup performance -->
     <script>
@@ -46,7 +46,7 @@
     </script>
     
     <!-- Authentication Logic -->
-    <script src="auth.js"></script>
+    <script defer src="auth.js"></script>
 </head>
 <body>
     <!-- Login Overlay -->
@@ -828,20 +828,20 @@
 
 
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
      
     <!-- Leaflet Rotate Plugin -->
-    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
+    <script defer src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
     
     <!-- Leaflet Routing Machine JS -->
-    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <script defer src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
     
     <!-- Custom JS App -->
-    <script src="app.js?v=4.0"></script>
-    <script src="app_info.js?v=1"></script>
-    <script src="planting_lines.js"></script>
+    <script defer src="app.js?v=4.0"></script>
+    <script defer src="app_info.js?v=1"></script>
+    <script defer src="planting_lines.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const menuBtn = document.getElementById('mobile-menu-btn');
