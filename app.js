@@ -1634,6 +1634,28 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     if (measureClearIcon) measureClearIcon.addEventListener('click', resetMeasure);
     document.getElementById('close-measure-btn').addEventListener('click', deactivateMeasure);
 
+    document.getElementById('tool-measure-add-gps').addEventListener('click', () => {
+        if (!measureActive || measureFinished) return;
+        // Check if gpsMarker exists globally (it's declared lower, but accessible due to var hoisting/closure if we use it, but wait, gpsMarker is declared around line 1747).
+        // Let's retrieve it from the global scope or map.
+        if (typeof gpsMarker !== 'undefined' && gpsMarker) {
+            const latlng = gpsMarker.getLatLng();
+            map.setView(latlng);
+            measurePoints.push(latlng);
+            L.circleMarker(latlng, {
+                radius: 5,
+                fillColor: '#ffeb3b',
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(measureMarkers);
+            updateMeasureUI();
+        } else {
+            alert('Aguardando sinal do GPS para marcar o ponto...');
+        }
+    });
+
     function finishMeasurement() {
         measureFinished = true;
         tempLine.setLatLngs([]);
