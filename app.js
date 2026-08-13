@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (cod) {
                             const html = `
                                 <div class="talhao-complex-label" style="position: relative;">
-                                    ${corte ? `<div class="tc-corte" style="position: absolute; left: -24px; top: 50%; transform: translateY(-50%); color: #ff0000; font-size: 10px; font-weight: 900; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">${corte}</div>` : ''}
+                                    ${corte ? `<div class="tc-corte" style="position: absolute; left: -22px; top: 50%; transform: translateY(-50%); color: #ff0000; font-size: 9px; font-weight: bold; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">${corte}</div>` : ''}
                                     <div class="tc-cod">${cod}</div>
                                     <div class="tc-area">${area}</div>
                                     <div class="tc-var">${varName}</div>
