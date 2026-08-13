@@ -769,9 +769,9 @@ body, html {
     font-weight: 600;
     letter-spacing: 0.3px;
 }
-.tc-cod { font-size: 9px; font-weight: bold; }
-.tc-area { font-size: 11px; margin: 1px 0; }
-.tc-var { font-size: 8px; opacity: 0.85; }
+.tc-cod { font-size: 7px; font-weight: bold; }
+.tc-area { font-size: 7px; margin: 1px 0; }
+.tc-var { font-size: 7px; opacity: 0.85; }
 
 /* Equipe Marker Styles */
 .equipe-marker {
