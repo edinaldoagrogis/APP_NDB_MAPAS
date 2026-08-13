@@ -660,8 +660,8 @@ body, html {
     }
     .map-wrapper {
         padding: 0;
-        height: calc(100vh - 100px); /* Adjust for topbar height */
-        width: 100vw;
+        height: 100%;
+        width: 100%;
     }
     .sidebar {
         position: absolute;

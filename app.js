@@ -1277,10 +1277,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         };
 
     function initCustomLayers() {
-        
         loadCustomLayer('pontos');
         loadCustomLayer('areas');
         loadCustomLayer('rotas');
+        loadCustomLayer('medicao_area');
+        loadCustomLayer('medicao_distancia');
         
         const li = document.createElement('li');
         li.className = 'layer-item custom-layers-group';
