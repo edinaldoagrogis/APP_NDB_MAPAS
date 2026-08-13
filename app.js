@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toggle labels based on zoom level and user preference
     const isMobile = window.innerWidth <= 768;
     const ZOOM_THRESHOLD = 13; // Fazendas (Appears closer)
-    const TALHOES_ZOOM_THRESHOLD = 14; // Talhões (Appears closer)
+    const TALHOES_ZOOM_THRESHOLD = 13.5; // Talhões (Appears closer)
     const EQUIPES_ZOOM_THRESHOLD = isMobile ? 10 : 8; // Equipes
     
     // Dynamic Layer Engine Stores
@@ -172,7 +172,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const layerStyles = {}; // Store generated styles
 
     function updateLabelVisibility() {
-        if (map) document.getElementById('map').setAttribute('data-zoom', map.getZoom());
+        if (!map) return;
+        const currentZoom = map.getZoom();
+        const mapContainer = document.getElementById('map');
+        mapContainer.setAttribute('data-zoom', Math.floor(currentZoom));
+        if (currentZoom < 15) {
+            mapContainer.classList.add('zoom-lt-15');
+        } else {
+            mapContainer.classList.remove('zoom-lt-15');
+        }
+        
         // Fazendas logic
         const toggleFazendas = document.getElementById('toggle-labels-fazendas');
         const fazendasEnabled = toggleFazendas ? toggleFazendas.checked : true;

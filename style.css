@@ -773,12 +773,9 @@ body, html {
 .tc-area { font-size: 7px; margin: 1px 0; }
 .tc-var { font-size: 7px; opacity: 0.85; }
 
-/* Hide specific labels at zoom 14 or below for a cleaner view */
-#map[data-zoom="10"] .tc-corte, #map[data-zoom="10"] .tc-area, #map[data-zoom="10"] .tc-var,
-#map[data-zoom="11"] .tc-corte, #map[data-zoom="11"] .tc-area, #map[data-zoom="11"] .tc-var,
-#map[data-zoom="12"] .tc-corte, #map[data-zoom="12"] .tc-area, #map[data-zoom="12"] .tc-var,
-#map[data-zoom="13"] .tc-corte, #map[data-zoom="13"] .tc-area, #map[data-zoom="13"] .tc-var,
-#map[data-zoom="14"] .tc-corte, #map[data-zoom="14"] .tc-area, #map[data-zoom="14"] .tc-var {
+/* Hide specific labels at zoom < 15 for a cleaner view */
+#map.zoom-lt-15 .tc-corte,
+#map.zoom-lt-15 .tc-var {
     display: none !important;
 }
 
