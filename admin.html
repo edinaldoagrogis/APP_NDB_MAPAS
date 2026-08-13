@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Licença - NDB Mapas</title>
+    <style>
+        :root {
+            --bg-main: #0d1a10;
+            --bg-secondary: #1a2a1f;
+            --primary: #2ec4b6;
+            --primary-hover: #1a9e93;
+            --text-main: #ffffff;
+            --text-muted: #a8b8b0;
+            --danger: #ff4d4d;
+            --border: rgba(46,196,182,0.3);
+        }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        header {
+            width: 100%;
+            background-color: var(--bg-secondary);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 40px;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: linear-gradient(145deg, #1a2a1f, #0d1a10);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+        
+        /* Auth Overlay */
+        #auth-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .auth-box {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+            width: 90%; max-width: 350px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        th {
+            color: var(--text-muted);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        td {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .status-active {
+            background: rgba(46, 196, 182, 0.2);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        .status-blocked {
+            background: rgba(255, 77, 77, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 77, 77, 0.5);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        #loading {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+            display: none;
+        }
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 10000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Auth Protection -->
+    <div id="auth-overlay">
+        <div class="auth-box">
+            <h2 style="margin-top:0;">Gestão de Licenças</h2>
+            <p style="color: var(--text-muted); font-size: 14px;">Insira a senha mestra do sistema</p>
+            <input type="password" id="admin-pass" placeholder="Senha do Administrador" autocomplete="off">
+            <button id="btn-login-admin">Acessar Painel</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <header>
+        <img src="ndb_logo.png" alt="Agrogis" style="height: 50px;">
+    </header>
+    
+    <div class="container">
+        <h1>Gerenciador de Acessos - APP NDB Mapas</h1>
+        <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 15px; text-align: center;">
+            Controle quem tem acesso ao aplicativo. Novos usuários aparecerão aqui automaticamente após o primeiro login no App com a senha padrão.
+        </p>
+
+        <div id="loading">Carregando usuários...</div>
+
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>Status</th>
+                    <th>Acesso Liberado?</th>
+                </tr>
+            </thead>
+            <tbody id="users-body">
+                <!-- Users will be injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="toast">Alteração salva!</div>
+
+    <script>
+        let adminToken = '';
+        const authOverlay = document.getElementById('auth-overlay');
+        const adminPassInput = document.getElementById('admin-pass');
+        const btnLoginAdmin = document.getElementById('btn-login-admin');
+        const usersBody = document.getElementById('users-body');
+        const loading = document.getElementById('loading');
+        const toast = document.getElementById('toast');
+
+        // Allow enter key
+        adminPassInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loginAdmin();
+        });
+        btnLoginAdmin.addEventListener('click', loginAdmin);
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 3000);
+        }
+
+        async function loginAdmin() {
+            const pass = adminPassInput.value.trim();
+            if (!pass) return;
+            
+            adminToken = pass;
+            btnLoginAdmin.textContent = 'Verificando...';
+            
+            try {
+                const res = await fetch('/api/getUsers', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                
+                if (res.ok) {
+                    authOverlay.style.display = 'none';
+                    loadUsers();
+                } else {
+                    alert('Senha incorreta!');
+                    btnLoginAdmin.textContent = 'Acessar Painel';
+                }
+            } catch (e) {
+                alert('Erro de conexão');
+                btnLoginAdmin.textContent = 'Acessar Painel';
+            }
+        }
+
+        async function loadUsers() {
+            loading.style.display = 'block';
+            usersBody.innerHTML = '';
+            
+            try {
+                const res = await fetch('/api/getUsers', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                
+                if (!res.ok) throw new Error('Falha ao carregar');
+                
+                const data = await res.json();
+                
+                if (data.users.length === 0) {
+                    usersBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
+                } else {
+                    data.users.forEach(u => {
+                        const tr = document.createElement('tr');
+                        const statusClass = u.active ? 'status-active' : 'status-blocked';
+                        const statusText = u.active ? 'Ativo' : 'Bloqueado';
+                        
+                        // Avoid tampering with admin from UI by mistake (optional precaution)
+                        const disabled = (u.name === 'admin_agrogis') ? 'disabled' : '';
+
+                        tr.innerHTML = `
+                            <td style="text-transform: capitalize;">${u.name}</td>
+                            <td><span class="status-badge ${statusClass}" id="badge-${u.name}">${statusText}</span></td>
+                            <td>
+                                <label class="switch">
+                                    <input type="checkbox" onchange="toggleUser('${u.name}', this.checked)" ${u.active ? 'checked' : ''} ${disabled}>
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                        `;
+                        usersBody.appendChild(tr);
+                    });
+                }
+            } catch (e) {
+                alert('Erro ao buscar lista de usuários: ' + e.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        window.toggleUser = async function(username, isActive) {
+            try {
+                const res = await fetch('/api/toggleUser', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ username, active: isActive })
+                });
+                
+                if (res.ok) {
+                    showToast(`Acesso de ${username} ${isActive ? 'liberado' : 'bloqueado'}!`);
+                    const badge = document.getElementById(`badge-${username}`);
+                    if (badge) {
+                        badge.className = `status-badge ${isActive ? 'status-active' : 'status-blocked'}`;
+                        badge.textContent = isActive ? 'Ativo' : 'Bloqueado';
+                    }
+                } else {
+                    alert('Falha ao alterar status!');
+                    loadUsers(); // Refresh to original state
+                }
+            } catch (e) {
+                alert('Erro na conexão!');
+                loadUsers();
+            }
+        };
+    </script>
+</body>
+</html>

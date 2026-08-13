@@ -86,32 +86,69 @@ document.addEventListener('DOMContentLoaded', () => {
         btnLogoutMobile.addEventListener('click', handleLogout);
     }
 
-    function performLogin() {
+    async function performLogin() {
         try {
-            const user = inputUsername.value.trim().toUpperCase();
-            const pass = inputPassword.value.trim().toUpperCase();
-
-            // Manage saved password
-            if (rememberCheckbox) {
-                if (rememberCheckbox.checked) {
-                    savedPasswords[user] = pass;
-                } else {
-                    delete savedPasswords[user];
-                }
-                localStorage.setItem('agrogis_saved_passwords', JSON.stringify(savedPasswords));
-            }
-
-            // Only one login for the entire app
-            if (user === 'NDB_MAPA' && pass === 'NDB_MAPA') {
-                grantAccess(2); // Grant admin access or single tier access
-            }
-            else {
-            loginError.style.display = 'block';
-            inputUsername.style.borderColor = '#ff4d4d';
-            inputPassword.style.borderColor = '#ff4d4d';
+            const user = inputUsername.value.trim();
+            const pass = inputPassword.value.trim();
             
-            // Add shake animation
-            const container = document.querySelector('.login-container');
+            if (!user || !pass) {
+                showLoginError('Preencha usuário e senha');
+                return;
+            }
+
+            btnLogin.textContent = 'Verificando...';
+            btnLogin.disabled = true;
+
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            });
+
+            const data = await res.json();
+            
+            btnLogin.textContent = 'Entrar';
+            btnLogin.disabled = false;
+
+            if (res.ok) {
+                // Manage saved password
+                if (rememberCheckbox) {
+                    if (rememberCheckbox.checked) {
+                        savedPasswords[user] = pass;
+                    } else {
+                        delete savedPasswords[user];
+                    }
+                    localStorage.setItem('agrogis_saved_passwords', JSON.stringify(savedPasswords));
+                }
+                
+                // Save actual username used
+                localStorage.setItem('agrogis_current_user', data.user);
+
+                // Grant access (using level 2 for everything now as per new rules)
+                grantAccess(2);
+            } else {
+                showLoginError(data.error || 'Senha incorreta');
+            }
+        } catch (e) {
+            alert('Erro no login: ' + e.message);
+            btnLogin.textContent = 'Entrar';
+            btnLogin.disabled = false;
+        }
+    }
+
+    function showLoginError(msg) {
+        if (loginError) {
+            loginError.textContent = msg;
+            loginError.style.display = 'block';
+        } else {
+            alert(msg);
+        }
+        inputUsername.style.borderColor = '#ff4d4d';
+        inputPassword.style.borderColor = '#ff4d4d';
+        
+        // Add shake animation
+        const container = document.querySelector('.login-container');
+        if (container) {
             container.style.transition = 'transform 0.1s';
             container.style.transform = 'translateX(-10px)';
             setTimeout(() => container.style.transform = 'translateX(10px)', 50);
@@ -119,10 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => container.style.transform = 'translateX(10px)', 150);
             setTimeout(() => container.style.transform = 'translateX(0)', 200);
         }
-        } catch (e) {
-            alert('Erro no login: ' + e.message + '\n' + e.stack);
-        }
     }
+
     window.performLogin = performLogin;
 
     function grantAccess(level) {
