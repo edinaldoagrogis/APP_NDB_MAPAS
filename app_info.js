@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h2 style="color: #fff; margin: 0 0 20px 0; font-size: 20px; font-weight: 700;">Descrição do aplicativo</h2>
                     
                     <div style="text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05);">
-                        <p style="color: #a8b8b0; font-size: 14px; margin: 0 0 10px 0;"><strong>Nome:</strong> <span style="color: #fff;">NDB Mapas</span></p>
+                        <p style="color: #a8b8b0; font-size: 14px; margin: 0 0 10px 0;"><strong>Nome:</strong> <span style="color: #fff;">Agrogis</span></p>
                         <p style="color: #a8b8b0; font-size: 14px; margin: 0 0 10px 0;"><strong>Autor:</strong> <span style="color: #fff;">Agrogis</span></p>
                         <p style="color: #a8b8b0; font-size: 14px; margin: 0;"><strong>Atualização:</strong> <span style="color: #2ec4b6;">${versionText}</span></p>
                     </div>
