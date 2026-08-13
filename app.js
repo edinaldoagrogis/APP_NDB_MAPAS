@@ -1043,9 +1043,21 @@ tryInitLayers();
                     fillColor: '#2ec4b6',
                     fillOpacity: 0.4
                 };
+            } else if (type === 'medicao_area') {
+                options.style = {
+                    color: '#2196f3',
+                    weight: 2,
+                    fillColor: '#2196f3',
+                    fillOpacity: 0.4
+                };
             } else if (type === 'rotas') {
                 options.style = {
                     color: '#e85d04',
+                    weight: 4
+                };
+            } else if (type === 'medicao_distancia') {
+                options.style = {
+                    color: '#9c27b0',
                     weight: 4
                 };
             }
