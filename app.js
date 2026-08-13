@@ -841,19 +841,29 @@ tryInitLayers();
         });
     }
 
-    // Context Menu Global para Editar/Excluir
+    // Context Menu Global para Editar/Excluir/Compartilhar
     let activeContextMenu = null;
     function showContextMenu(type, id, name, latlng) {
         if (activeContextMenu) {
             map.removeLayer(activeContextMenu);
         }
         
+        let whatsappHtml = '';
+        if (type === 'pontos' && latlng) {
+            // Encode the coordinates into a Google Maps URL for WhatsApp sharing
+            const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
+            const message = encodeURIComponent(`Veja o ponto "${name}": ${gmapsUrl}`);
+            const wappUrl = `https://api.whatsapp.com/send?text=${message}`;
+            whatsappHtml = `<a href="${wappUrl}" target="_blank" style="display: block; width: 100%; text-align: left; background: none; border: none; color: #25d366; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px; text-decoration: none;">📲 Compartilhar (WhatsApp)</a>`;
+        }
+
         const content = document.createElement('div');
         content.className = 'custom-context-menu';
         content.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 8px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; font-size: 13px;">${name}</div>
             <button id="ctx-edit-btn" style="width: 100%; text-align: left; background: none; border: none; color: #2ec4b6; padding: 6px; cursor: pointer; font-size: 13px;">✏️ Editar Nome</button>
             <button id="ctx-del-btn" style="width: 100%; text-align: left; background: none; border: none; color: #e71d36; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px;">🗑️ Excluir</button>
+            ${whatsappHtml}
         `;
         
         const popup = L.popup({
@@ -912,47 +922,35 @@ tryInitLayers();
             let options = {
                 onEachFeature: (feature, layer) => {
                     if (feature.properties) {
-                        // Bind Popup with Action Buttons
-                        const baseContent = createPopupContent(feature.properties.NOME || 'Sem Nome', feature.properties);
-                        const popupContainer = document.createElement('div');
-                        popupContainer.innerHTML = baseContent;
+                        const featureName = feature.properties.NOME || 'Sem Nome';
                         
-                        const actionsDiv = document.createElement('div');
-                        actionsDiv.style.marginTop = '10px';
-                        actionsDiv.style.borderTop = '1px solid rgba(255,255,255,0.1)';
-                        actionsDiv.style.paddingTop = '8px';
-                        actionsDiv.style.display = 'flex';
-                        actionsDiv.style.justifyContent = 'space-around';
+                        // Rotulagem Permanente (Sempre visível no mapa)
+                        layer.bindTooltip(featureName, {
+                            permanent: true,
+                            direction: 'center',
+                            className: 'custom-label-tooltip'
+                        });
                         
-                        const btnEdit = document.createElement('button');
-                        btnEdit.innerHTML = '✏️ Editar';
-                        btnEdit.style.cssText = 'background: rgba(46, 196, 182, 0.1); border: 1px solid #2ec4b6; border-radius: 4px; color: #2ec4b6; font-size: 12px; cursor: pointer; padding: 4px 8px; flex-grow: 1; margin-right: 5px;';
-                        btnEdit.onclick = () => {
-                            map.closePopup();
-                            editCustomFeatureName(type, feature.properties.id, feature.properties.NOME || 'Sem Nome');
-                        };
+                        // Clique Simples (Mostra apenas informações limpas)
+                        layer.on('click', (e) => {
+                            let popupHtml = `<div style="font-weight: bold; font-size: 14px;">${featureName}</div>`;
+                            
+                            if (type === 'areas' && feature.properties.AREA_HA) {
+                                popupHtml += `<div style="margin-top: 5px; color: #2ec4b6;">Área: ${feature.properties.AREA_HA} ha</div>`;
+                            } else if (feature.properties.TIPO) {
+                                popupHtml += `<div style="margin-top: 5px; color: #a8b8b0;">Tipo: ${feature.properties.TIPO}</div>`;
+                            }
+                            
+                            L.popup({ className: 'custom-popup', minWidth: 120 })
+                                .setLatLng(e.latlng)
+                                .setContent(popupHtml)
+                                .openOn(map);
+                        });
                         
-                        const btnDel = document.createElement('button');
-                        btnDel.innerHTML = '🗑️ Excluir';
-                        btnDel.style.cssText = 'background: rgba(231, 29, 54, 0.1); border: 1px solid #e71d36; border-radius: 4px; color: #e71d36; font-size: 12px; cursor: pointer; padding: 4px 8px; flex-grow: 1; margin-left: 5px;';
-                        btnDel.onclick = () => {
-                            map.closePopup();
-                            deleteCustomFeature(type, feature.properties.id);
-                        };
-                        
-                        actionsDiv.appendChild(btnEdit);
-                        actionsDiv.appendChild(btnDel);
-                        popupContainer.appendChild(actionsDiv);
-                        
-                        layer.bindPopup(popupContainer, { className: 'custom-popup' });
-                        
-                        if (feature.properties.NOME) {
-                            layer.bindTooltip(feature.properties.NOME, {
-                                permanent: false,
-                                direction: 'center',
-                                className: 'custom-label-tooltip'
-                            });
-                        }
+                        // Segurar o Dedo / Long-Press (Mostra menu de Editar, Excluir e Compartilhar)
+                        layer.on('contextmenu', (e) => {
+                            showContextMenu(type, feature.properties.id, featureName, e.latlng);
+                        });
                     }
                 }
             };
