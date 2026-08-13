@@ -660,7 +660,7 @@ body, html {
     }
     .map-wrapper {
         padding: 0;
-        height: 100vh;
+        height: calc(100vh - 100px); /* Adjust for topbar height */
         width: 100vw;
     }
     .sidebar {
