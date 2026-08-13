@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v71';
+const CACHE_NAME = 'agrogis-v72';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -93,33 +93,25 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Network-First Strategy para o resto (código, interface, atualizações)
+    // Cache-First Strategy para todo o resto (app.js, index.html, etc) - Extrema velocidade na inicialização
     event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                // If we got a valid response, clone it and stick it in the cache
-                // Note: opaque responses (status 0) from CORS are also cached.
-                if (!response || (response.status !== 200 && response.type !== 'opaque')) {
-                    return response;
+        caches.match(event.request).then(cachedResponse => {
+            if (cachedResponse) {
+                return cachedResponse; // Retorna imediatamente do celular, zero tela de splash demorada
+            }
+            // Se não estiver no cache, tenta a rede
+            return fetch(event.request).then(response => {
+                if (response && (response.status === 200 || response.type === 'opaque')) {
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseToCache);
+                    });
                 }
-                
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, responseToCache);
-                });
-
                 return response;
-            })
-            .catch(() => {
-                // Network failed (we are offline). Look in the cache!
-                return caches.match(event.request).then(cachedResponse => {
-                    if (cachedResponse) {
-                        return cachedResponse;
-                    }
-                    // If it's not in the cache either, we just fail gracefully.
-                    return new Response('', { status: 404, statusText: 'Offline' });
-                });
-            })
+            }).catch(() => {
+                return new Response('', { status: 404, statusText: 'Offline' });
+            });
+        })
     );
 });
 
