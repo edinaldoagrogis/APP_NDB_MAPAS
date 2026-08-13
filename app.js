@@ -1602,6 +1602,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         resultPanel.style.display = 'none';
         map.getContainer().style.cursor = '';
         document.body.classList.remove('hide-equipes', 'disable-map-hover');
+        const wrapper = document.querySelector('.top-right-wrapper');
+        if (wrapper) wrapper.style.display = 'flex';
         resetMeasure();
     }
 
@@ -1621,6 +1623,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             
             // Auto-close tools panel so user can see map clearly
             document.getElementById('floating-tools-panel').style.display = 'none';
+            // Hide the entire sidebar (top-right-wrapper)
+            const wrapper = document.querySelector('.top-right-wrapper');
+            if (wrapper) wrapper.style.display = 'none';
         }
     });
 
