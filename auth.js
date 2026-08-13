@@ -15,6 +15,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedAuthLevel) {
         // Delay slightly to ensure DOM is fully ready before hiding
         setTimeout(() => grantAccess(parseInt(savedAuthLevel)), 50);
+        
+        // Asynchronously check if the user was blocked by admin in the background
+        const currentUser = localStorage.getItem('agrogis_current_user');
+        if (currentUser) {
+            // Wait 2 seconds so it doesn't delay the initial map rendering
+            setTimeout(() => {
+                fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // Using the standard password since it's hardcoded for all users anyway
+                    body: JSON.stringify({ username: currentUser, password: 'ndb_mapas' })
+                }).then(res => {
+                    if (res.status === 403) {
+                        // User was blocked! Force logout.
+                        alert('Atenção: Seu acesso foi revogado pelo administrador.');
+                        localStorage.removeItem('agrogis_auth_level');
+                        window.location.reload();
+                    }
+                }).catch(e => {
+                    // Ignore network errors (offline mode support)
+                    console.log('Offline mode or network error during background auth check');
+                });
+            }, 2000);
+        }
     }
 
     // Auto-fill password on load if username is already selected and saved
