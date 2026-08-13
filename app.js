@@ -974,8 +974,13 @@ tryInitLayers();
                                 </div>
                             `;
                             
+                            let popupLatlng = e.latlng;
+                            if (!popupLatlng) {
+                                popupLatlng = layer.getBounds ? layer.getBounds().getCenter() : layer.getLatLng();
+                            }
+                            
                             const popup = L.popup({ className: 'custom-popup', minWidth: 150 })
-                                .setLatLng(e.latlng)
+                                .setLatLng(popupLatlng)
                                 .setContent(popupHtml)
                                 .openOn(map);
                                 
@@ -999,10 +1004,10 @@ tryInitLayers();
             if (type === 'pontos') {
                 options.pointToLayer = (feature, latlng) => {
                     return L.circleMarker(latlng, {
-                        radius: 6,
+                        radius: 10,
                         fillColor: '#e71d36',
                         color: '#fff',
-                        weight: 2,
+                        weight: 3,
                         fillOpacity: 1
                     });
                 };
@@ -1292,7 +1297,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         ['pontos', 'areas', 'rotas'].forEach(type => {
             const cb = li.querySelector(`#toggle-custom-${type}`);
             if (cb) {
+                if (cb.checked) {
+                    map.addLayer(myLayers[type]);
+                }
                 cb.addEventListener('change', (e) => {
+                    localStorage.setItem(`agrogis_custom_toggle_${type}`, e.target.checked);
                     if (e.target.checked) {
                         map.addLayer(myLayers[type]);
                     } else {
@@ -1396,11 +1405,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     }
 
     function createSubLayerToggle(id, label, color) {
+        const key = `agrogis_custom_toggle_${id}`;
+        const saved = localStorage.getItem(key);
+        const isChecked = saved === null ? true : saved === 'true';
+        const checkedAttr = isChecked ? 'checked' : '';
+
         return `
             <div style="margin-bottom: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <label class="custom-checkbox" style="font-size: 12px; display: flex; align-items: center; margin: 0; min-width: 30px;">
-                        <input type="checkbox" id="toggle-custom-${id}">
+                        <input type="checkbox" id="toggle-custom-${id}" ${checkedAttr}>
                         <span class="checkmark" style="--layer-color: ${color}; width: 16px; height: 16px; min-width: 16px;"></span>
                     </label>
                     <div id="expand-custom-${id}" class="layer-name" style="flex-grow: 1; margin-left: 10px; color: var(--text-main); font-weight: 500; font-size: 12px; cursor: pointer;">
