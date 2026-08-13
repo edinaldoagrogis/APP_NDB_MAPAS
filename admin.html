@@ -233,6 +233,10 @@
                 <!-- Users will be injected here -->
             </tbody>
         </table>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+            <p id="total-users" style="color: var(--primary); font-weight: bold; margin: 0; display: none; font-size: 16px;">Total: 0 usuários</p>
+        </div>
     </div>
 
     <div id="toast">Alteração salva!</div>
@@ -298,8 +302,12 @@
                 
                 if (data.users.length === 0) {
                     usersBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
+                    document.getElementById('total-users').style.display = 'none';
                 } else {
-                    data.users.forEach(u => {
+                    document.getElementById('total-users').textContent = `Total: ${data.users.length} usuário${data.users.length > 1 ? 's' : ''}`;
+                    document.getElementById('total-users').style.display = 'block';
+
+                    data.users.forEach((u, index) => {
                         const tr = document.createElement('tr');
                         const statusClass = u.active ? 'status-active' : 'status-blocked';
                         const statusText = u.active ? 'Ativo' : 'Bloqueado';
@@ -308,7 +316,7 @@
                         const disabled = (u.name === 'admin_agrogis') ? 'disabled' : '';
 
                         tr.innerHTML = `
-                            <td style="text-transform: capitalize;">${u.name}</td>
+                            <td style="text-transform: capitalize;"><strong>${index + 1}.</strong> ${u.name}</td>
                             <td><span class="status-badge ${statusClass}" id="badge-${u.name}">${statusText}</span></td>
                             <td>
                                 <label class="switch">
