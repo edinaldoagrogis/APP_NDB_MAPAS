@@ -944,49 +944,50 @@ tryInitLayers();
                             className: 'custom-label-tooltip'
                         });
                         
-                        // Clique Simples (Mostra apenas informações limpas)
+                        // Clique Simples (Mostra Nome, Área, e Botões de Ação)
                         layer.on('click', (e) => {
-                            let popupHtml = `<div style="font-weight: bold; font-size: 14px;">${featureName}</div>`;
+                            let popupHtml = `<div style="font-weight: bold; font-size: 14px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">${featureName}</div>`;
                             
                             if (type === 'areas' && feature.properties.AREA_HA) {
-                                popupHtml += `<div style="margin-top: 5px; color: #2ec4b6;">Área: ${feature.properties.AREA_HA} ha</div>`;
+                                popupHtml += `<div style="margin-bottom: 12px; color: #2ec4b6;">Área: ${feature.properties.AREA_HA} ha</div>`;
                             } else if (feature.properties.TIPO) {
-                                popupHtml += `<div style="margin-top: 5px; color: #a8b8b0;">Tipo: ${feature.properties.TIPO}</div>`;
+                                popupHtml += `<div style="margin-bottom: 12px; color: #a8b8b0;">Tipo: ${feature.properties.TIPO}</div>`;
                             }
                             
-                            L.popup({ className: 'custom-popup', minWidth: 120 })
+                            let whatsappHtml = '';
+                            if (type === 'pontos') {
+                                const latlng = e.latlng || layer.getLatLng();
+                                const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
+                                const message = encodeURIComponent(`Veja o ponto "${featureName}": ${gmapsUrl}`);
+                                const wappUrl = `whatsapp://send?text=${message}`;
+                                whatsappHtml = `<button onclick="window.location.href='${wappUrl}'" style="width: 100%; text-align: left; background: none; border: none; color: #25d366; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px;">📲 Compartilhar (WhatsApp)</button>`;
+                            }
+                            
+                            popupHtml += `
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <button id="inline-edit-btn" style="width: 100%; text-align: left; background: none; border: none; color: #2ec4b6; padding: 6px; cursor: pointer; font-size: 13px;">✏️ Editar Nome</button>
+                                    <button id="inline-del-btn" style="width: 100%; text-align: left; background: none; border: none; color: #e71d36; padding: 6px; cursor: pointer; font-size: 13px;">🗑️ Excluir</button>
+                                    ${whatsappHtml}
+                                </div>
+                            `;
+                            
+                            const popup = L.popup({ className: 'custom-popup', minWidth: 150 })
                                 .setLatLng(e.latlng)
                                 .setContent(popupHtml)
                                 .openOn(map);
-                        });
-                        
-                        // Segurar o Dedo / Long-Press (Mostra menu de Editar, Excluir e Compartilhar)
-                        let pressTimer = null;
-                        
-                        const startPress = (e) => {
-                            if (pressTimer) clearTimeout(pressTimer);
-                            const latlng = e.latlng || map.mouseEventToLatLng(e.originalEvent);
-                            pressTimer = setTimeout(() => {
-                                // Close the single-click popup if it opened
-                                map.closePopup();
-                                showContextMenu(type, feature.properties.id, featureName, latlng);
-                            }, 500); // Reduzido para 500ms para ser mais responsivo
-                        };
-
-                        const cancelPress = () => {
-                            if (pressTimer) clearTimeout(pressTimer);
-                        };
-
-                        // Não cancelamos no mousemove porque os dedos tremem levemente no celular
-                        layer.on('mousedown', startPress);
-                        layer.on('touchstart', startPress);
-                        layer.on('mouseup', cancelPress);
-                        layer.on('touchend', cancelPress);
-                        
-                        // Fallback para botão direito no Computador
-                        layer.on('contextmenu', (e) => {
-                            cancelPress();
-                            showContextMenu(type, feature.properties.id, featureName, e.latlng);
+                                
+                            setTimeout(() => {
+                                const btnEdit = document.getElementById('inline-edit-btn');
+                                const btnDel = document.getElementById('inline-del-btn');
+                                if (btnEdit) btnEdit.addEventListener('click', () => {
+                                    map.closePopup(popup);
+                                    editCustomFeatureName(type, feature.properties.id, featureName);
+                                });
+                                if (btnDel) btnDel.addEventListener('click', () => {
+                                    map.closePopup(popup);
+                                    deleteCustomFeature(type, feature.properties.id);
+                                });
+                            }, 50);
                         });
                     }
                 }
