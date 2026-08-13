@@ -475,9 +475,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         const area = parseFloat(props.TALHAO_ARE || props.AREA_TOTAL || props['DL AREA'] || 0).toFixed(2);
                         const varName = props['DL VARIEDADE'] || props.VARIEDADE || '';
                         
+                        const corteRaw = props['DL CORTE'];
+                        const corte = corteRaw ? (String(corteRaw).toUpperCase().includes('C') ? corteRaw : corteRaw + 'C') : '';
+                        
                         if (cod) {
                             const html = `
-                                <div class="talhao-complex-label">
+                                <div class="talhao-complex-label" style="position: relative;">
+                                    ${corte ? `<div class="tc-corte" style="position: absolute; left: -26px; top: 50%; transform: translateY(-50%); background: #e71d36; color: #fff; padding: 1px 3px; border: 1px solid #fff; border-radius: 3px; font-size: 8px; font-weight: bold; box-shadow: 1px 1px 2px rgba(0,0,0,0.5);">${corte}</div>` : ''}
                                     <div class="tc-cod">${cod}</div>
                                     <div class="tc-area">${area}</div>
                                     <div class="tc-var">${varName}</div>
