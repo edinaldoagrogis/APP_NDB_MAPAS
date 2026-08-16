@@ -6,14 +6,15 @@
     <title>Gerenciador de Licença - NDB Mapas</title>
     <style>
         :root {
-            --bg-main: #0d1a10;
-            --bg-secondary: #1a2a1f;
-            --primary: #2ec4b6;
-            --primary-hover: #1a9e93;
-            --text-main: #ffffff;
-            --text-muted: #a8b8b0;
+            --bg-main: #111418; /* Main app dark background */
+            --bg-secondary: rgba(20, 32, 28, 0.9);
+            --primary: #e85d04; /* Agrogis Orange */
+            --primary-hover: #cc5203;
+            --text-main: #f4f9f7;
+            --text-muted: #8fa89b;
             --danger: #ff4d4d;
-            --border: rgba(46,196,182,0.3);
+            --border: rgba(255, 255, 255, 0.1);
+            --green: #00965e; /* Agrogis Green */
         }
         body {
             background-color: var(--bg-main);
@@ -166,8 +167,9 @@
             transition: .4s;
             border-radius: 50%;
         }
+        /* Switch Active (Green) */
         input:checked + .slider {
-            background-color: var(--primary);
+            background-color: var(--green);
         }
         /* Switch for Updates (Blue) */
         .slider-update {
@@ -190,7 +192,7 @@
             border-radius: 50%;
         }
         input:checked + .slider-update {
-            background-color: #00bcd4; /* Cyan/Blue */
+            background-color: var(--primary); /* Orange */
         }
         input:checked + .slider-update:before {
             transform: translateX(26px);
