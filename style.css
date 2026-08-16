@@ -257,6 +257,10 @@ body, html {
 }
 
 /* Reusable Custom Scrollbar */
+.custom-scroll {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
 .custom-scroll::-webkit-scrollbar {
     width: 6px;
 }
@@ -704,6 +708,11 @@ body, html {
         -webkit-backdrop-filter: none !important;
         background-color: #0d1410 !important;
         border: 1px solid rgba(255,255,255,0.1) !important;
+    }
+    
+    #floating-layers-panel .custom-scroll,
+    #floating-tools-panel .custom-scroll {
+        max-height: 55vh !important;
     }
 }
   
