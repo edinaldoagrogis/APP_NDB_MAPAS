@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         click: (e) => {
                             if (window.routeSelectionMode) {
                                 const props = layer.feature.properties || {};
-                                const title = props.NOME_FAZ || props.FAZENDA || props.nome_faz || props.nome || props.NOME || props.Name || props.TALHAO || 'Local';
+                                const title = props.NOME_FAZ || props.FAZENDA || props.nome_faz || props.nome || props.NOME || props.NAME || props.Name || props.TALHAO || 'Local';
                                 let lat, lng;
                                 if (typeof turf !== 'undefined') {
                                     const centroid = turf.centroid(layer.feature);
@@ -1625,7 +1625,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
             layerGroup.eachLayer(layer => {
                 const props = layer.feature.properties || {};
-                const title = props.nome || props.NOME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                const title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                 
                 // If user selected an exact match from the datalist
                 if (title.toLowerCase() === query) {
@@ -2050,7 +2050,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             const layerGroup = loadedLayers[layerName];
             layerGroup.eachLayer(layer => {
                 const props = layer.feature.properties || {};
-                const title = props.nome || props.NOME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                const title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                 
                 if (title.toLowerCase() === query) {
                     let lat, lng;
