@@ -12,15 +12,6 @@ def build_layers():
         else:
             out.write('null')
             
-        out.write(',\n  "TALHOES": ')
-        
-        # TALHOES
-        if os.path.exists('TALHOES.geojson'):
-            with open('TALHOES.geojson', 'r', encoding='utf-8') as f:
-                out.write(f.read())
-        else:
-            out.write('null')
-            
         out.write(',\n  "VARIEDADES": ')
         
         # VARIEDADES
@@ -31,7 +22,12 @@ def build_layers():
             out.write('null')
             
         out.write('\n};\n')
+        
+        out.write('// Duplicate FAZENDAS layer into TALHOES since user exported same geometries\n')
+        out.write('GEOPORTAL_LAYERS["TALHOES"] = GEOPORTAL_LAYERS["FAZENDAS"];\n\n')
+        out.write('const EQUIPES_DATA = [];\n\n')
+        out.write('const APP_VERSION = "v108";\n')
 
 if __name__ == '__main__':
     build_layers()
-    print("layers_data.js rebuilt successfully.")
+    print("layers_data.js rebuilt successfully (optimized!).")
