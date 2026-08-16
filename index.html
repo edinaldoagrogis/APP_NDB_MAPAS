@@ -25,7 +25,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
      
     <!-- Custom Style -->
-    <link rel="stylesheet" href="style.css?v=2.3">
+    <link rel="stylesheet" href="style.css?v=2.4">
+
 
     <!-- Chart.js -->
     <script defer src="chart.js"></script>
@@ -214,6 +215,21 @@
                             <!-- Separador -->
                             <div style="height: 1px; background: rgba(255,0,0,0.2); margin: 4px 0;"></div>
 
+                            <!-- Botão Clima Farm -->
+                            <button id="btn-clima-farm-tool" class="tool-action-btn" onclick="if(window.climaFarmToggle) window.climaFarmToggle();" style="display: flex; align-items: center; gap: 12px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" title="Dados Climáticos da Fazenda e Talhão">
+                                <div style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                                        <path d="M9 17l2 2 4-4" stroke="#4ade80" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <div style="flex: 1; text-align: left;">
+                                    <div style="font-size: 13px; font-weight: 600; color: #38bdf8;">🌤️ Clima Farm</div>
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px;">Previsão e clima por talhão</div>
+                                </div>
+                            </button>
+
+
                             <!-- Botão Análise de Satélite -->
                             <button id="tool-weed-btn" class="tool-action-btn" style="display: flex; align-items: center; gap: 12px; background: rgba(255,0,0,0.08); border: 1px solid rgba(255,0,0,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" title="Identificar infestação de ervas daninhas por satélite">
                                 <div style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -237,7 +253,6 @@
 
                     </div>
               </div>
-
 
             </div> <!-- end right-controls -->
 
@@ -832,6 +847,10 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ====== PAINEL CLIMA FARM (Rodapé Fixo) ====== -->
+            <div id="clima-farm-panel"></div>
+
         </main>
     </div> <!-- /main-content -->
 </div> <!-- /app-container -->
@@ -850,9 +869,10 @@
     <script defer src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
     
     <!-- Custom JS App -->
-    <script defer src="app.js?v=4.0"></script>
+    <script defer src="app.js?v=4.3"></script>
     <script defer src="app_info.js?v=1"></script>
     <script defer src="planting_lines.js"></script>
+    <script defer src="clima_farm.js?v=1.1"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const menuBtn = document.getElementById('mobile-menu-btn');

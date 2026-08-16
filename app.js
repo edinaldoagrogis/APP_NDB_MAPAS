@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Prevent map interactions when scrolling or clicking the floating panels
     setTimeout(() => {
-        ['floating-layers-panel', 'floating-tools-panel', 'measure-result', 'route-panel', 'custom-name-modal'].forEach(id => {
+        ['floating-layers-panel', 'floating-tools-panel', 'measure-result', 'route-panel', 'custom-name-modal', 'clima-farm-panel'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 L.DomEvent.disableClickPropagation(el);
@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }, 500);
+
     
     // Custom Compass Control (Rotation Toggle)
     const CompassControl = L.Control.extend({
@@ -99,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isTouchDevice) {
         map.addControl(new CompassControl());
     }
-    
+
     // Fix map rendering bug on mobile
     setTimeout(() => { map.invalidateSize(); }, 500);
 
@@ -621,6 +622,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 // Abre painel de análise de satélite para o talhão clicado (PC)
                                 if (isTalhao && window.openWeedAnalysisPanel) {
                                     window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
+                                }
+                                // ── CLIMA FARM: buscar dados climáticos ao clicar em talhão ──
+                                if (isTalhao && window.climaFarmActive && window.climaFarmFetchData) {
+                                    const center = layer.getBounds ? layer.getBounds().getCenter() : e.latlng;
+                                    window.climaFarmFetchData(center.lat, center.lng, props);
+                                    L.DomEvent.stopPropagation(e);
                                 }
                             }
                         }
