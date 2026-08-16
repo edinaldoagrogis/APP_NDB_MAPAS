@@ -122,14 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const iconWrap = L.DomUtil.create('div', 'cf-btn-icon', container);
             iconWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;opacity:0.85;transition:opacity 0.2s;';
-            // Custom SVG icon requested by the user: Sun behind a filled cloud
-            iconWrap.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 3v2"></path>
-                <path d="M3.34 6.34l1.42 1.42"></path>
-                <path d="M3 13h2"></path>
-                <path d="M14.66 6.34l-1.42 1.42"></path>
-                <path d="M12.66 13.3A4 4 0 0 0 6.7 7.34"></path>
-                <path fill="#ffffff" stroke="#ffffff" stroke-width="1.5" d="M18 19H8.5a4.5 4.5 0 0 1-1.3-8.8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 18 19Z"></path>
+            // Custom SVG icon requested by the user: Simple blue cloud outline
+            iconWrap.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
             </svg>`;
 
             container.onmouseover = function() {
