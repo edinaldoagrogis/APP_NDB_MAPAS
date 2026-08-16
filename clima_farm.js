@@ -270,11 +270,13 @@
         window.climaFarmActive = true;
         document.body.classList.add('clima-farm-active');
 
-        const btn = document.getElementById('btn-clima-farm-tool');
+        const btn = document.getElementById('btn-clima-farm-control');
         if (btn) {
             btn.style.borderColor = '#38bdf8';
             btn.style.boxShadow = '0 0 14px rgba(56,189,248,0.4)';
             btn.style.background = 'rgba(56,189,248,0.2)';
+            const icon = btn.querySelector('.cf-btn-icon');
+            if (icon) icon.style.opacity = '1';
         }
 
         showWaitingState();
@@ -291,11 +293,13 @@
             currentRequest = null;
         }
 
-        const btn = document.getElementById('btn-clima-farm-tool');
+        const btn = document.getElementById('btn-clima-farm-control');
         if (btn) {
-            btn.style.borderColor = 'rgba(56,189,248,0.3)';
+            btn.style.borderColor = 'rgba(255,255,255,0.1)';
             btn.style.boxShadow = 'none';
-            btn.style.background = 'rgba(56,189,248,0.08)';
+            btn.style.background = 'var(--bg-secondary)';
+            const icon = btn.querySelector('.cf-btn-icon');
+            if (icon) icon.style.opacity = '0.85';
         }
 
         const panel = document.getElementById('clima-farm-panel');

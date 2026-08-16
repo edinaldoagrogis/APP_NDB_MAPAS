@@ -97,6 +97,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // ── Clima Farm Control (Botão ABAIXO da bússola) ─────────────────
+    const ClimaFarmControl = L.Control.extend({
+        options: { position: 'bottomright' },
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            container.id = 'btn-clima-farm-control';
+            container.title = 'Clima Farm — Dados Climáticos por Talhão';
+            container.style.cssText = [
+                'background-color: var(--bg-secondary)',
+                'border: 1px solid rgba(255,255,255,0.1)',
+                'border-radius: 12px',
+                'backdrop-filter: blur(12px)',
+                'width: 44px',
+                'height: 44px',
+                'cursor: pointer',
+                'display: flex',
+                'justify-content: center',
+                'align-items: center',
+                'margin-bottom: 10px',
+                'margin-right: 10px',
+                'transition: all 0.25s'
+            ].join(';');
+
+            const iconWrap = L.DomUtil.create('div', 'cf-btn-icon', container);
+            iconWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;opacity:0.85;transition:opacity 0.2s;';
+            // Custom SVG icon requested by the user: Sun behind a filled cloud
+            iconWrap.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 3v2"></path>
+                <path d="M3.34 6.34l1.42 1.42"></path>
+                <path d="M3 13h2"></path>
+                <path d="M14.66 6.34l-1.42 1.42"></path>
+                <path d="M12.66 13.3A4 4 0 0 0 6.7 7.34"></path>
+                <path fill="#ffffff" stroke="#ffffff" stroke-width="1.5" d="M18 19H8.5a4.5 4.5 0 0 1-1.3-8.8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 18 19Z"></path>
+            </svg>`;
+
+            container.onmouseover = function() {
+                if (!window.climaFarmActive) container.style.backgroundColor = 'rgba(255,255,255,0.1)';
+            };
+            container.onmouseout = function() {
+                if (!window.climaFarmActive) container.style.backgroundColor = 'var(--bg-secondary)';
+            };
+
+            container.onclick = function(e) {
+                L.DomEvent.stopPropagation(e);
+                if (window.climaFarmToggle) window.climaFarmToggle();
+            };
+
+            return container;
+        }
+    });
+    map.addControl(new ClimaFarmControl());
+
     if (isTouchDevice) {
         map.addControl(new CompassControl());
     }
