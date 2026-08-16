@@ -522,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const html = `
                                 <div class="talhao-complex-label" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
                                     <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                        ${corte ? `<div class="tc-corte" style="color: #ff0000; font-size: 8px; font-weight: 900; background: rgba(255,255,255,0.7); border-radius: 2px; padding: 0 2px; border: 1px solid #ff0000;">${corte}</div>` : ''}
+                                        ${corte ? `<div class="tc-corte" style="color: #ff0000; font-size: 8px; font-weight: 900; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">${corte}</div>` : ''}
                                         <div class="tc-cod" style="font-size: 9px; font-weight: 900;">${cod}</div>
                                     </div>
                                     <div class="tc-area" style="font-size: 8px; font-weight: bold; margin-top: 1px;">${area}</div>
