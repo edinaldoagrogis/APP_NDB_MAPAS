@@ -2150,7 +2150,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 styles: [{opacity: 0, weight: 0}]
             },
             lineOptions: {
-                styles: [{color: '#e85d04', opacity: 0.8, weight: 6}]
+                styles: [{color: '#e85d04', opacity: 0.8, weight: 6}],
+                missingRouteStyles: [{color: '#e85d04', opacity: 0.8, weight: 4, dashArray: '7,7'}]
             }
         }).addTo(map);
 
@@ -2180,23 +2181,6 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         routingControl.on('routingerror', function() {
             if (distText) distText.textContent = 'Erro ao calcular';
         });
-
-        // Load ROTAS_NDB to complement the network visually
-        if (!rotasNdbLayer) {
-            fetch('ROTAS_NDB.geojson')
-                .then(res => res.json())
-                .then(data => {
-                    rotasNdbLayer = L.geoJSON(data, {
-                        style: {
-                            color: '#e85d04',
-                            weight: 4,
-                            opacity: 0.9
-                        }
-                    }).addTo(map);
-                    rotasNdbLayer.bindTooltip('Rota NDB (Complementar)', {direction: 'top'});
-                })
-                .catch(err => console.error("Erro ao carregar ROTAS_NDB:", err));
-        }
     }
 
     // GPS is auto-activated above now
