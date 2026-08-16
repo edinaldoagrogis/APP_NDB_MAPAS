@@ -103,20 +103,47 @@
             border-collapse: collapse;
             margin-top: 20px;
         }
-        th, td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
         th {
+            text-align: left;
+            padding: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
             color: var(--text-muted);
-            font-size: 14px;
+            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            position: sticky;
+            top: 0;
+            background: #15221a; /* Match container gradient to mask scrolling rows */
+            z-index: 10;
         }
         td {
-            font-size: 16px;
-            font-weight: 500;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        tr:hover {
+            background-color: rgba(255,255,255,0.02);
+        }
+
+        /* Scrollable Table Wrapper */
+        .table-wrapper {
+            max-height: 450px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .table-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-wrapper::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
         }
         .status-badge {
             padding: 4px 10px;
@@ -247,19 +274,21 @@
 
         <div id="loading">Carregando usuários...</div>
 
-        <table id="users-table">
-            <thead>
-                <tr>
-                    <th>Usuário</th>
-                    <th>Status</th>
-                    <th>Acesso Liberado?</th>
-                    <th>Liberar Atualização?</th>
-                </tr>
-            </thead>
-            <tbody id="users-body">
-                <!-- Users will be injected here -->
-            </tbody>
-        </table>
+        <div class="table-wrapper">
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Status</th>
+                        <th>Acesso Liberado?</th>
+                        <th>Liberar Atualização?</th>
+                    </tr>
+                </thead>
+                <tbody id="users-body">
+                    <!-- Users will be injected here -->
+                </tbody>
+            </table>
+        </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
             <p id="total-users" style="color: var(--primary); font-weight: bold; margin: 0; display: none; font-size: 16px;">Total: 0 usuários</p>
