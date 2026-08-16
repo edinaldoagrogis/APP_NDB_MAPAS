@@ -2145,6 +2145,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             routeWhileDragging: false,
             language: 'pt-BR',
             show: false, // Hide the default itinerary text box to keep UI clean
+            showAlternatives: false,
+            altLineOptions: {
+                styles: [{opacity: 0, weight: 0}]
+            },
             lineOptions: {
                 styles: [{color: '#e85d04', opacity: 0.8, weight: 6}]
             }
