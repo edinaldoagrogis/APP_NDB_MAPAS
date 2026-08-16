@@ -268,11 +268,11 @@ body, html {
     background: transparent;
 }
 .custom-scroll::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.4);
     border-radius: 10px;
 }
 .custom-scroll::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.6);
 }
 
 /* Search Container */
