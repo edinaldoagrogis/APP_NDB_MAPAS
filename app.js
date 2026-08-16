@@ -13,6 +13,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }).setView([-17.8, -40.0], 7);
     window.map = map; // Expose globally for modules
     
+    // Prevent map interactions when scrolling or clicking the floating panels
+    setTimeout(() => {
+        ['floating-layers-panel', 'floating-tools-panel', 'measure-result', 'route-panel', 'custom-name-modal'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                L.DomEvent.disableClickPropagation(el);
+                L.DomEvent.disableScrollPropagation(el);
+            }
+        });
+    }, 500);
+    
     // Custom Compass Control (Rotation Toggle)
     const CompassControl = L.Control.extend({
         options: { position: 'bottomright' },
