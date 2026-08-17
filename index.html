@@ -42,6 +42,35 @@
     
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Override native alert to use SweetAlert2 and hide the domain
+        window.alert = function(message) {
+            Swal.fire({
+                title: 'Agrogis',
+                text: message,
+                icon: 'info',
+                confirmButtonColor: '#2ec4b6',
+                background: 'rgba(25, 28, 32, 0.95)',
+                color: '#ffffff'
+            });
+        };
+        // Async confirm wrapper to replace window.confirm
+        window.agrogisConfirm = async function(message) {
+            const result = await Swal.fire({
+                title: 'Agrogis',
+                text: message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2ec4b6',
+                cancelButtonColor: '#ff4d4d',
+                confirmButtonText: 'Sim',
+                cancelButtonText: 'Cancelar',
+                background: 'rgba(25, 28, 32, 0.95)',
+                color: '#ffffff'
+            });
+            return result.isConfirmed;
+        };
+    </script>
     
     <!-- GeoJSON Data loading moved to Web Worker inside app.js for better startup performance -->
     <script>
