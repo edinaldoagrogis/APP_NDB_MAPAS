@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "app.vercel.app_ndb_mapas.twa",
-        "sha256_cert_fingerprints": ["D8:71:B6:D5:95:EE:73:E0:A0:53:3A:B0:66:1B:15:F9:78:6D:1E:D7:29:09:8C:32:FD:2D:FA:13:1C:65:B1:BD"]
+        "sha256_cert_fingerprints": ["66:66:E0:68:07:79:D1:38:E1:53:DC:49:EF:67:BE:60:97:8E:24:AC:BA:62:79:BC:E4:1C:39:81:21:3A:5E:3B"]
       }
     }]
