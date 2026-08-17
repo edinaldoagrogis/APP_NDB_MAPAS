@@ -2171,6 +2171,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
         
         if (!navigator.onLine) {
+            const closeBtn = document.getElementById('close-route-btn');
+            if (closeBtn) closeBtn.click();
             alert("⚠️ Você está offline.\n\nO traçado de rotas por estradas exige internet. \nPara medir distâncias offline, utilize a ferramenta de MEDIÇÃO (ícone de régua).");
             return;
         }
