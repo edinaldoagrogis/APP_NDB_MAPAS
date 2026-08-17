@@ -2407,13 +2407,26 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }).addTo(map);
 
             setTimeout(() => {
-                if (confirm(`Deseja compartilhar esta localização no WhatsApp?`)) {
-                    const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
-                    const message = encodeURIComponent(`Veja esta localização: ${gmapsUrl}`);
-                    window.location.href = `whatsapp://send?text=${message}`;
-                }
-                map.removeLayer(tempMarker);
-                resetDraw();
+                Swal.fire({
+                    title: 'Compartilhar localização?',
+                    text: 'Deseja compartilhar esta localização no WhatsApp?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#25d366',
+                    cancelButtonColor: '#444c56',
+                    confirmButtonText: 'Sim',
+                    cancelButtonText: 'Cancelar',
+                    background: '#1a1d21',
+                    color: '#fff'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
+                        const message = encodeURIComponent(`Veja esta localização: ${gmapsUrl}`);
+                        window.location.href = `whatsapp://send?text=${message}`;
+                    }
+                    map.removeLayer(tempMarker);
+                    resetDraw();
+                });
             }, 100);
         } else if (drawMode === 'area') {
             const latlng = e.latlng;
