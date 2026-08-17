@@ -280,8 +280,24 @@
                     <tr>
                         <th>Usuário</th>
                         <th>Status</th>
-                        <th>Acesso Liberado?</th>
-                        <th>Liberar Atualização?</th>
+                        <th>
+                            Acesso Liberado?
+                            <br>
+                            <label class="switch" style="transform: scale(0.65); transform-origin: left; margin-top: 4px;">
+                                <input type="checkbox" id="master-access" onchange="bulkToggle('active', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
+                        </th>
+                        <th>
+                            Liberar Atualização?
+                            <br>
+                            <label class="switch" style="transform: scale(0.65); transform-origin: left; margin-top: 4px;">
+                                <input type="checkbox" id="master-updates" onchange="bulkToggle('receiveUpdates', this.checked)">
+                                <span class="slider-update"></span>
+                            </label>
+                            <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
+                        </th>
                     </tr>
                 </thead>
                 <tbody id="users-body">
@@ -356,6 +372,15 @@
                 
                 const data = await res.json();
                 
+                
+                // Update master switches states based on all users
+                if (data.users.length > 0) {
+                    const allActive = data.users.every(u => u.active || u.name === 'admin_agrogis');
+                    const allUpdates = data.users.every(u => u.receiveUpdates);
+                    document.getElementById('master-access').checked = allActive;
+                    document.getElementById('master-updates').checked = allUpdates;
+                }
+
                 if (data.users.length === 0) {
                     usersBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
                     document.getElementById('total-users').style.display = 'none';
@@ -441,6 +466,40 @@
                 } else {
                     alert('Falha ao alterar status de atualização!');
                     loadUsers(); // Refresh to original state
+                }
+            } catch (e) {
+                alert('Erro na conexão!');
+                loadUsers();
+            }
+        };
+
+        window.bulkToggle = async function(field, value) {
+            const fieldName = field === 'active' ? 'Acessos' : 'Atualizações';
+            const action = value ? 'liberados' : 'bloqueados';
+            const confirmMsg = `Tem certeza que deseja ${value ? 'liberar' : 'bloquear'} ${fieldName.toLowerCase()} para TODOS os usuários?`;
+            
+            if (!confirm(confirmMsg)) {
+                // Revert switch UI
+                loadUsers();
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/bulkToggle', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ field, value })
+                });
+                
+                if (res.ok) {
+                    showToast(`${fieldName} ${action} para todos os usuários!`);
+                    loadUsers();
+                } else {
+                    alert('Falha ao alterar status em massa!');
+                    loadUsers(); 
                 }
             } catch (e) {
                 alert('Erro na conexão!');
