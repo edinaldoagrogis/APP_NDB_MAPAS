@@ -1696,9 +1696,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     // Make panel draggable
     if (resultPanel) {
-        const dragHandle = document.getElementById('measure-drag-handle');
-        const draggable = new L.Draggable(resultPanel, dragHandle);
-        draggable.enable();
+        // const dragHandle = document.getElementById('measure-drag-handle');
+        // const draggable = new L.Draggable(resultPanel, dragHandle);
+        // draggable.enable();
     }
 
     function resetMeasure() {
@@ -2077,9 +2077,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     if (routeSearchDest) routeSearchDest.addEventListener('input', (e) => handleRouteSearch(e, 'dest'));
 
     if (routePanel) {
-        const routeDragHandle = document.getElementById('route-drag-handle');
-        const draggableRoute = new L.Draggable(routePanel, routeDragHandle);
-        draggableRoute.enable();
+        // const routeDragHandle = document.getElementById('route-drag-handle');
+        // const draggableRoute = new L.Draggable(routePanel, routeDragHandle);
+        // draggableRoute.enable();
     }
 
     function deactivateRoute() {
@@ -2282,7 +2282,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     const drawStatus = document.getElementById('draw-status');
 
     if (drawPanel) {
-        new L.Draggable(drawPanel, document.getElementById('draw-drag-handle')).enable();
+        // new L.Draggable(drawPanel, document.getElementById('draw-drag-handle')).enable();
     }
 
     function resetDraw() {
@@ -2486,7 +2486,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     const timeRecordEl = document.getElementById('record-time');
 
     if (recordPanel) {
-        new L.Draggable(recordPanel, document.getElementById('record-drag-handle')).enable();
+        // new L.Draggable(recordPanel, document.getElementById('record-drag-handle')).enable();
     }
 
     let recordActive = false;
