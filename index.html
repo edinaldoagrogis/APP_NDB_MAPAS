@@ -197,7 +197,7 @@
                         </svg>
                     </button>
 
-                    <div id="floating-tools-panel" style="display: none; position: absolute; top: 52px; right: 0; width: 280px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden; z-index: 100;">
+                    <div id="floating-tools-panel" style="display: none; position: absolute; top: 52px; right: 0; width: 280px; max-height: 80vh; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow-y: auto; overflow-x: hidden; z-index: 100;">
                         <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
                             <h3 style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: #fff;">FERRAMENTAS</h3>
                         </div>
@@ -260,6 +260,18 @@
                                     <div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px;">Sentinel-2 · Análise por Fazenda</div>
                                 </div>
                                 <div id="weed-tool-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #555;" title="Status do servidor"></div>
+                            </button>
+
+                            <!-- Separador -->
+                            <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 4px 0;"></div>
+
+                            <!-- Botão Entomologia -->
+                            <button id="tool-entomologia-btn" class="tool-action-btn" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" title="Levantamento Entomológico (Pragas)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2v20M8 6h8M6 10h12M8 14h8M10 18h4"/>
+                                    <circle cx="12" cy="12" r="10" stroke-dasharray="2 2"/>
+                                </svg>
+                                <span style="font-size: 13px; font-weight: 500;">Entomologia (Pragas)</span>
                             </button>
 
 
@@ -888,6 +900,7 @@
     <script defer src="app_info.js?v=1"></script>
     <script defer src="planting_lines.js"></script>
     <script defer src="clima_farm.js?v=1.2"></script>
+    <script defer src="entomologia.js?v=1.0"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const menuBtn = document.getElementById('mobile-menu-btn');
