@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (entoBtn) entoBtn.style.display = 'flex';
                         } else {
                             localStorage.removeItem('agrogis_entomologia');
-                            if (entoBtn) entoBtn.style.display = 'none';
+                            if (entoBtn) entoBtn.style.display = 'none'; // Esconde se não tiver permissão
                         }
                     }
                 }).catch(e => {
@@ -268,14 +268,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Controle da ferramenta Entomologia
+            // Controle da ferramenta Entomologia: esconde se não tiver acesso
             const entoBtn = document.getElementById('floating-entomologia-btn');
             if (entoBtn) {
                 if (localStorage.getItem('agrogis_entomologia') === 'true') {
                     entoBtn.style.display = 'flex';
-                } else {
-                    entoBtn.style.display = 'none';
                 }
+                // (botão fica visível por padrão; o check em background vai esconder se necessário)
             }
         } catch (e) {
             alert('Erro ao dar acesso: ' + e.message + '\n' + e.stack);
