@@ -29,6 +29,13 @@
         }, 2000);
     }
 
+    // Chama a inicialização
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initEntomologia);
+    } else {
+        initEntomologia();
+    }
+
     function initLayer() {
         if (!mapInstance) return;
         
