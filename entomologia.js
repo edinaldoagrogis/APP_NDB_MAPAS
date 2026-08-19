@@ -24,11 +24,13 @@
         // Criar o Painel UI
         createUI();
         
-        // Registrar Evento no Botão Flutuante
-        const btn = document.getElementById('floating-entomologia-btn');
+        // Registrar Evento no Botão do Painel de Ferramentas
+        const btn = document.getElementById('tool-entomologia-btn');
         if (btn) {
             btn.addEventListener('click', toggleEntomologia);
         }
+        // Fallback global para onclick inline
+        window._entoClick = toggleEntomologia;
 
         // Tentar obter o map do window
         setTimeout(() => {
