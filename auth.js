@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Controle da ferramenta Entomologia
-            const entoBtn = document.getElementById('tool-entomologia-btn');
+            const entoBtn = document.getElementById('floating-entomologia-btn');
             if (entoBtn) {
                 if (localStorage.getItem('agrogis_entomologia') === 'true') {
                     entoBtn.style.display = 'flex';

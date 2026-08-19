@@ -24,8 +24,8 @@
         // Criar o Painel UI
         createUI();
         
-        // Registrar Evento no Botão do Menu de Ferramentas
-        const btn = document.getElementById('tool-entomologia-btn');
+        // Registrar Evento no Botão Flutuante
+        const btn = document.getElementById('floating-entomologia-btn');
         if (btn) {
             btn.addEventListener('click', toggleEntomologia);
         }
