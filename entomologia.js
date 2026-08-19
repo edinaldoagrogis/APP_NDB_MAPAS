@@ -14,6 +14,7 @@
     let entomologiaLayer = null;
     let savedPoints = [];
     let mapInstance = null;
+    let routeRecordingStarted = false;
     
     // ─── Inicialização ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
@@ -145,7 +146,7 @@
 
                     <!-- Controles de Rota -->
                     <button id="entomologia-route-btn" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,165,0,0.2); border: 1px solid rgba(255,165,0,0.5); color: #ffa500; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                        ▶ Iniciar Gravação de Rota
+                        ▶ Iniciar Levantamento
                     </button>
 
                     <!-- Coletar Amostra -->
@@ -296,7 +297,8 @@
             // Parar Gravação
             navigator.geolocation.clearWatch(watchPositionId);
             isTracking = false;
-            btn.innerHTML = '▶ Iniciar Gravação de Rota';
+            routeRecordingStarted = false;
+            btn.innerHTML = '▶ Iniciar Levantamento';
             btn.style.background = 'rgba(255,165,0,0.2)';
             btn.style.color = '#ffa500';
             collectBtn.disabled = true;
@@ -309,10 +311,11 @@
             }
 
             routeCoords = [];
+            routeRecordingStarted = false;
             if(routePolyline) routePolyline.setLatLngs([]);
 
             isTracking = true;
-            btn.innerHTML = '⏹ Parar Gravação';
+            btn.innerHTML = '⏹ Finalizar Levantamento';
             btn.style.background = 'rgba(255,0,0,0.2)';
             btn.style.color = '#ff4444';
             collectBtn.disabled = false;
@@ -324,12 +327,15 @@
                     const lng = position.coords.longitude;
                     const latlng = [lat, lng];
                     
-                    routeCoords.push(latlng);
-                    if (routePolyline) {
-                        routePolyline.setLatLngs(routeCoords);
-                    }
-                    if(mapInstance && routeCoords.length === 1) {
+                    if (mapInstance && !routeRecordingStarted) {
                         mapInstance.setView(latlng, 16);
+                    }
+                    
+                    if (routeRecordingStarted) {
+                        routeCoords.push(latlng);
+                        if (routePolyline) {
+                            routePolyline.setLatLngs(routeCoords);
+                        }
                     }
                 },
                 (error) => {
@@ -412,6 +418,9 @@
             if (entomologiaLayer) {
                 entomologiaLayer.addData(ponto);
             }
+
+            // Iniciar a gravação da rota a partir deste ponto
+            routeRecordingStarted = true;
 
             // Salvar no array e localStorage
             savedPoints.push(ponto);
