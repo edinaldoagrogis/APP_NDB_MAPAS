@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v131';
+const CACHE_NAME = 'agrogis-v132';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -92,6 +92,12 @@ self.addEventListener('fetch', event => {
                 });
             })
         );
+        return;
+    }
+    
+    // Bypass cache for API calls and admin page (must always be fresh)
+    if (url.pathname.startsWith('/api/') || url.pathname.includes('admin.html')) {
+        event.respondWith(fetch(event.request));
         return;
     }
 
