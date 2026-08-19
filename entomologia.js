@@ -264,11 +264,11 @@
             if (layer.feature && layer.feature.properties) {
                 const props = layer.feature.properties;
                 // Heurística para identificar Talhões
-                const isTalhao = props.TALHAO !== undefined || props.COD_TALHAO !== undefined || props.ZONA !== undefined || props.ZONA_A !== undefined;
+                const isTalhao = props.ZONA !== undefined || props.NOME_FAZ !== undefined || props.TALHAO !== undefined || props.COD_TALHAO !== undefined;
                 
                 if (isTalhao) {
                     const zona = props.ZONA || props.COD_TALHAO || props.TALHAO || props.nome || 'Desconhecido';
-                    const fazenda = props.FAZENDA || props.NOME_FAZ || 'Desconhecida';
+                    const fazenda = props.NOME_FAZ || props.FAZENDA || 'Desconhecida';
                     const id = `${fazenda}||${zona}`;
                     talhoesMap.set(id, { fazenda, zona });
                 }
