@@ -42,14 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             localStorage.removeItem('agrogis_updates_enabled');
                         }
                         
-                        // Sync entomologia flag AND update button visibility immediately
-                        const entoBtn = document.getElementById('floating-entomologia-btn');
+                        // Sync entomologia flag (botão sempre visível, acesso controlado via click)
                         if (data.entomologiaAccess || data.user === 'admin_agrogis') {
                             localStorage.setItem('agrogis_entomologia', 'true');
-                            if (entoBtn) entoBtn.style.display = 'flex';
                         } else {
                             localStorage.removeItem('agrogis_entomologia');
-                            if (entoBtn) entoBtn.style.display = 'none'; // Esconde se não tiver permissão
                         }
                     }
                 }).catch(e => {
@@ -268,14 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Controle da ferramenta Entomologia: esconde se não tiver acesso
-            const entoBtn = document.getElementById('floating-entomologia-btn');
-            if (entoBtn) {
-                if (localStorage.getItem('agrogis_entomologia') === 'true') {
-                    entoBtn.style.display = 'flex';
-                }
-                // (botão fica visível por padrão; o check em background vai esconder se necessário)
-            }
+            // Botão de Entomologia sempre visível - controle de acesso feito pelo click handler
         } catch (e) {
             alert('Erro ao dar acesso: ' + e.message + '\n' + e.stack);
         }
