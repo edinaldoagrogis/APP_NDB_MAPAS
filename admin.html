@@ -224,6 +224,33 @@
         input:checked + .slider-update:before {
             transform: translateX(26px);
         }
+        
+        /* Switch for Entomologia (Yellow/Green) */
+        .slider-ento {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider-ento:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-ento {
+            background-color: #ffb732; /* Orangeish */
+        }
+        input:checked + .slider-ento:before {
+            transform: translateX(26px);
+        }
 
         #loading {
             text-align: center;
@@ -295,6 +322,15 @@
                             <label class="switch" style="transform: scale(0.65); transform-origin: left; margin-top: 4px;">
                                 <input type="checkbox" id="master-updates" onchange="bulkToggle('receiveUpdates', this.checked)">
                                 <span class="slider-update"></span>
+                            </label>
+                            <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
+                        </th>
+                        <th>
+                            Entomologia?
+                            <br>
+                            <label class="switch" style="transform: scale(0.65); transform-origin: left; margin-top: 4px;">
+                                <input type="checkbox" id="master-ento" onchange="bulkToggle('entomologiaAccess', this.checked)">
+                                <span class="slider-ento"></span>
                             </label>
                             <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
                         </th>
@@ -377,12 +413,14 @@
                 if (data.users.length > 0) {
                     const allActive = data.users.every(u => u.active || u.name === 'admin_agrogis');
                     const allUpdates = data.users.every(u => u.receiveUpdates);
+                    const allEnto = data.users.every(u => u.entomologiaAccess);
                     document.getElementById('master-access').checked = allActive;
                     document.getElementById('master-updates').checked = allUpdates;
+                    document.getElementById('master-ento').checked = allEnto;
                 }
 
                 if (data.users.length === 0) {
-                    usersBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
+                    usersBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
                     document.getElementById('total-users').style.display = 'none';
                 } else {
                     document.getElementById('total-users').textContent = `Total: ${data.users.length} usuário${data.users.length > 1 ? 's' : ''}`;
@@ -409,6 +447,12 @@
                                 <label class="switch">
                                     <input type="checkbox" onchange="toggleUpdate('${u.name}', this.checked)" ${u.receiveUpdates ? 'checked' : ''}>
                                     <span class="slider-update"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <label class="switch">
+                                    <input type="checkbox" onchange="toggleEntomologia('${u.name}', this.checked)" ${u.entomologiaAccess ? 'checked' : ''}>
+                                    <span class="slider-ento"></span>
                                 </label>
                             </td>
                         `;
@@ -474,8 +518,8 @@
         };
 
         window.bulkToggle = async function(field, value) {
-            const fieldName = field === 'active' ? 'Acessos' : 'Atualizações';
-            const action = value ? 'liberados' : 'bloqueados';
+            let fieldName = field === 'active' ? 'Acessos' : (field === 'receiveUpdates' ? 'Atualizações' : 'Acesso Entomologia');
+            const action = value ? 'liberados(as)' : 'bloqueados(as)';
             const confirmMsg = `Tem certeza que deseja ${value ? 'liberar' : 'bloquear'} ${fieldName.toLowerCase()} para TODOS os usuários?`;
             
             if (!confirm(confirmMsg)) {

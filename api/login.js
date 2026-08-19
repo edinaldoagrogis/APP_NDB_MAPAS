@@ -72,7 +72,8 @@ export default async function handler(req, res) {
         return res.status(200).json({ 
             success: true, 
             user: userData.name,
-            receiveUpdates: userData.receiveUpdates 
+            receiveUpdates: userData.receiveUpdates,
+            entomologiaAccess: userData.entomologiaAccess || false
         });
     } catch (e) {
         console.error(e);

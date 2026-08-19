@@ -26,12 +26,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     // Using the standard password since it's hardcoded for all users anyway
                     body: JSON.stringify({ username: currentUser, password: 'ndb_mapas' })
-                }).then(res => {
+                }).then(async res => {
                     if (res.status === 403) {
                         // User was blocked! Force logout.
                         alert('Atenção: Seu acesso foi revogado pelo administrador.');
                         localStorage.removeItem('agrogis_auth_level');
                         window.location.reload();
+                    } else if (res.ok) {
+                        const data = await res.json();
+                        
+                        // Sync update flag
+                        if (data.receiveUpdates) {
+                            localStorage.setItem('agrogis_updates_enabled', 'true');
+                        } else {
+                            localStorage.removeItem('agrogis_updates_enabled');
+                        }
+                        
+                        // Sync entomologia flag
+                        if (data.entomologiaAccess || data.user === 'admin_agrogis') {
+                            localStorage.setItem('agrogis_entomologia', 'true');
+                        } else {
+                            localStorage.removeItem('agrogis_entomologia');
+                        }
                     }
                 }).catch(e => {
                     // Ignore network errors (offline mode support)
@@ -154,6 +170,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     localStorage.removeItem('agrogis_updates_enabled');
                 }
+                
+                // Save feature flag for Entomologia
+                if (data.entomologiaAccess || data.user === 'admin_agrogis') {
+                    localStorage.setItem('agrogis_entomologia', 'true');
+                } else {
+                    localStorage.removeItem('agrogis_entomologia');
+                }
 
                 // Grant access (using level 2 for everything now as per new rules)
                 grantAccess(2);
@@ -239,6 +262,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         e.preventDefault();
                         e.stopPropagation();
                     }, true);
+                }
+            }
+            
+            // Controle da ferramenta Entomologia
+            const entoBtn = document.getElementById('tool-entomologia-btn');
+            if (entoBtn) {
+                if (localStorage.getItem('agrogis_entomologia') === 'true') {
+                    entoBtn.style.display = 'flex';
+                } else {
+                    entoBtn.style.display = 'none';
                 }
             }
         } catch (e) {

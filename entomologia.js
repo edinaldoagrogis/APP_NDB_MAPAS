@@ -161,6 +161,10 @@
                         </label>
                     </div>
 
+                    <!-- Sync com Portal -->
+                    <button id="entomologia-sync-btn" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(46, 196, 182, 0.2); border: 1px solid rgba(46, 196, 182, 0.5); color: #2ec4b6; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 8px;">
+                        🔄 Sincronizar com Portal
+                    </button>
                 </div>
 
                 <!-- Formulário de Amostra (Oculto inicialmente) -->
@@ -218,6 +222,7 @@
         document.getElementById('entomologia-collect-btn').addEventListener('click', openSampleForm);
         document.getElementById('entomologia-cancel-btn').addEventListener('click', closeSampleForm);
         document.getElementById('entomologia-save-btn').addEventListener('click', saveSample);
+        document.getElementById('entomologia-sync-btn').addEventListener('click', syncWithPortal);
         
         document.getElementById('entomologia-layer-toggle').addEventListener('change', (e) => {
             if (!mapInstance || !entomologiaLayer) return;
@@ -463,5 +468,53 @@
             }
         }
     };
+
+    async function syncWithPortal() {
+        if (savedPoints.length === 0) {
+            alert('Não há dados locais para sincronizar.');
+            return;
+        }
+
+        const btn = document.getElementById('entomologia-sync-btn');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '⏳ Enviando...';
+        btn.disabled = true;
+
+        try {
+            const currentUser = localStorage.getItem('agrogis_current_user') || 'Desconhecido';
+            
+            const res = await fetch('/api/syncEntomologia', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user: currentUser,
+                    points: savedPoints
+                })
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+                alert('Dados enviados com sucesso para o Portal de Monitoramento!');
+            } else {
+                alert('Erro na sincronização: ' + data.error);
+            }
+        } catch (e) {
+            alert('Erro de conexão ao sincronizar.');
+            console.error(e);
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
+    }
+
+    // Export sync function if needed or just bind it internally
+    // but first bind it to the button (we can use setTimeout to ensure it's bound after HTML injection)
+    setTimeout(() => {
+        const syncBtn = document.getElementById('entomologia-sync-btn');
+        if (syncBtn) {
+            syncBtn.addEventListener('click', syncWithPortal);
+        }
+    }, 1000);
 
 })();

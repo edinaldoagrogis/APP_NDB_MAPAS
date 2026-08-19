@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
         const { field, value } = req.body;
         
-        if (!['active', 'receiveUpdates'].includes(field) || typeof value !== 'boolean') {
+        if (!['active', 'receiveUpdates', 'entomologiaAccess'].includes(field) || typeof value !== 'boolean') {
             return res.status(400).json({ error: 'Parâmetros inválidos.' });
         }
 
