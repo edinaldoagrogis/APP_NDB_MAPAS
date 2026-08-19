@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v132';
+const CACHE_NAME = 'agrogis-v133';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -74,7 +74,7 @@ self.addEventListener('fetch', event => {
     // Cache-First Strategy para as fatias do mapa offline (extrema fluidez)
     if (url.pathname.includes('/offline_images/')) {
         event.respondWith(
-            caches.match(event.request).then(cachedResponse => {
+            caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
                 if (cachedResponse) {
                     return cachedResponse; // Retorna imediatamente do celular, zero delay
                 }
@@ -103,7 +103,7 @@ self.addEventListener('fetch', event => {
 
     // Cache-First Strategy para todo o resto (app.js, index.html, etc) - Extrema velocidade na inicialização
     event.respondWith(
-        caches.match(event.request).then(cachedResponse => {
+        caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
             if (cachedResponse) {
                 return cachedResponse; // Retorna imediatamente do celular, zero tela de splash demorada
             }
