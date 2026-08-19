@@ -42,11 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             localStorage.removeItem('agrogis_updates_enabled');
                         }
                         
-                        // Sync entomologia flag
+                        // Sync entomologia flag AND update button visibility immediately
+                        const entoBtn = document.getElementById('floating-entomologia-btn');
                         if (data.entomologiaAccess || data.user === 'admin_agrogis') {
                             localStorage.setItem('agrogis_entomologia', 'true');
+                            if (entoBtn) entoBtn.style.display = 'flex';
                         } else {
                             localStorage.removeItem('agrogis_entomologia');
+                            if (entoBtn) entoBtn.style.display = 'none';
                         }
                     }
                 }).catch(e => {
