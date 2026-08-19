@@ -27,7 +27,7 @@
                 initLayer();
             }
         }, 2000);
-    });
+    }
 
     function initLayer() {
         if (!mapInstance) return;
