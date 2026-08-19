@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v135';
+const CACHE_NAME = 'agrogis-v136';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -98,6 +98,25 @@ self.addEventListener('fetch', event => {
     // Bypass cache for API calls and admin page (must always be fresh)
     if (url.pathname.startsWith('/api/') || url.pathname.includes('admin.html')) {
         event.respondWith(fetch(event.request));
+        return;
+    }
+
+    // Network-First para arquivos principais do app (index.html, auth.js, app.js, entomologia.js)
+    // Garante que atualizações apareçam imediatamente, sem depender de cache antigo
+    const alwaysFreshFiles = ['/', '/index.html', '/auth.js', '/app.js', '/entomologia.js', '/style.css', '/sw.js'];
+    if (alwaysFreshFiles.some(f => url.pathname === f || url.pathname.endsWith(f))) {
+        event.respondWith(
+            fetch(event.request).then(response => {
+                if (response && response.status === 200) {
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
+                }
+                return response;
+            }).catch(() => {
+                // Se offline, serve do cache
+                return caches.match(event.request);
+            })
+        );
         return;
     }
 
