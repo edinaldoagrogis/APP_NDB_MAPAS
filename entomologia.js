@@ -237,45 +237,52 @@
     }
 
     function toggleEntomologia() {
-        // Verificar se o usuário tem permissão para usar a ferramenta
-        if (localStorage.getItem('agrogis_entomologia') !== 'true') {
-            // Mostrar alerta estilizado de bloqueio
-            const existingAlert = document.getElementById('ento-blocked-alert');
-            if (existingAlert) existingAlert.remove();
-
-            const alertEl = document.createElement('div');
-            alertEl.id = 'ento-blocked-alert';
-            alertEl.style.cssText = `
-                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                background: rgba(10, 14, 23, 0.97); border: 1px solid rgba(255, 100, 0, 0.5);
-                border-radius: 16px; padding: 28px 24px; z-index: 99999;
-                text-align: center; color: #fff; max-width: 300px; width: 90%;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.6); backdrop-filter: blur(12px);
-            `;
-            alertEl.innerHTML = `
-                <div style="font-size: 40px; margin-bottom: 12px;">🔒</div>
-                <div style="font-size: 16px; font-weight: 700; color: #ff6a00; margin-bottom: 8px;">Acesso Restrito</div>
-                <div style="font-size: 13px; color: #a0aec0; margin-bottom: 20px; line-height: 1.5;">
-                    Você não tem permissão para usar a ferramenta de Entomologia.<br>
-                    Solicite acesso ao administrador.
-                </div>
-                <button onclick="document.getElementById('ento-blocked-alert').remove()"
-                    style="padding: 10px 24px; background: #ff6a00; border: none; border-radius: 8px;
-                    color: #fff; font-weight: 700; cursor: pointer; font-size: 14px;">OK</button>
-            `;
-            document.body.appendChild(alertEl);
-
-            // Auto-remover após 4 segundos
-            setTimeout(() => { if (alertEl.parentNode) alertEl.remove(); }, 4000);
+        // Verificar permissão: primeiro tenta localStorage, depois confirma na API
+        const hasLocalAccess = localStorage.getItem('agrogis_entomologia') === 'true';
+        
+        if (hasLocalAccess) {
+            // Acesso local confirmado - abre direto
+            _openTool();
             return;
         }
 
+        // Sem flag local: consulta a API em tempo real
+        const currentUser = localStorage.getItem('agrogis_current_user');
+        if (!currentUser) {
+            _showBlocked();
+            return;
+        }
+
+        const btn = document.getElementById('floating-entomologia-btn');
+        if (btn) btn.style.opacity = '0.5';
+
+        fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: currentUser, password: 'ndb_mapas' })
+        }).then(res => res.json()).then(data => {
+            if (btn) btn.style.opacity = '1';
+            if (data.entomologiaAccess || data.user === 'admin_agrogis') {
+                localStorage.setItem('agrogis_entomologia', 'true');
+                _openTool();
+            } else {
+                _showBlocked();
+            }
+        }).catch(() => {
+            if (btn) btn.style.opacity = '1';
+            // Offline - bloqueia por segurança
+            _showBlocked();
+        });
+    }
+
+    function _openTool() {
         const panel = document.getElementById('entomologia-panel');
         isActive = !isActive;
 
         if (isActive) {
             panel.style.display = 'flex';
-            document.getElementById('floating-tools-panel').style.display = 'none'; // Fechar menu de ferramentas
+            const toolsPanel = document.getElementById('floating-tools-panel');
+            if (toolsPanel) toolsPanel.style.display = 'none';
             
             if (!mapInstance && window.map) {
                 mapInstance = window.map;
@@ -285,9 +292,37 @@
         } else {
             panel.style.display = 'none';
             if (isTracking) {
-                toggleTracking(); // Parar rastreio ao fechar a ferramenta
+                toggleTracking();
             }
         }
+    }
+
+    function _showBlocked() {
+        const existingAlert = document.getElementById('ento-blocked-alert');
+        if (existingAlert) existingAlert.remove();
+
+        const alertEl = document.createElement('div');
+        alertEl.id = 'ento-blocked-alert';
+        alertEl.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(10, 14, 23, 0.97); border: 1px solid rgba(255, 100, 0, 0.5);
+            border-radius: 16px; padding: 28px 24px; z-index: 99999;
+            text-align: center; color: #fff; max-width: 300px; width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6); backdrop-filter: blur(12px);
+        `;
+        alertEl.innerHTML = `
+            <div style="font-size: 40px; margin-bottom: 12px;">🔒</div>
+            <div style="font-size: 16px; font-weight: 700; color: #ff6a00; margin-bottom: 8px;">Acesso Restrito</div>
+            <div style="font-size: 13px; color: #a0aec0; margin-bottom: 20px; line-height: 1.5;">
+                Você não tem permissão para usar a ferramenta de Entomologia.<br>
+                Solicite acesso ao administrador.
+            </div>
+            <button onclick="document.getElementById('ento-blocked-alert').remove()"
+                style="padding: 10px 24px; background: #ff6a00; border: none; border-radius: 8px;
+                color: #fff; font-weight: 700; cursor: pointer; font-size: 14px;">OK</button>
+        `;
+        document.body.appendChild(alertEl);
+        setTimeout(() => { if (alertEl.parentNode) alertEl.remove(); }, 4000);
     }
 
     function populateTalhoes() {
