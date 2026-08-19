@@ -517,6 +517,29 @@
             }
         };
 
+        window.toggleEntomologia = async function(username, hasAccess) {
+            try {
+                const res = await fetch('/api/toggleEntomologia', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ username, entomologiaAccess: hasAccess })
+                });
+                
+                if (res.ok) {
+                    showToast(`Entomologia ${hasAccess ? 'liberada' : 'bloqueada'} para ${username}!`);
+                } else {
+                    alert('Falha ao alterar acesso de Entomologia!');
+                    loadUsers();
+                }
+            } catch (e) {
+                alert('Erro na conexão!');
+                loadUsers();
+            }
+        };
+
         window.bulkToggle = async function(field, value) {
             let fieldName = field === 'active' ? 'Acessos' : (field === 'receiveUpdates' ? 'Atualizações' : 'Acesso Entomologia');
             const action = value ? 'liberados(as)' : 'bloqueados(as)';
