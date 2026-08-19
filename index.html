@@ -760,25 +760,30 @@
                     });
                 </script>
                 
-                <!-- Floating Entomologia Button (Oculto por padrão, ativado via auth.js) -->
-                <div class="floating-entomologia-wrapper" style="position: relative;">
-                    <button id="floating-entomologia-btn" title="Entomologia (Pragas)" style="display: flex; width: 44px; height: 44px; border-radius: 12px; background: rgba(5, 8, 7, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); color: #fff; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s;">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-                            <path d="M12 9v4"/>
-                            <circle cx="12" cy="13" r="3"/>
-                            <path d="M9.5 11l-2-2"/>
-                            <path d="M14.5 11l2-2"/>
-                            <path d="M10 15l-2 2"/>
-                            <path d="M14 15l2 2"/>
-                            <path d="M9 13H7"/>
-                            <path d="M15 13h2"/>
-                            <path d="M11 9l-1-2"/>
-                            <path d="M13 9l1-2"/>
-                        </svg>
-                    </button>
-                </div>
+                <!-- Floating Entomologia Button - fora do wrapper, posicionado via CSS fixed -->
             </div>
+            <!-- Botão Entomologia - posição fixa na tela, abaixo da chave de ferramentas -->
+            <button id="floating-entomologia-btn" title="Entomologia (Pragas)"
+                style="position: fixed; top: 230px; right: 24px; z-index: 1000;
+                       display: flex; width: 44px; height: 44px; border-radius: 12px;
+                       background: rgba(5, 8, 7, 0.85); backdrop-filter: blur(12px);
+                       border: 1px solid rgba(255,255,255,0.1); color: #fff;
+                       justify-content: center; align-items: center; cursor: pointer;
+                       box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                    <path d="M12 9v4"/>
+                    <circle cx="12" cy="13" r="3"/>
+                    <path d="M9.5 11l-2-2"/>
+                    <path d="M14.5 11l2-2"/>
+                    <path d="M10 15l-2 2"/>
+                    <path d="M14 15l2 2"/>
+                    <path d="M9 13H7"/>
+                    <path d="M15 13h2"/>
+                    <path d="M11 9l-1-2"/>
+                    <path d="M13 9l1-2"/>
+                </svg>
+            </button>
 
             <!-- Floating Measure Result Window -->
             <div id="measure-result" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; width: auto; box-sizing: border-box; z-index: 2000; padding: 16px 20px 24px; background: rgba(5, 10, 8, 0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); border-radius: 20px 20px 0 0; box-shadow: 0 -8px 32px rgba(0,0,0,0.6); font-size: 13px; color: #a8b8b0; flex-direction: column;">
