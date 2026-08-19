@@ -17,22 +17,10 @@
     let routeRecordingStarted = false;
     
     // ─── Inicialização ────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
-        // Obter referência do mapa (assumindo que o mapa principal do Leaflet foi atribuído a window.map ou está acessível no DOM)
-        // No app.js o mapa é criado e tipicamente associado a window.map
-        
-        // Criar o Painel UI
+    function initEntomologia() {
         createUI();
-        
-        // Registrar Evento no Botão do Painel de Ferramentas
-        const btn = document.getElementById('tool-entomologia-btn');
-        if (btn) {
-            btn.addEventListener('click', toggleEntomologia);
-        }
-        // Fallback global para onclick inline
         window._entoClick = toggleEntomologia;
-
-        // Tentar obter o map do window
+        
         setTimeout(() => {
             if (window.map) {
                 mapInstance = window.map;
@@ -255,7 +243,7 @@
             return;
         }
 
-        const btn = document.getElementById('floating-entomologia-btn');
+        const btn = document.getElementById('tool-entomologia-btn');
         if (btn) btn.style.opacity = '0.5';
 
         fetch('/api/login', {
