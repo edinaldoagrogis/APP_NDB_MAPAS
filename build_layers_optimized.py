@@ -72,44 +72,46 @@ def round_coords(coords, decimals=5):
         return [round_coords(c, decimals) for c in coords]
     return coords
 
-def optimize_geojson(input_path, layer_type):
-    print(f"Loading {input_path}...")
-    with open(input_path, 'r', encoding='utf-8', errors='ignore') as f:
-        data = json.load(f)
-        
-    print(f"Original features in {layer_type}: {len(data['features'])}")
+import glob
+
+def optimize_geojson_paths(input_paths, layer_type):
+    merged_data = {"type": "FeatureCollection", "name": layer_type, "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } }, "features": []}
     
-    for feature in data['features']:
-        feature['properties'] = clean_properties(feature.get('properties', {}), layer_type)
-        if layer_type == 'LINHAS DE COLHEITA':
-            feature['geometry']['coordinates'] = round_coords(feature['geometry']['coordinates'], decimals=8)
-        else:
-            feature['geometry']['coordinates'] = round_coords(feature['geometry']['coordinates'], decimals=5)
+    for path in input_paths:
+        if not os.path.exists(path):
+            continue
+        print(f"Loading {path}...")
+        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            data = json.load(f)
+            
+        print(f"Original features in {path}: {len(data.get('features', []))}")
         
-    return data
+        for feature in data.get('features', []):
+            feature['properties'] = clean_properties(feature.get('properties', {}), layer_type)
+            if layer_type == 'LINHAS DE COLHEITA':
+                feature['geometry']['coordinates'] = round_coords(feature['geometry']['coordinates'], decimals=8)
+            else:
+                feature['geometry']['coordinates'] = round_coords(feature['geometry']['coordinates'], decimals=5)
+            
+            merged_data['features'].append(feature)
+            
+    return merged_data
 
 def build():
-    fazendas_path = os.path.join('CAMADAS VETORIAIS', 'FAZENDAS_01.geojson')
-    talhoes_path = os.path.join('CAMADAS VETORIAIS', 'TALHOES_01.geojson')
-    linhas_colheita_path = os.path.join('CAMADAS VETORIAIS', 'LINHAS DE COLHEITA.geojson')
+    fazendas_paths = [os.path.join('CAMADAS VETORIAIS', 'FAZENDAS_01.geojson')]
+    talhoes_paths = [os.path.join('CAMADAS VETORIAIS', 'TALHOES_01.geojson')]
     
-    if os.path.exists(fazendas_path):
-        opt_faz_data = optimize_geojson(fazendas_path, 'FAZENDAS')
-        opt_faz_json_str = json.dumps(opt_faz_data, separators=(',', ':'))
-    else:
-        opt_faz_json_str = 'null'
+    linhas_colheita_paths = [os.path.join('CAMADAS VETORIAIS', 'LINHAS DE COLHEITA.geojson')]
+    linhas_colheita_paths.extend(glob.glob(os.path.join('CAMADAS VETORIAIS', 'LINHAS DE COLHEITA', '*.geojson')))
+    
+    opt_faz_data = optimize_geojson_paths(fazendas_paths, 'FAZENDAS')
+    opt_faz_json_str = json.dumps(opt_faz_data, separators=(',', ':')) if opt_faz_data['features'] else 'null'
         
-    if os.path.exists(talhoes_path):
-        opt_tal_data = optimize_geojson(talhoes_path, 'TALHOES')
-        opt_tal_json_str = json.dumps(opt_tal_data, separators=(',', ':'))
-    else:
-        opt_tal_json_str = 'null'
+    opt_tal_data = optimize_geojson_paths(talhoes_paths, 'TALHOES')
+    opt_tal_json_str = json.dumps(opt_tal_data, separators=(',', ':')) if opt_tal_data['features'] else 'null'
 
-    if os.path.exists(linhas_colheita_path):
-        opt_linhas_col_data = optimize_geojson(linhas_colheita_path, 'LINHAS DE COLHEITA')
-        opt_linhas_col_json_str = json.dumps(opt_linhas_col_data, separators=(',', ':'))
-    else:
-        opt_linhas_col_json_str = 'null'
+    opt_linhas_col_data = optimize_geojson_paths(linhas_colheita_paths, 'LINHAS DE COLHEITA')
+    opt_linhas_col_json_str = json.dumps(opt_linhas_col_data, separators=(',', ':')) if opt_linhas_col_data['features'] else 'null'
         
     with open('layers_data.js', 'w', encoding='utf-8') as out:
         out.write('const GEOPORTAL_LAYERS = {\n')
