@@ -81,7 +81,10 @@ def optimize_geojson(input_path, layer_type):
     
     for feature in data['features']:
         feature['properties'] = clean_properties(feature.get('properties', {}), layer_type)
-        feature['geometry']['coordinates'] = round_coords(feature['geometry']['coordinates'])
+        if layer_type == 'LINHAS DE COLHEITA':
+            feature['geometry']['coordinates'] = round_coords(feature['geometry']['coordinates'], decimals=8)
+        else:
+            feature['geometry']['coordinates'] = round_coords(feature['geometry']['coordinates'], decimals=5)
         
     return data
 

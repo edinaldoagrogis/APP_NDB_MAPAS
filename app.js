@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (isFazenda) baseColor = '#ff9f1c'; 
             if (isTalhao) baseColor = '#2ec4b6'; 
-            if (isLinhasColheita) baseColor = '#ccff00'; // Amarelo fluorescente
+            if (isLinhasColheita) baseColor = '#00008b'; // Azul escuro
             colorIndex++;
 
             const styleFunc = function(feature) {
@@ -3296,8 +3296,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         tractorBtn.style.borderColor = 'rgba(255,255,255,0.1)';
                     } else {
                         window.map.addLayer(layer);
-                        tractorBtn.style.background = 'rgba(204, 255, 0, 0.2)'; // Highlight color
-                        tractorBtn.style.borderColor = '#ccff00';
+                        tractorBtn.style.background = 'rgba(0, 0, 139, 0.4)'; // Highlight color (dark blue)
+                        tractorBtn.style.borderColor = '#00008b';
                     }
                 }
             });
