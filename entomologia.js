@@ -92,21 +92,22 @@
             <div id="entomologia-panel" style="
                 display: none;
                 position: fixed;
-                bottom: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 90%;
-                max-width: 400px;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: auto;
+                max-width: none;
                 background: rgba(10, 14, 12, 0.95);
                 backdrop-filter: blur(16px);
-                border: 1px solid rgba(255, 165, 0, 0.3);
-                border-radius: 16px;
+                border-top: 1px solid rgba(255, 165, 0, 0.3);
+                border-radius: 20px 20px 0 0;
                 overflow: hidden;
                 z-index: 1500;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 30px rgba(255,165,0,0.1);
+                box-shadow: 0 -8px 32px rgba(0,0,0,0.6);
                 font-family: 'Inter', sans-serif;
                 color: #fff;
                 flex-direction: column;
+                padding-bottom: env(safe-area-inset-bottom, 20px);
             ">
                 <!-- Cabeçalho -->
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,165,0,0.15);">
@@ -120,12 +121,11 @@
                 <!-- Corpo -->
                 <div id="entomologia-body" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; max-height: 70vh; overflow-y: auto;">
                     
-                    <!-- Seleção de Talhão -->
+                    <!-- Busca de Talhão -->
                     <div>
-                        <label style="font-size: 12px; color: #aaa; margin-bottom: 4px; display: block;">Selecionar Talhão Próximo</label>
-                        <select id="entomologia-talhao-select" style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 13px;">
-                            <option value="">-- Buscar Talhões --</option>
-                        </select>
+                        <label style="font-size: 12px; color: #aaa; margin-bottom: 4px; display: block;">Buscar Fazenda/Talhão</label>
+                        <input type="text" id="entomologia-busca" list="ento-lista" placeholder="Digite Código ou Nome..." style="width: 100%; padding: 10px; border-radius: 6px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,165,0,0.3); color: #fff; font-size: 14px; box-sizing: border-box;">
+                        <datalist id="ento-lista"></datalist>
                     </div>
 
                     <div style="display: flex; gap: 10px;">
@@ -134,7 +134,7 @@
                             <input type="text" id="entomologia-fazenda" readonly style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #ccc; font-size: 13px; box-sizing: border-box;">
                         </div>
                         <div style="flex: 1;">
-                            <label style="font-size: 12px; color: #aaa; margin-bottom: 4px; display: block;">Zona/Cód</label>
+                            <label style="font-size: 12px; color: #aaa; margin-bottom: 4px; display: block;">Talhão</label>
                             <input type="text" id="entomologia-zona" readonly style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #ccc; font-size: 13px; box-sizing: border-box;">
                         </div>
                     </div>
@@ -203,12 +203,17 @@
         // Listeners
         document.getElementById('entomologia-close-btn').addEventListener('click', toggleEntomologia);
         
-        document.getElementById('entomologia-talhao-select').addEventListener('change', (e) => {
+        document.getElementById('entomologia-busca').addEventListener('input', (e) => {
             const val = e.target.value;
-            if (val) {
-                const [fazenda, zona] = val.split('||');
-                document.getElementById('entomologia-fazenda').value = fazenda;
-                document.getElementById('entomologia-zona').value = zona;
+            if (val && window._allTalhoesList) {
+                const matched = window._allTalhoesList.find(t => `${t.fazenda} - Talhão: ${t.zona}` === val);
+                if (matched) {
+                    document.getElementById('entomologia-fazenda').value = matched.fazenda;
+                    document.getElementById('entomologia-zona').value = matched.zona;
+                } else {
+                    document.getElementById('entomologia-fazenda').value = '';
+                    document.getElementById('entomologia-zona').value = '';
+                }
             } else {
                 document.getElementById('entomologia-fazenda').value = '';
                 document.getElementById('entomologia-zona').value = '';
@@ -323,8 +328,9 @@
     }
 
     function populateTalhoes() {
-        const select = document.getElementById('entomologia-talhao-select');
-        select.innerHTML = '<option value="">-- Buscar Talhões --</option>';
+        const datalist = document.getElementById('ento-lista');
+        datalist.innerHTML = '';
+        window._allTalhoesList = [];
         
         if (!mapInstance) return;
 
@@ -345,18 +351,13 @@
             }
         });
 
-        const sorted = Array.from(talhoesMap.values()).sort((a, b) => a.fazenda.localeCompare(b.fazenda));
+        window._allTalhoesList = Array.from(talhoesMap.values()).sort((a, b) => a.fazenda.localeCompare(b.fazenda));
         
-        sorted.forEach(t => {
+        window._allTalhoesList.forEach(t => {
             const opt = document.createElement('option');
-            opt.value = `${t.fazenda}||${t.zona}`;
-            opt.textContent = `${t.fazenda} - Talhão: ${t.zona}`;
-            select.appendChild(opt);
+            opt.value = `${t.fazenda} - Talhão: ${t.zona}`;
+            datalist.appendChild(opt);
         });
-        
-        if(sorted.length === 0) {
-            select.innerHTML = '<option value="">-- Nenhum Talhão carregado no mapa --</option>';
-        }
     }
 
     function toggleTracking() {
