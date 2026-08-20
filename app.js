@@ -492,16 +492,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 
-                // Tratar linha selecionada
-                if (isLinhasColheita && window.selectedHarvestLineId === L.Util.stamp(feature)) {
-                    return {
-                        color: '#ffffff',
-                        weight: 2.0, // Reduzido de 4.0 para 2.0
-                        opacity: 1,
-                        fillOpacity: 0
-                    };
-                }
-
+                // Tratar linha selecionada foi movido para o evento de clique (setStyle direto)
+                
                 return {
                     color: isTalhao ? '#b0b0b0' : featureColor,
                     weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 0.7 : 1.5)), // Ajustado para 0.7
@@ -609,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (!isFazenda) {
                                 const l = e.target;
                                 // Ignore mouseover highlight if it is the selected harvest line
-                                if (isLinhasColheita && window.selectedHarvestLineId === L.Util.stamp(l.feature)) {
+                                if (isLinhasColheita && window.selectedHarvestLayer === l) {
                                     return;
                                 }
                                 l.setStyle(layerStyles[layerName].highlight);
@@ -620,7 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (!isFazenda) {
                                 const l = e.target;
                                 // Ignore mouseout if it is the selected harvest line
-                                if (isLinhasColheita && window.selectedHarvestLineId === L.Util.stamp(l.feature)) {
+                                if (isLinhasColheita && window.selectedHarvestLayer === l) {
                                     return;
                                 }
                                 mapLayer.resetStyle(l);
@@ -654,16 +646,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             // Selecionar linha de colheita
                             if (isLinhasColheita) {
-                                const prevSelectedId = window.selectedHarvestLineId;
-                                window.selectedHarvestLineId = L.Util.stamp(l.feature);
+                                // Reset previously selected layer
+                                if (window.selectedHarvestLayer && mapLayer.hasLayer(window.selectedHarvestLayer)) {
+                                    mapLayer.resetStyle(window.selectedHarvestLayer);
+                                }
                                 
-                                // Reset all styles in the layer group to apply the selected style properly
-                                mapLayer.eachLayer(layerItem => {
-                                    const itemId = L.Util.stamp(layerItem.feature);
-                                    if (itemId === prevSelectedId || itemId === window.selectedHarvestLineId) {
-                                        mapLayer.resetStyle(layerItem);
-                                    }
+                                // Set new selected layer
+                                window.selectedHarvestLayer = l;
+                                l.setStyle({
+                                    color: '#ffffff',
+                                    weight: 2.0,
+                                    opacity: 1,
+                                    fillOpacity: 0
                                 });
+                                l.bringToFront();
                                 
                                 // Prevent map click from clearing immediately
                                 L.DomEvent.stopPropagation(e);
@@ -1715,18 +1711,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             window.currentSearchedFarmLayerGroup = null;
         }
         
-        if (window.selectedHarvestLineId && window.loadedLayers) {
+        if (window.selectedHarvestLayer && window.loadedLayers) {
             const harvestLayer = window.loadedLayers['LINHAS DE COLHEITA'];
-            if (harvestLayer) {
-                const prevId = window.selectedHarvestLineId;
-                window.selectedHarvestLineId = null;
-                harvestLayer.eachLayer(layerItem => {
-                    const itemId = layerItem.feature.properties.Field + '_' + layerItem.feature.properties.Length;
-                    if (itemId === prevId) {
-                        harvestLayer.resetStyle(layerItem);
-                    }
-                });
+            if (harvestLayer && harvestLayer.hasLayer(window.selectedHarvestLayer)) {
+                harvestLayer.resetStyle(window.selectedHarvestLayer);
             }
+            window.selectedHarvestLayer = null;
         }
     };
 
