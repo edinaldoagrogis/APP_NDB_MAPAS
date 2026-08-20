@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
         touchRotate: false // Disabled by default, toggled by compass
     }).setView([-17.8, -40.0], 7);
     window.map = map; // Expose globally for modules
+
+    // Create a custom pane for harvest lines to always appear above other vector layers (zIndex > 400)
+    map.createPane('harvestLinesPane');
+    map.getPane('harvestLinesPane').style.zIndex = 450;
     
     // Prevent map interactions when scrolling or clicking the floating panels
     setTimeout(() => {
@@ -515,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Create Map Layer
             const mapLayer = L.geoJSON(data, {
+                pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
                 smoothFactor: isLinhasColheita ? 0 : 0.5, // Balance geometry precision, mas para colheita usa 0 para não ficar em zig-zag
 
                 style: styleFunc,
