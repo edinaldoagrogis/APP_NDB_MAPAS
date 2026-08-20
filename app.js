@@ -500,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return {
                     color: isTalhao ? '#b0b0b0' : featureColor,
-                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 0.1 : 1.5)), // Ajustado para 0.1
+                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 0.3 : 1.5)), // Ajustado para 0.3
                     opacity: isFazenda ? 0 : 0.9,
                     fillColor: featureColor,
                     fillOpacity: isTalhao ? 0.85 : (isFazenda ? 0 : (isLinhasColheita ? 0 : 0.2))
