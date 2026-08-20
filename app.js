@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // Tratar linha selecionada
-                if (isLinhasColheita && window.selectedHarvestLineId === feature.properties.Field + '_' + feature.properties.Length) {
+                if (isLinhasColheita && window.selectedHarvestLineId === L.Util.stamp(feature)) {
                     return {
                         color: '#ffffff',
                         weight: 2.0, // Reduzido de 4.0 para 2.0
@@ -608,15 +608,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         mouseover: (e) => {
                             if (!isFazenda) {
                                 const l = e.target;
-                                // Ignore mouseover if it is the selected harvest line
-                                if (isLinhasColheita && window.selectedHarvestLineId === l.feature.properties.Field + '_' + l.feature.properties.Length) {
+                                // Ignore mouseover highlight if it is the selected harvest line
+                                if (isLinhasColheita && window.selectedHarvestLineId === L.Util.stamp(l.feature)) {
                                     return;
                                 }
-                                l.setStyle({
-                                    weight: 3.5,
-                                    opacity: 1,
-                                    fillOpacity: 0.7
-                                });
+                                l.setStyle(layerStyles[layerName].highlight);
                                 l.bringToFront();
                             }
                         },
@@ -624,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (!isFazenda) {
                                 const l = e.target;
                                 // Ignore mouseout if it is the selected harvest line
-                                if (isLinhasColheita && window.selectedHarvestLineId === l.feature.properties.Field + '_' + l.feature.properties.Length) {
+                                if (isLinhasColheita && window.selectedHarvestLineId === L.Util.stamp(l.feature)) {
                                     return;
                                 }
                                 mapLayer.resetStyle(l);
@@ -659,12 +655,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Selecionar linha de colheita
                             if (isLinhasColheita) {
                                 const prevSelectedId = window.selectedHarvestLineId;
-                                window.selectedHarvestLineId = l.feature.properties.Field + '_' + l.feature.properties.Length;
+                                window.selectedHarvestLineId = L.Util.stamp(l.feature);
                                 
                                 // Reset all styles in the layer group to apply the selected style properly
-                                // Wait, resetting all is slow. Let's just update styles.
                                 mapLayer.eachLayer(layerItem => {
-                                    const itemId = layerItem.feature.properties.Field + '_' + layerItem.feature.properties.Length;
+                                    const itemId = L.Util.stamp(layerItem.feature);
                                     if (itemId === prevSelectedId || itemId === window.selectedHarvestLineId) {
                                         mapLayer.resetStyle(layerItem);
                                     }
