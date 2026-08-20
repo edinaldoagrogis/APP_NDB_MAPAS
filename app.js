@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (isFazenda) baseColor = '#ff9f1c'; 
             if (isTalhao) baseColor = '#2ec4b6'; 
-            if (isLinhasColheita) baseColor = '#e71d36'; // Bright red for visibility
+            if (isLinhasColheita) baseColor = '#ccff00'; // Amarelo fluorescente
             colorIndex++;
 
             const styleFunc = function(feature) {
@@ -487,9 +487,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         featureColor = getFarmColor(farmName);
                     }
                 }
+                
+                // Tratar linha selecionada
+                if (isLinhasColheita && window.selectedHarvestLineId === feature.properties.Field + '_' + feature.properties.Length) {
+                    return {
+                        color: '#ffffff',
+                        weight: 4,
+                        opacity: 1,
+                        fillOpacity: 0
+                    };
+                }
+
                 return {
                     color: isTalhao ? '#b0b0b0' : featureColor,
-                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 2.5 : 1.5)),
+                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 1.0 : 1.5)),
                     opacity: isFazenda ? 0 : 0.9,
                     fillColor: featureColor,
                     fillOpacity: isTalhao ? 0.85 : (isFazenda ? 0 : (isLinhasColheita ? 0 : 0.2))
@@ -592,6 +603,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         mouseover: (e) => {
                             if (!isFazenda) {
                                 const l = e.target;
+                                // Ignore mouseover if it is the selected harvest line
+                                if (isLinhasColheita && window.selectedHarvestLineId === l.feature.properties.Field + '_' + l.feature.properties.Length) {
+                                    return;
+                                }
                                 l.setStyle({
                                     weight: 3.5,
                                     opacity: 1,
@@ -602,10 +617,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         mouseout: (e) => {
                             if (!isFazenda) {
-                                mapLayer.resetStyle(e.target);
+                                const l = e.target;
+                                // Ignore mouseout if it is the selected harvest line
+                                if (isLinhasColheita && window.selectedHarvestLineId === l.feature.properties.Field + '_' + l.feature.properties.Length) {
+                                    return;
+                                }
+                                mapLayer.resetStyle(l);
                             }
                         },
                         click: (e) => {
+                            const l = e.target;
+                            
                             if (window.routeSelectionMode) {
                                 const props = layer.feature.properties || {};
                                 const title = props.NOME_FAZ || props.FAZENDA || props.nome_faz || props.nome || props.NOME || props.NAME || props.Name || props.TALHAO || 'Local';
@@ -627,6 +649,24 @@ document.addEventListener('DOMContentLoaded', () => {
                             // If we are measuring, ignore the polygon click and let it bubble to the map!
                             if (window.measureActive) {
                                 return;
+                            }
+                            
+                            // Selecionar linha de colheita
+                            if (isLinhasColheita) {
+                                const prevSelectedId = window.selectedHarvestLineId;
+                                window.selectedHarvestLineId = l.feature.properties.Field + '_' + l.feature.properties.Length;
+                                
+                                // Reset all styles in the layer group to apply the selected style properly
+                                // Wait, resetting all is slow. Let's just update styles.
+                                mapLayer.eachLayer(layerItem => {
+                                    const itemId = layerItem.feature.properties.Field + '_' + layerItem.feature.properties.Length;
+                                    if (itemId === prevSelectedId || itemId === window.selectedHarvestLineId) {
+                                        mapLayer.resetStyle(layerItem);
+                                    }
+                                });
+                                
+                                // Prevent map click from clearing immediately
+                                L.DomEvent.stopPropagation(e);
                             }
 
                             // If we are NOT tracing a route or measuring, open the attribute table popup
@@ -684,8 +724,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Add to map by default only if it's Fazenda, Talhao, or Linhas de Colheita
-            const isDefaultActive = isFazenda || isTalhao || isLinhasColheita;
+            // Add to map by default only if it's Fazenda or Talhao
+            const isDefaultActive = isFazenda || isTalhao;
             if (isDefaultActive) {
                 mapLayer.addTo(map);
             }
@@ -1673,6 +1713,20 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             window.currentSearchedFarmLayerGroup.resetStyle(window.currentSearchedFarmLayer);
             window.currentSearchedFarmLayer = null;
             window.currentSearchedFarmLayerGroup = null;
+        }
+        
+        if (window.selectedHarvestLineId && window.loadedLayers) {
+            const harvestLayer = window.loadedLayers['LINHAS DE COLHEITA'];
+            if (harvestLayer) {
+                const prevId = window.selectedHarvestLineId;
+                window.selectedHarvestLineId = null;
+                harvestLayer.eachLayer(layerItem => {
+                    const itemId = layerItem.feature.properties.Field + '_' + layerItem.feature.properties.Length;
+                    if (itemId === prevId) {
+                        harvestLayer.resetStyle(layerItem);
+                    }
+                });
+            }
         }
     };
 
@@ -3226,6 +3280,29 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             clearWeedLayer();
         });
     }
+
+    // Toggle tractor layer button
+    setTimeout(() => {
+        const tractorBtn = document.getElementById('floating-tractor-btn');
+        if (tractorBtn) {
+            tractorBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.loadedLayers && window.loadedLayers['LINHAS DE COLHEITA']) {
+                    const layer = window.loadedLayers['LINHAS DE COLHEITA'];
+                    // Toggle visibility check correctly by checking if map has it
+                    if (window.map.hasLayer(layer)) {
+                        window.map.removeLayer(layer);
+                        tractorBtn.style.background = 'rgba(5, 8, 7, 0.85)';
+                        tractorBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+                    } else {
+                        window.map.addLayer(layer);
+                        tractorBtn.style.background = 'rgba(204, 255, 0, 0.2)'; // Highlight color
+                        tractorBtn.style.borderColor = '#ccff00';
+                    }
+                }
+            });
+        }
+    }, 1000);
 
 })();
 
