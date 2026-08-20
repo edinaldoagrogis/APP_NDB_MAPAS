@@ -88,6 +88,7 @@ def optimize_geojson(input_path, layer_type):
 def build():
     fazendas_path = os.path.join('CAMADAS VETORIAIS', 'FAZENDAS_01.geojson')
     talhoes_path = os.path.join('CAMADAS VETORIAIS', 'TALHOES_01.geojson')
+    linhas_colheita_path = os.path.join('CAMADAS VETORIAIS', 'LINHAS DE COLHEITA.geojson')
     
     if os.path.exists(fazendas_path):
         opt_faz_data = optimize_geojson(fazendas_path, 'FAZENDAS')
@@ -100,15 +101,22 @@ def build():
         opt_tal_json_str = json.dumps(opt_tal_data, separators=(',', ':'))
     else:
         opt_tal_json_str = 'null'
+
+    if os.path.exists(linhas_colheita_path):
+        opt_linhas_col_data = optimize_geojson(linhas_colheita_path, 'LINHAS DE COLHEITA')
+        opt_linhas_col_json_str = json.dumps(opt_linhas_col_data, separators=(',', ':'))
+    else:
+        opt_linhas_col_json_str = 'null'
         
     with open('layers_data.js', 'w', encoding='utf-8') as out:
         out.write('const GEOPORTAL_LAYERS = {\n')
         out.write(f'  "FAZENDAS": {opt_faz_json_str},\n')
         out.write(f'  "TALHOES": {opt_tal_json_str},\n')
+        out.write(f'  "LINHAS DE COLHEITA": {opt_linhas_col_json_str},\n')
         out.write('  "VARIEDADES": null\n')
         out.write('};\n\n')
         out.write('const EQUIPES_DATA = [];\n\n')
-        out.write('const APP_VERSION = "v111";\n')
+        out.write('const APP_VERSION = "v112";\n')
 
 if __name__ == '__main__':
     build()

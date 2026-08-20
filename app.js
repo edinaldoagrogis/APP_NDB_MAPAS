@@ -467,6 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Identify specific layers
             const isFazenda = layerName.toUpperCase().includes('FAZENDA');
             const isTalhao = layerName.toUpperCase().includes('TALHO');
+            const isLinhasColheita = layerName.toUpperCase().includes('LINHAS DE COLHEITA');
             
             // EXCLUI CAMADA DE VARIEDADE E ROTAS (Ignora no carregamento dinâmico)
             if (layerName.toUpperCase().includes('VARIEDADE') || layerName.toUpperCase().includes('ROTAS')) {
@@ -475,6 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (isFazenda) baseColor = '#ff9f1c'; 
             if (isTalhao) baseColor = '#2ec4b6'; 
+            if (isLinhasColheita) baseColor = '#e71d36'; // Bright red for visibility
             colorIndex++;
 
             const styleFunc = function(feature) {
@@ -487,10 +489,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return {
                     color: isTalhao ? '#b0b0b0' : featureColor,
-                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : 1.5),
+                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 2.5 : 1.5)),
                     opacity: isFazenda ? 0 : 0.9,
                     fillColor: featureColor,
-                    fillOpacity: isTalhao ? 0.85 : (isFazenda ? 0 : 0.2)
+                    fillOpacity: isTalhao ? 0.85 : (isFazenda ? 0 : (isLinhasColheita ? 0 : 0.2))
                 };
             };
             
@@ -682,8 +684,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Add to map by default only if it's Fazenda or Talhao
-            const isDefaultActive = isFazenda || isTalhao;
+            // Add to map by default only if it's Fazenda, Talhao, or Linhas de Colheita
+            const isDefaultActive = isFazenda || isTalhao || isLinhasColheita;
             if (isDefaultActive) {
                 mapLayer.addTo(map);
             }
