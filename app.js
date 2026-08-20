@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create Map Layer
             const mapLayer = L.geoJSON(data, {
                 pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
-                smoothFactor: isLinhasColheita ? 0 : 0.5, // Balance geometry precision, mas para colheita usa 0 para não ficar em zig-zag
+                smoothFactor: isLinhasColheita ? 1.5 : 0.5, // Aumentado para 1.5 para suavizar e deixar a linha reta
 
                 style: styleFunc,
                 pointToLayer: function (feature, latlng) {
