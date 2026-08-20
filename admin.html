@@ -317,20 +317,11 @@
                             <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
                         </th>
                         <th>
-                            Liberar Atualização?
+                            Atualizações?
                             <br>
                             <label class="switch" style="transform: scale(0.65); transform-origin: left; margin-top: 4px;">
                                 <input type="checkbox" id="master-updates" onchange="bulkToggle('receiveUpdates', this.checked)">
                                 <span class="slider-update"></span>
-                            </label>
-                            <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
-                        </th>
-                        <th>
-                            Entomologia?
-                            <br>
-                            <label class="switch" style="transform: scale(0.65); transform-origin: left; margin-top: 4px;">
-                                <input type="checkbox" id="master-ento" onchange="bulkToggle('entomologiaAccess', this.checked)">
-                                <span class="slider-ento"></span>
                             </label>
                             <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
                         </th>
@@ -413,10 +404,8 @@
                 if (data.users.length > 0) {
                     const allActive = data.users.every(u => u.active || u.name === 'admin_agrogis');
                     const allUpdates = data.users.every(u => u.receiveUpdates);
-                    const allEnto = data.users.every(u => u.entomologiaAccess);
                     document.getElementById('master-access').checked = allActive;
                     document.getElementById('master-updates').checked = allUpdates;
-                    document.getElementById('master-ento').checked = allEnto;
                 }
 
                 if (data.users.length === 0) {
@@ -447,12 +436,6 @@
                                 <label class="switch">
                                     <input type="checkbox" onchange="toggleUpdate('${u.name}', this.checked)" ${u.receiveUpdates ? 'checked' : ''}>
                                     <span class="slider-update"></span>
-                                </label>
-                            </td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" onchange="toggleEntomologia('${u.name}', this.checked)" ${u.entomologiaAccess ? 'checked' : ''}>
-                                    <span class="slider-ento"></span>
                                 </label>
                             </td>
                         `;
