@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Create Map Layer
             const mapLayer = L.geoJSON(data, {
-                smoothFactor: 0.5, // Balance geometry precision with Canvas rendering constraints
+                smoothFactor: isLinhasColheita ? 0 : 0.5, // Balance geometry precision, mas para colheita usa 0 para não ficar em zig-zag
 
                 style: styleFunc,
                 pointToLayer: function (feature, latlng) {
