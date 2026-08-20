@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isLinhasColheita && window.selectedHarvestLineId === feature.properties.Field + '_' + feature.properties.Length) {
                     return {
                         color: '#ffffff',
-                        weight: 4,
+                        weight: 2.0, // Reduzido de 4.0 para 2.0
                         opacity: 1,
                         fillOpacity: 0
                     };
@@ -500,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return {
                     color: isTalhao ? '#b0b0b0' : featureColor,
-                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 1.0 : 1.5)),
+                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 0.5 : 1.5)), // Reduzido de 1.0 para 0.5
                     opacity: isFazenda ? 0 : 0.9,
                     fillColor: featureColor,
                     fillOpacity: isTalhao ? 0.85 : (isFazenda ? 0 : (isLinhasColheita ? 0 : 0.2))
