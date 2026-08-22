@@ -1802,6 +1802,26 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     if (measureClearIcon) measureClearIcon.addEventListener('click', resetMeasure);
     document.getElementById('close-measure-btn').addEventListener('click', deactivateMeasure);
 
+    const btnUndo = document.getElementById('tool-measure-undo');
+    if (btnUndo) {
+        btnUndo.addEventListener('click', () => {
+            if (measurePoints.length > 0) {
+                if (measureFinished) {
+                    measureFinished = false;
+                    map.getContainer().style.cursor = 'crosshair';
+                }
+                measurePoints.pop();
+                renderMeasureMarkers();
+                updateMeasureDisplay();
+                if (measurePoints.length === 0) {
+                    tempLine.setLatLngs([]);
+                } else if (!measureFinished) {
+                    // Temporarily hide temp line if we want, or it will update on next mousemove
+                }
+            }
+        });
+    }
+
     document.getElementById('tool-measure-add-gps').addEventListener('click', () => {
         if (!measureActive || measureFinished) return;
         // Check if gpsMarker exists globally (it's declared lower, but accessible due to var hoisting/closure if we use it, but wait, gpsMarker is declared around line 1747).
@@ -1810,15 +1830,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             const latlng = gpsMarker.getLatLng();
             map.setView(latlng);
             measurePoints.push(latlng);
-            L.circleMarker(latlng, {
-                radius: 5,
-                fillColor: '#ffeb3b',
-                color: '#000',
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 1
-            }).addTo(measureMarkers);
-            updateMeasureUI();
+            renderMeasureMarkers();
+            updateMeasureDisplay();
         } else {
             alert('Aguardando sinal do GPS para marcar o ponto...');
         }
@@ -1870,6 +1883,35 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         deactivateMeasure(); // Auto-close tool after saving
     });
 
+    const vertexIcon = L.divIcon({
+        className: 'measure-vertex-icon',
+        html: '<div style="width: 12px; height: 12px; background: #ffeb3b; border: 2px solid #000; border-radius: 50%; margin-top: -6px; margin-left: -6px;"></div>',
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+    });
+
+    function renderMeasureMarkers() {
+        measureMarkers.clearLayers();
+        measurePoints.forEach((latlng, index) => {
+            const marker = L.marker(latlng, {
+                icon: vertexIcon,
+                draggable: true
+            }).addTo(measureMarkers);
+
+            marker.on('drag', (e) => {
+                measurePoints[index] = e.target.getLatLng();
+                updateMeasureDisplay();
+            });
+
+            marker.on('click', (ev) => {
+                if (measurePoints.length > 2 && !measureFinished) {
+                    L.DomEvent.stopPropagation(ev);
+                    finishMeasurement();
+                }
+            });
+        });
+    }
+
     function finishMeasurement() {
         measureFinished = true;
         tempLine.setLatLngs([]);
@@ -1887,23 +1929,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const latlng = e.latlng;
         measurePoints.push(latlng);
         
-        // Add marker
-        const marker = L.circleMarker(latlng, {
-            radius: 5,
-            fillColor: '#ffeb3b',
-            color: '#000',
-            weight: 1,
-            fillOpacity: 1
-        }).addTo(measureMarkers);
-        
-        // Finalize on marker click
-        marker.on('click', (ev) => {
-            if (measurePoints.length > 2 && !measureFinished) {
-                L.DomEvent.stopPropagation(ev);
-                finishMeasurement();
-            }
-        });
-
+        renderMeasureMarkers();
         updateMeasureDisplay();
     });
 
