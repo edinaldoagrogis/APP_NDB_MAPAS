@@ -10,6 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load saved passwords from localStorage (Custom Password Manager)
     let savedPasswords = JSON.parse(localStorage.getItem('agrogis_saved_passwords') || '{}');
     
+    // Manage Device ID to prevent simultaneous access
+    let deviceId = localStorage.getItem('agrogis_device_id');
+    if (!deviceId) {
+        deviceId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('agrogis_device_id', deviceId);
+    }
+    
     // Check persistent login
     const savedAuthLevel = localStorage.getItem('agrogis_auth_level');
     if (savedAuthLevel) {
@@ -25,15 +32,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     // Using the standard password since it's hardcoded for all users anyway
-                    body: JSON.stringify({ username: currentUser, password: 'ndb_mapas' })
+                    body: JSON.stringify({ 
+                        username: currentUser, 
+                        password: 'ndb_mapas',
+                        deviceId: deviceId,
+                        isBackgroundCheck: true
+                    })
                 }).then(async res => {
+                    const data = await res.json().catch(() => ({}));
                     if (res.status === 403) {
-                        // User was blocked! Force logout.
-                        alert('Atenção: Seu acesso foi revogado pelo administrador.');
+                        if (data.error === 'CONCURRENCY_ERROR') {
+                            alert('Atenção: Sua conta foi conectada em outro dispositivo. Esta sessão será encerrada.');
+                        } else {
+                            alert('Atenção: Seu acesso foi revogado pelo administrador.');
+                        }
                         localStorage.removeItem('agrogis_auth_level');
                         window.location.reload();
                     } else if (res.ok) {
-                        const data = await res.json();
                         
                         // Sync update flag
                         if (data.receiveUpdates) {
@@ -142,7 +157,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: user, password: pass })
+                body: JSON.stringify({ 
+                    username: user, 
+                    password: pass,
+                    deviceId: deviceId,
+                    isBackgroundCheck: false
+                })
             });
 
             const data = await res.json();

@@ -14,7 +14,7 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Banco de dados não configurado (REDIS_URL missing)' });
         }
 
-        const { username, password } = req.body;
+        const { username, password, deviceId, isBackgroundCheck } = req.body;
         
         if (!username || !password) {
             return res.status(400).json({ error: 'Usuário ou senha em branco' });
@@ -42,6 +42,8 @@ export default async function handler(req, res) {
         let userDataStr = await redis.get(userKey);
         
         let userData;
+        let requiresSave = false;
+
         if (!userDataStr) {
             // Check if this is the very first user in the database
             const existingKeys = await redis.keys('user:*');
@@ -54,18 +56,37 @@ export default async function handler(req, res) {
                 receiveUpdates: isFirstUser, // First user gets updates by default
                 createdAt: Date.now()
             };
-            await redis.set(userKey, JSON.stringify(userData));
+            requiresSave = true;
         } else {
             userData = JSON.parse(userDataStr);
             // Ensure older users have the property
             if (userData.receiveUpdates === undefined) {
                 userData.receiveUpdates = false;
+                requiresSave = true;
             }
         }
         
         // Check if blocked
         if (userData.active === false) {
             return res.status(403).json({ error: 'Seu acesso foi bloqueado pelo administrador.' });
+        }
+
+        // Check simultaneous access
+        if (deviceId) {
+            if (isBackgroundCheck) {
+                // Background verification: device must match the one in DB
+                if (userData.currentDeviceId && userData.currentDeviceId !== deviceId) {
+                    return res.status(403).json({ error: 'CONCURRENCY_ERROR', message: 'Sua conta foi conectada em outro dispositivo.' });
+                }
+            } else {
+                // Real login: take over session
+                userData.currentDeviceId = deviceId;
+                requiresSave = true;
+            }
+        }
+
+        if (requiresSave) {
+            await redis.set(userKey, JSON.stringify(userData));
         }
         
         // Allowed
