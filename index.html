@@ -757,29 +757,70 @@
                 <!-- Floating Entomologia Button - fora do wrapper, posicionado via CSS fixed -->
             </div>
 
-            <!-- Floating Measure Result Window -->
-            <div id="measure-result" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; width: auto; box-sizing: border-box; z-index: 2000; padding: 16px 20px 24px; background: rgba(5, 10, 8, 0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); border-radius: 20px 20px 0 0; box-shadow: 0 -8px 32px rgba(0,0,0,0.6); font-size: 13px; color: #a8b8b0; flex-direction: column;">
-                <div id="measure-drag-handle" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 4px;">
-                    <span style="font-weight: 600; color: #fff; letter-spacing: 1px;">FERRAMENTA DE MEDIÇÃO</span>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <button id="tool-measure-clear-icon" style="background: none; border: none; color: #f48c06; cursor: pointer; font-size: 16px; padding: 0 4px;" title="Reiniciar Medição">🔄</button>
-                        <button id="min-measure-btn" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 24px; padding: 0 4px; line-height: 0.5;" title="Minimizar">-</button>
-                        <button id="close-measure-btn" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 20px; padding: 0; line-height: 1;" title="Fechar">&times;</button>
+            <!-- Floating Measure Result Window Redesign -->
+            <div id="measure-result" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; width: 100%; box-sizing: border-box; z-index: 2000; padding: 20px 24px 30px; background: linear-gradient(180deg, rgba(16,24,20,0.95) 0%, rgba(10,14,12,1) 100%); backdrop-filter: blur(24px); border-top: 1px solid rgba(255,255,255,0.08); border-radius: 28px 28px 0 0; box-shadow: 0 -12px 40px rgba(0,0,0,0.7); font-family: 'Inter', sans-serif; color: #a8b8b0; flex-direction: column;">
+                
+                <!-- Drag Handle & Header -->
+                <div id="measure-drag-handle" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e85d04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M6 12v-3"/><path d="M10 12v-2"/><path d="M14 12v-3"/><path d="M18 12v-2"/></svg>
+                        <span style="font-weight: 700; color: #fff; font-size: 13px; letter-spacing: 1.5px;">MEDIÇÃO NO MAPA</span>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <button id="tool-measure-clear-icon" style="background: none; border: none; color: #a8b8b0; cursor: pointer; padding: 4px; transition: color 0.2s;" title="Reiniciar Medição" onmouseover="this.style.color='#f48c06'" onmouseout="this.style.color='#a8b8b0'">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        </button>
+                        <button id="min-measure-btn" style="background: none; border: none; color: #a8b8b0; cursor: pointer; padding: 4px; transition: color 0.2s;" title="Minimizar" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#a8b8b0'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </button>
+                        <button id="close-measure-btn" style="background: rgba(255,255,255,0.1); border: none; color: #fff; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Fechar" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
                     </div>
                 </div>
-                <div id="measure-body" style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                        <span>Distância:</span> <strong id="measure-distance" style="color: #fff;">0 m</strong>
+
+                <div id="measure-body" style="display: flex; flex-direction: column; gap: 16px;">
+                    
+                    <!-- Values Display -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 14px 16px;">
+                            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #889990; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Distância
+                            </div>
+                            <div id="measure-distance" style="font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.5px;">0 m</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 14px 16px; position: relative; overflow: hidden;">
+                            <div style="position: absolute; right: -12px; bottom: -12px; opacity: 0.1;">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#2ec4b6" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                            </div>
+                            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #889990; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; position: relative; z-index: 2;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> Área
+                            </div>
+                            <div id="measure-area" style="font-size: 22px; font-weight: 700; color: #2ec4b6; letter-spacing: -0.5px; position: relative; z-index: 2;">0 ha</div>
+                        </div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                        <span>Área:</span> <strong id="measure-area" style="color: #fff;">0 ha</strong>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 8px;">
+                        <button id="tool-measure-undo" style="flex: 1; padding: 14px 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 12px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                            Desfazer
+                        </button>
+                        <button id="tool-measure-add-gps" style="flex: 1; padding: 14px 8px; background: rgba(33, 150, 243, 0.08); border: 1px solid rgba(33, 150, 243, 0.3); color: #2196F3; border-radius: 12px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(33, 150, 243, 0.15)'" onmouseout="this.style.background='rgba(33, 150, 243, 0.08)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                            Ponto GPS
+                        </button>
+                        <button id="tool-measure-clear" style="flex: 1; padding: 14px 8px; background: rgba(232, 93, 4, 0.08); border: 1px solid rgba(232, 93, 4, 0.3); color: #e85d04; border-radius: 12px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(232, 93, 4, 0.15)'" onmouseout="this.style.background='rgba(232, 93, 4, 0.08)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            Limpar
+                        </button>
                     </div>
-                    <div style="display: flex; gap: 8px; margin-top: 4px;">
-                        <button id="tool-measure-undo" style="flex: 1; padding: 10px; background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #fff; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: all 0.2s; text-transform: uppercase;">↩ Desfazer</button>
-                        <button id="tool-measure-add-gps" style="flex: 1; padding: 10px; background: rgba(33, 150, 243, 0.2); border: 1px solid #2196F3; color: #fff; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: all 0.2s; text-transform: uppercase;">📍 GPS</button>
-                        <button id="tool-measure-clear" style="flex: 1; padding: 10px; background: rgba(232, 93, 4, 0.2); border: 1px solid #e85d04; color: #fff; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: all 0.2s; text-transform: uppercase;">Limpar</button>
-                    </div>
-                    <button id="tool-measure-save" style="width: 100%; padding: 10px; margin-top: 4px; background: rgba(46, 196, 182, 0.2); border: 1px solid #2ec4b6; color: #fff; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: all 0.2s; text-transform: uppercase;">💾 Salvar Medição</button>
+
+                    <!-- Save Button -->
+                    <button id="tool-measure-save" style="width: 100%; padding: 16px; margin-top: 4px; background: linear-gradient(135deg, #2ec4b6 0%, #20998e 100%); border: none; color: #fff; border-radius: 14px; cursor: pointer; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; display: flex; justify-content: center; align-items: center; gap: 10px; box-shadow: 0 4px 14px rgba(46, 196, 182, 0.3); transition: transform 0.1s, box-shadow 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        SALVAR MEDIÇÃO
+                    </button>
                 </div>
             </div>
 
