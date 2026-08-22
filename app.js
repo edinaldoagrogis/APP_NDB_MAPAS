@@ -1769,9 +1769,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         btnMeasure.style.borderColor = 'rgba(255,255,255,0.1)';
         resultPanel.style.display = 'none';
         map.getContainer().style.cursor = '';
-        document.body.classList.remove('hide-equipes', 'disable-map-hover', 'measure-active');
-        const wrapper = document.querySelector('.top-right-wrapper');
-        if (wrapper) wrapper.style.display = 'flex';
+        document.body.classList.remove('hide-equipes', 'disable-map-hover', 'measure-active', 'ui-hidden');
         resetMeasure();
     }
 
@@ -1786,14 +1784,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             btnMeasure.style.borderColor = '#e85d04';
             resultPanel.style.display = 'flex';
             map.getContainer().style.cursor = 'crosshair';
-            document.body.classList.add('hide-equipes', 'disable-map-hover', 'measure-active');
+            document.body.classList.add('hide-equipes', 'disable-map-hover', 'measure-active', 'ui-hidden');
             resetMeasure();
             
             // Auto-close tools panel so user can see map clearly
             document.getElementById('floating-tools-panel').style.display = 'none';
-            // Hide the entire sidebar (top-right-wrapper)
-            const wrapper = document.querySelector('.top-right-wrapper');
-            if (wrapper) wrapper.style.display = 'none';
         }
     });
 
@@ -2170,7 +2165,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const routeInfo = document.getElementById('route-info');
         if (routeInfo) routeInfo.style.display = 'none';
         map.getContainer().classList.remove('route-active');
-        document.body.classList.remove('hide-equipes');
+        document.body.classList.remove('hide-equipes', 'ui-hidden');
         if (typeof window.toggleCompass === 'function') {
             window.toggleCompass(false);
         }
@@ -2186,7 +2181,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             btnRoute.style.background = 'rgba(232, 93, 4, 0.2)';
             btnRoute.style.borderColor = '#e85d04';
             map.getContainer().classList.add('route-active');
-            document.body.classList.add('hide-equipes');
+            document.body.classList.add('hide-equipes', 'ui-hidden');
             
             document.getElementById('floating-tools-panel').style.display = 'none';
             
@@ -2365,6 +2360,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         map.getContainer().style.cursor = '';
         btnDrawPoint.style.boxShadow = 'none';
         btnDrawArea.style.boxShadow = 'none';
+        document.body.classList.remove('ui-hidden');
         
         const btnShareLoc = document.getElementById('tool-share-loc-btn');
         if (btnShareLoc) {
@@ -2384,6 +2380,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             btnDraw.style.borderColor = '#2ec4b6';
             drawPanel.style.display = 'flex';
             document.getElementById('floating-tools-panel').style.display = 'none';
+            document.body.classList.add('ui-hidden');
         }
     });
 
@@ -2581,6 +2578,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         recordPoints = [];
         recordLine.setLatLngs([]);
+        document.body.classList.remove('ui-hidden');
     }
 
     btnRecord.addEventListener('click', () => {
@@ -2593,6 +2591,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             btnRecord.style.borderColor = '#e71d36';
             recordPanel.style.display = 'flex';
             document.getElementById('floating-tools-panel').style.display = 'none';
+            document.body.classList.add('ui-hidden');
         }
     });
 
