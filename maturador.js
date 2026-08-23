@@ -32,13 +32,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Preenche o Datalist com as fazendas disponíveis em fazendasGeoJSON
+ * Preenche o Datalist com as fazendas disponíveis no GEOPORTAL_LAYERS
  */
 function populateFazendasDatalist() {
     const datalist = document.getElementById('talhao-datalist');
-    if (typeof fazendasGeoJSON !== 'undefined' && fazendasGeoJSON.features) {
-        fazendasGeoJSON.features.forEach(feature => {
-            const name = feature.properties.Name || feature.properties.name || "Fazenda sem nome";
+    
+    // Tenta carregar as fazendas da camada principal
+    if (typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
+        GEOPORTAL_LAYERS["FAZENDAS"].features.forEach(feature => {
+            const name = feature.properties.NAME || feature.properties.Name || feature.properties.name || "Fazenda sem nome";
+            const option = document.createElement('option');
+            option.value = name;
+            datalist.appendChild(option);
+        });
+    }
+    // Suporte caso a camada chame 'TALHOES' ou similar
+    else if (typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
+        GEOPORTAL_LAYERS["TALHOES"].features.forEach(feature => {
+            const name = feature.properties.NAME || feature.properties.Name || feature.properties.name || "Talhão sem nome";
             const option = document.createElement('option');
             option.value = name;
             datalist.appendChild(option);
@@ -370,28 +381,38 @@ function renderChart(series, baseNdre, targetNdre, d0) {
  * Retorna geometria GeoJSON da fazenda selecionada
  */
 function getTalhaoGeometry(id) {
-    if (typeof fazendasGeoJSON !== 'undefined' && fazendasGeoJSON.features) {
-        const feature = fazendasGeoJSON.features.find(f => 
-            (f.properties.Name === id || f.properties.name === id)
-        );
-        if (feature) {
-            // Se for um ponto, vamos criar um polígono pequeno (buffer) ao redor para fins de visualização de talhão simulado
-            if (feature.geometry.type === "Point") {
-                const coord = feature.geometry.coordinates;
-                const offset = 0.005; // ~500m
-                return {
-                    "type": "Polygon",
-                    "coordinates": [[
-                        [coord[0] - offset, coord[1] - offset],
-                        [coord[0] + offset, coord[1] - offset],
-                        [coord[0] + offset, coord[1] + offset],
-                        [coord[0] - offset, coord[1] + offset],
-                        [coord[0] - offset, coord[1] - offset]
-                    ]]
-                };
-            }
-            return feature.geometry;
+    let feature = null;
+    
+    if (typeof GEOPORTAL_LAYERS !== 'undefined') {
+        if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
+            feature = GEOPORTAL_LAYERS["FAZENDAS"].features.find(f => 
+                (f.properties.NAME === id || f.properties.Name === id || f.properties.name === id)
+            );
         }
+        if (!feature && GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
+            feature = GEOPORTAL_LAYERS["TALHOES"].features.find(f => 
+                (f.properties.NAME === id || f.properties.Name === id || f.properties.name === id)
+            );
+        }
+    }
+    
+    if (feature) {
+        // Se for um ponto, vamos criar um polígono pequeno (buffer) ao redor para fins de visualização de talhão simulado
+        if (feature.geometry.type === "Point") {
+            const coord = feature.geometry.coordinates;
+            const offset = 0.005; // ~500m
+            return {
+                "type": "Polygon",
+                "coordinates": [[
+                    [coord[0] - offset, coord[1] - offset],
+                    [coord[0] + offset, coord[1] - offset],
+                    [coord[0] + offset, coord[1] + offset],
+                    [coord[0] - offset, coord[1] + offset],
+                    [coord[0] - offset, coord[1] - offset]
+                ]]
+            };
+        }
+        return feature.geometry;
     }
     
     // Fallback default caso não encontre
