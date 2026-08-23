@@ -268,7 +268,7 @@ document.getElementById('talhao-select').addEventListener('input', function(e) {
     const searchString = String(e.target.value).trim().toLowerCase();
     
     // Função para remover acentos
-    const removeAcentos = (str) => {
+    // (global removeAcentos used)
         return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
     };
     
@@ -391,7 +391,8 @@ function getSelectedGeometry() {
     
     // Fallback: Apenas a fazenda em ponto se não houver talhões mas houver match na camada FAZENDAS
     if (typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["FAZENDAS"]) {
-        const removeAcentos = (str) => str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+        // removed local - using global removeAcentos
+// // (global removeAcentos used)
         const searchNormalized = removeAcentos(searchString);
         
         let feat = GEOPORTAL_LAYERS["FAZENDAS"].features.find(f => {
