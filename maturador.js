@@ -74,22 +74,65 @@ function populateFazendasDatalist() {
  * Listener de mudança na Fazenda - popula a lista de talhões
  */
 document.getElementById('talhao-select').addEventListener('input', function(e) {
-    const fazendaNome = e.target.value;
+    const searchString = String(e.target.value).trim().toLowerCase();
+    
+    // Função para remover acentos
+    const removeAcentos = (str) => {
+        return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    };
+    
+    const searchNormalized = removeAcentos(searchString);
+    
     const talhoesContainer = document.getElementById('talhoes-container');
     const talhoesList = document.getElementById('talhoes-list');
     
-    if (!fazendaNome || typeof GEOPORTAL_LAYERS === 'undefined') {
+    if (searchNormalized.length < 2 || typeof GEOPORTAL_LAYERS === 'undefined') {
         talhoesContainer.style.display = 'none';
         return;
     }
     
     let foundTalhoes = [];
     if (GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
-        foundTalhoes = GEOPORTAL_LAYERS["TALHOES"].features.filter(f => {
+        GEOPORTAL_LAYERS["TALHOES"].features.forEach((f, index) => {
             const props = f.properties;
-            const nomeFaz = props.NOME_FAZ || props.NAME || props.Name;
-            return nomeFaz.trim().toLowerCase() === fazendaNome.trim().toLowerCase();
+            const nomeFaz = String(props.NOME_FAZ || props.NAME || props.Name || "");
+            const nomeFazNormalized = removeAcentos(nomeFaz);
+            
+            // Busca estilo substring, ignorando acentos!
+            if (nomeFazNormalized.includes(searchNormalized) || nomeFaz.toLowerCase().includes(searchString)) {
+                foundTalhoes.push({ feature: f, globalIndex: index, props: props, nomeFaz: nomeFaz });
+            }
         });
+    }
+    
+    if (foundTalhoes.length > 0) {
+        talhoesContainer.style.display = 'block';
+        talhoesList.innerHTML = ''; 
+        
+        foundTalhoes.sort((a, b) => {
+            const codA = String(a.props.COD_TALHAO || a.props.TALHAO || '');
+            const codB = String(b.props.COD_TALHAO || b.props.TALHAO || '');
+            const nameCmp = a.nomeFaz.localeCompare(b.nomeFaz);
+            if (nameCmp !== 0) return nameCmp;
+            return codA.localeCompare(codB, undefined, {numeric: true, sensitivity: 'base'});
+        });
+        
+        foundTalhoes.forEach((item) => {
+            const codTal = item.props.COD_TALHAO || item.props.TALHAO || `S/ID`;
+            const div = document.createElement('div');
+            div.style.marginBottom = '5px';
+            div.innerHTML = `
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                    <input type="checkbox" class="talhao-checkbox" value="${item.globalIndex}" checked>
+                    ${item.nomeFaz} - Talhão ${codTal}
+                </label>
+            `;
+            talhoesList.appendChild(div);
+        });
+    } else {
+        talhoesContainer.style.display = 'none';
+    }
+});
     }
     
     if (foundTalhoes.length > 0) {
@@ -133,18 +176,18 @@ document.getElementById('select-all-talhoes').addEventListener('change', functio
  * ou o polígono/ponto da fazenda se nenhum talhão estiver disponível
  */
 function getSelectedGeometry() {
-    const fazendaNome = document.getElementById('talhao-select').value;
+    const searchString = document.getElementById('talhao-select').value;
     const checkboxes = document.querySelectorAll('.talhao-checkbox:checked');
     
     let features = [];
     
+    // Se o usuário selecionou talhões via checkboxes (usa os IDs globais)
     if (checkboxes.length > 0 && typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["TALHOES"]) {
-        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-        features = GEOPORTAL_LAYERS["TALHOES"].features.filter(f => {
-            const props = f.properties;
-            const nomeFaz = props.NOME_FAZ || props.NAME || props.Name;
-            const codTal = String(props.COD_TALHAO || props.TALHAO || '');
-            return nomeFaz.trim().toLowerCase() === fazendaNome.trim().toLowerCase() && selectedIds.includes(codTal);
+        const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        selectedIndices.forEach(idx => {
+            if (GEOPORTAL_LAYERS["TALHOES"].features[idx]) {
+                features.push(GEOPORTAL_LAYERS["TALHOES"].features[idx]);
+            }
         });
     }
     
@@ -155,11 +198,15 @@ function getSelectedGeometry() {
         };
     }
     
+    // Fallback: Apenas a fazenda em ponto se não houver talhões mas houver match na camada FAZENDAS
     if (typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["FAZENDAS"]) {
+        const removeAcentos = (str) => str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+        const searchNormalized = removeAcentos(searchString);
+        
         let feat = GEOPORTAL_LAYERS["FAZENDAS"].features.find(f => {
             const props = f.properties;
-            const name = props.NOME_FAZ || props.NAME || props.Name || props.name;
-            return name.trim().toLowerCase() === fazendaNome.trim().toLowerCase();
+            const name = String(props.NOME_FAZ || props.NAME || props.Name || props.name || "");
+            return removeAcentos(name).includes(searchNormalized);
         });
         
         if (feat) {
@@ -203,7 +250,6 @@ function getSelectedGeometry() {
         }]
     };
 }
-
 let rasterLayer = null;
 
 function renderTalhaoOnMap(geojson) {
