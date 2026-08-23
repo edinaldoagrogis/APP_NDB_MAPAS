@@ -790,7 +790,8 @@ body, html {
 }
 
 /* Hide right controls (zoom, GPS, compass) when measuring */
-body.measure-active .leaflet-right {
+body.measure-active .leaflet-right,
+body.measure-active .leaflet-left {
     display: none !important;
 }
 
@@ -1091,8 +1092,9 @@ body.disable-map-hover .leaflet-interactive {
     z-index: 9999 !important;
 }
 
-/* Elevate bottom-right controls so they don't hide behind mobile bottom bar */
-.leaflet-bottom.leaflet-right {
+/* Elevate bottom controls so they don't hide behind mobile bottom bar */
+.leaflet-bottom.leaflet-right,
+.leaflet-bottom.leaflet-left {
     margin-bottom: 45px !important;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
@@ -1112,7 +1114,8 @@ body.disable-map-hover .leaflet-interactive {
 }
 
 body.ui-hidden .top-right-wrapper,
-body.ui-hidden .leaflet-bottom.leaflet-right {
+body.ui-hidden .leaflet-bottom.leaflet-right,
+body.ui-hidden .leaflet-bottom.leaflet-left {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;

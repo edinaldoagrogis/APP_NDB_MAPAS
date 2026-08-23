@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Custom Compass Control (Rotation Toggle)
     const CompassControl = L.Control.extend({
-        options: { position: 'bottomright' },
+        options: { position: 'bottomleft' },
         onAdd: function(map) {
             const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
             container.style.backgroundColor = 'var(--bg-secondary)';
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ── Clima Farm Control (Botão ABAIXO da bússola) ─────────────────
     const ClimaFarmControl = L.Control.extend({
-        options: { position: 'bottomright' },
+        options: { position: 'bottomleft' },
         onAdd: function(map) {
             const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
             container.id = 'btn-clima-farm-control';
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fix map rendering bug on mobile
     setTimeout(() => { map.invalidateSize(); }, 500);
 
-    map.zoomControl.setPosition('bottomright');
+    map.zoomControl.setPosition('bottomleft');
 
     // Custom Locate Control
     const LocateControl = L.Control.extend({
