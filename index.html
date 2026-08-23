@@ -206,7 +206,7 @@
 
                     <div id="floating-tools-panel" style="display: none; position: absolute; top: 52px; right: 0; width: 280px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden; z-index: 100;">
                         <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
-                            <h3 style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: #fff;">FERRAMENTAS</h3>
+                            <h3 style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: #fff;">NAVEGAÇÃO</h3>
                         </div>
                         <div style="max-height: calc(100vh - 220px); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;" class="custom-scroll">
 
@@ -249,6 +249,23 @@
                                 </svg>
                                 <span style="font-size: 13px; font-weight: 500;">Compartilhar Localização</span>
                             </button>
+                        </div>
+                    </div>
+               </div>
+
+                <!-- Floating Monitoramento Agronômico Menu -->
+                <div class="floating-monitor-wrapper" style="position: relative;">
+                    <button id="floating-monitor-btn" title="Monitoramento Agronômico" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(5, 8, 7, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); color: #fff; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12h4l2-9 5 18 3-9h6"></path>
+                        </svg>
+                    </button>
+
+                    <div id="floating-monitor-panel" style="display: none; position: absolute; top: 52px; right: 0; width: 280px; background: rgba(5, 8, 7, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden; z-index: 100;">
+                        <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+                            <h3 style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: #fff;">MONITORAMENTO AGRONÔMICO</h3>
+                        </div>
+                        <div style="max-height: calc(100vh - 220px); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;" class="custom-scroll">
 
                             <!-- Botão Análise de Satélite -->
                             <button id="tool-weed-btn" class="tool-action-btn" style="display: flex; align-items: center; gap: 12px; background: rgba(255,0,0,0.08); border: 1px solid rgba(255,0,0,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" title="Identificar infestação de ervas daninhas por satélite">
@@ -294,11 +311,6 @@
                                     <div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px;">Sentinel-2 · IEH · Solo · Terreno</div>
                                 </div>
                             </button>
-
-                            <!-- Separador -->
-                            <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 4px 0;"></div>
-
-                        </div>
 
                     </div>
                </div>
@@ -756,7 +768,8 @@
                         const panel = document.getElementById('floating-layers-panel');
                         if (panel.style.display === 'none') {
                             panel.style.display = 'block';
-                            document.getElementById('floating-tools-panel').style.display = 'none'; // Close other panel
+                            document.getElementById('floating-tools-panel').style.display = 'none'; 
+                            if(document.getElementById('floating-monitor-panel')) document.getElementById('floating-monitor-panel').style.display = 'none';
                         } else {
                             panel.style.display = 'none';
                         }
@@ -767,7 +780,20 @@
                         const panel = document.getElementById('floating-tools-panel');
                         if (panel.style.display === 'none') {
                             panel.style.display = 'block';
-                            document.getElementById('floating-layers-panel').style.display = 'none'; // Close other panel
+                            document.getElementById('floating-layers-panel').style.display = 'none'; 
+                            if(document.getElementById('floating-monitor-panel')) document.getElementById('floating-monitor-panel').style.display = 'none';
+                        } else {
+                            panel.style.display = 'none';
+                        }
+                    });
+                    
+                    document.getElementById('floating-monitor-btn').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const panel = document.getElementById('floating-monitor-panel');
+                        if (panel.style.display === 'none') {
+                            panel.style.display = 'block';
+                            document.getElementById('floating-layers-panel').style.display = 'none'; 
+                            document.getElementById('floating-tools-panel').style.display = 'none';
                         } else {
                             panel.style.display = 'none';
                         }
@@ -785,6 +811,12 @@
                         const btnTools = document.getElementById('floating-tools-btn');
                         if (panelTools && panelTools.style.display === 'block' && !panelTools.contains(e.target) && !btnTools.contains(e.target)) {
                             panelTools.style.display = 'none';
+                        }
+                        
+                        const panelMonitor = document.getElementById('floating-monitor-panel');
+                        const btnMonitor = document.getElementById('floating-monitor-btn');
+                        if (panelMonitor && panelMonitor.style.display === 'block' && !panelMonitor.contains(e.target) && !btnMonitor.contains(e.target)) {
+                            panelMonitor.style.display = 'none';
                         }
                     });
                 </script>
