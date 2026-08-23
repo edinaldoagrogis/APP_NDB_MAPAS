@@ -51,7 +51,8 @@
                 icon: 'info',
                 confirmButtonColor: '#2ec4b6',
                 background: 'rgba(25, 28, 32, 0.95)',
-                color: '#ffffff'
+                color: '#ffffff',
+                showCloseButton: true
             });
         };
         // Async confirm wrapper to replace window.confirm
@@ -61,6 +62,7 @@
                 text: message,
                 icon: 'question',
                 showCancelButton: true,
+                showCloseButton: true,
                 confirmButtonColor: '#2ec4b6',
                 cancelButtonColor: '#ff4d4d',
                 confirmButtonText: 'Sim',
