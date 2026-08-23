@@ -88,7 +88,7 @@ document.getElementById('talhao-select').addEventListener('input', function(e) {
         foundTalhoes = GEOPORTAL_LAYERS["TALHOES"].features.filter(f => {
             const props = f.properties;
             const nomeFaz = props.NOME_FAZ || props.NAME || props.Name;
-            return nomeFaz === fazendaNome;
+            return nomeFaz.trim().toLowerCase() === fazendaNome.trim().toLowerCase();
         });
     }
     
@@ -144,7 +144,7 @@ function getSelectedGeometry() {
             const props = f.properties;
             const nomeFaz = props.NOME_FAZ || props.NAME || props.Name;
             const codTal = String(props.COD_TALHAO || props.TALHAO || '');
-            return nomeFaz === fazendaNome && selectedIds.includes(codTal);
+            return nomeFaz.trim().toLowerCase() === fazendaNome.trim().toLowerCase() && selectedIds.includes(codTal);
         });
     }
     
@@ -159,7 +159,7 @@ function getSelectedGeometry() {
         let feat = GEOPORTAL_LAYERS["FAZENDAS"].features.find(f => {
             const props = f.properties;
             const name = props.NOME_FAZ || props.NAME || props.Name || props.name;
-            return name === fazendaNome;
+            return name.trim().toLowerCase() === fazendaNome.trim().toLowerCase();
         });
         
         if (feat) {
