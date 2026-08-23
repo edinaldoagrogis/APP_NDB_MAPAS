@@ -49,10 +49,13 @@
                 title: 'Agrogis',
                 text: message,
                 icon: 'info',
-                confirmButtonColor: '#2ec4b6',
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonColor: '#ff4d4d',
+                cancelButtonText: 'Fechar',
                 background: 'rgba(25, 28, 32, 0.95)',
                 color: '#ffffff',
-                showCloseButton: true
+                showCloseButton: false
             });
         };
         // Async confirm wrapper to replace window.confirm
@@ -62,7 +65,7 @@
                 text: message,
                 icon: 'question',
                 showCancelButton: true,
-                showCloseButton: true,
+                showCloseButton: false,
                 confirmButtonColor: '#2ec4b6',
                 cancelButtonColor: '#ff4d4d',
                 confirmButtonText: 'Sim',
