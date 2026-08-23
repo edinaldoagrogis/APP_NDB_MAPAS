@@ -1482,3 +1482,5 @@ body.clima-farm-active #map .leaflet-interactive {
     .cf-day-card     { min-width: 48px; padding: 5px 8px; }
 }
 
+
+.swal2-container { z-index: 9999 !important; }
