@@ -1832,11 +1832,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
     });
 
-    document.getElementById('tool-measure-save').addEventListener('click', () => {
+    document.getElementById('tool-measure-save').addEventListener('click', async () => {
         if (!measureActive || measurePoints.length < 2) {
             alert('Por favor, faça uma medição no mapa antes de salvar.');
             return;
         }
+        
+        const confirmSave = await window.agrogisConfirm('Deseja salvar esta medição nas Minhas Camadas?');
+        if (!confirmSave) return;
         
         let type, feature, valueStr;
         const coords = measurePoints.map(p => [p.lng, p.lat]);
