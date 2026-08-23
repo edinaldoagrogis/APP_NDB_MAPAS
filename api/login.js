@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
         // Allow emergency admin access unconditionally just in case DB is down or locked
         if (cleanUser === 'admin_agrogis' && password === 'ndb_mapas') {
-             return res.status(200).json({ success: true, user: 'admin_agrogis' });
+             return res.status(200).json({ success: true, user: 'admin_agrogis', level: 2 });
         }
         
         // Fetch user from Redis
@@ -94,7 +94,8 @@ export default async function handler(req, res) {
             success: true, 
             user: userData.name,
             receiveUpdates: userData.receiveUpdates,
-            entomologiaAccess: userData.entomologiaAccess || false
+            entomologiaAccess: userData.entomologiaAccess || false,
+            level: userData.level || 1
         });
     } catch (e) {
         console.error(e);

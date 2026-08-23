@@ -198,8 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.removeItem('agrogis_entomologia');
                 }
 
-                // Grant access (using level 2 for everything now as per new rules)
-                grantAccess(2);
+                // Grant access using the level from server
+                const userLevel = data.level || 1;
+                grantAccess(userLevel);
             } else {
                 showLoginError(data.error || 'Senha incorreta');
             }

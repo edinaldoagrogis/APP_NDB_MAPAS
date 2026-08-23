@@ -325,6 +325,7 @@
                             </label>
                             <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
                         </th>
+                        <th>Nível de Acesso</th>
                     </tr>
                 </thead>
                 <tbody id="users-body">
@@ -422,6 +423,7 @@
                         
                         // Avoid tampering with admin from UI by mistake (optional precaution)
                         const disabled = (u.name === 'admin_agrogis') ? 'disabled' : '';
+                        const level = u.level || 1;
 
                         tr.innerHTML = `
                             <td style="text-transform: capitalize;"><strong>${index + 1}.</strong> ${u.name}</td>
@@ -437,6 +439,12 @@
                                     <input type="checkbox" onchange="toggleUpdate('${u.name}', this.checked)" ${u.receiveUpdates ? 'checked' : ''}>
                                     <span class="slider-update"></span>
                                 </label>
+                            </td>
+                            <td>
+                                <select class="form-control" style="background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:4px 8px; font-size:12px; width: 100px;" onchange="changeLevel('${u.name}', this.value)" ${disabled}>
+                                    <option value="1" ${level == 1 ? 'selected' : ''}>Nível 01</option>
+                                    <option value="2" ${level == 2 ? 'selected' : ''}>Nível 02</option>
+                                </select>
                             </td>
                         `;
                         usersBody.appendChild(tr);
@@ -515,6 +523,29 @@
                     showToast(`Entomologia ${hasAccess ? 'liberada' : 'bloqueada'} para ${username}!`);
                 } else {
                     alert('Falha ao alterar acesso de Entomologia!');
+                    loadUsers();
+                }
+            } catch (e) {
+                alert('Erro na conexão!');
+                loadUsers();
+            }
+        };
+        
+        window.changeLevel = async function(username, levelValue) {
+            try {
+                const res = await fetch('/api/changeLevel', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ username, level: parseInt(levelValue) })
+                });
+                
+                if (res.ok) {
+                    showToast(`Nível de ${username} alterado para Nível ${levelValue}!`);
+                } else {
+                    alert('Falha ao alterar nível!');
                     loadUsers();
                 }
             } catch (e) {

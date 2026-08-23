@@ -789,6 +789,14 @@
                     
                     document.getElementById('floating-monitor-btn').addEventListener('click', function(e) {
                         e.stopPropagation();
+                        
+                        // Check user level
+                        const userLevel = parseInt(localStorage.getItem('agrogis_auth_level') || '1', 10);
+                        if (userLevel < 2) {
+                            alert('Acesso Restrito: Nível 02 necessário para utilizar o Monitoramento Agronômico.');
+                            return;
+                        }
+
                         const panel = document.getElementById('floating-monitor-panel');
                         if (panel.style.display === 'none') {
                             panel.style.display = 'block';
