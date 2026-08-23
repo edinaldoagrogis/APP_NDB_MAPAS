@@ -73,6 +73,197 @@ function populateFazendasDatalist() {
 /**
  * Listener de mudança na Fazenda - popula a lista de talhões
  */
+
+// ============================================================
+// BUSCA CUSTOMIZADA: dropdown que funciona no Android
+// ============================================================
+
+const removeAcentos = (str) =>
+    String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+let fazendaSearchTimeout = null;
+
+document.getElementById('talhao-select').addEventListener('input', function(e) {
+    clearTimeout(fazendaSearchTimeout);
+    fazendaSearchTimeout = setTimeout(() => doFazendaSearch(e.target.value), 150);
+});
+
+document.getElementById('talhao-select').addEventListener('focus', function() {
+    if (this.value.trim().length >= 1) doFazendaSearch(this.value);
+});
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#talhao-select') && !e.target.closest('#fazenda-dropdown')) {
+        document.getElementById('fazenda-dropdown').style.display = 'none';
+    }
+});
+
+function doFazendaSearch(query) {
+    const dropdown = document.getElementById('fazenda-dropdown');
+    const q = removeAcentos(query);
+    
+    if (q.length < 1) {
+        dropdown.style.display = 'none';
+        return;
+    }
+    
+    if (typeof GEOPORTAL_LAYERS === 'undefined') {
+        dropdown.innerHTML = '<div style="padding:10px; color:#94a3b8;">Carregando dados...</div>';
+        dropdown.style.display = 'block';
+        return;
+    }
+    
+    const seen = new Set();
+    const results = [];
+    
+    // Busca em TALHOES (coleta nomes unicos de fazenda)
+    if (GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
+        GEOPORTAL_LAYERS["TALHOES"].features.forEach(f => {
+            const nome = String(f.properties.NOME_FAZ || f.properties.NAME || f.properties.Name || '');
+            if (nome && removeAcentos(nome).includes(q) && !seen.has(nome)) {
+                seen.add(nome);
+                results.push(nome);
+            }
+        });
+    }
+    
+    // Busca em FAZENDAS (fallback)
+    if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
+        GEOPORTAL_LAYERS["FAZENDAS"].features.forEach(f => {
+            const nome = String(f.properties.NOME_FAZ || f.properties.NAME || f.properties.Name || f.properties.name || '');
+            if (nome && removeAcentos(nome).includes(q) && !seen.has(nome)) {
+                seen.add(nome);
+                results.push(nome);
+            }
+        });
+    }
+    
+    results.sort();
+    dropdown.innerHTML = '';
+    
+    if (results.length === 0) {
+        dropdown.innerHTML = '<div style="padding:10px; color:#94a3b8;">Nenhuma fazenda encontrada</div>';
+        dropdown.style.display = 'block';
+        return;
+    }
+    
+    results.slice(0, 30).forEach(nome => {
+        const item = document.createElement('div');
+        item.textContent = nome;
+        item.style.cssText = 'padding:10px 14px; cursor:pointer; color:#e2e8f0; font-size:14px; border-bottom:1px solid rgba(255,255,255,0.05);';
+        
+        const selectFazenda = () => {
+            document.getElementById('talhao-select').value = nome;
+            dropdown.style.display = 'none';
+            populateTalhoes(nome);
+        };
+        
+        item.addEventListener('mouseenter', () => { item.style.background = 'rgba(255,255,255,0.1)'; });
+        item.addEventListener('mouseleave', () => { item.style.background = ''; });
+        item.addEventListener('mousedown', (ev) => { ev.preventDefault(); });
+        item.addEventListener('click', selectFazenda);
+        item.addEventListener('touchend', (ev) => { ev.preventDefault(); selectFazenda(); });
+        dropdown.appendChild(item);
+    });
+    
+    dropdown.style.display = 'block';
+}
+
+function populateTalhoes(fazendaNome) {
+    const talhoesContainer = document.getElementById('talhoes-container');
+    const talhoesList = document.getElementById('talhoes-list');
+    
+    if (!fazendaNome || typeof GEOPORTAL_LAYERS === 'undefined') {
+        talhoesContainer.style.display = 'none';
+        return;
+    }
+    
+    const qFaz = removeAcentos(fazendaNome);
+    let foundTalhoes = [];
+    
+    if (GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
+        GEOPORTAL_LAYERS["TALHOES"].features.forEach((f, idx) => {
+            const nome = String(f.properties.NOME_FAZ || f.properties.NAME || f.properties.Name || '');
+            if (removeAcentos(nome) === qFaz) {
+                foundTalhoes.push({ feature: f, globalIndex: idx, props: f.properties, nomeFaz: nome });
+            }
+        });
+    }
+    
+    if (foundTalhoes.length > 0) {
+        talhoesContainer.style.display = 'block';
+        talhoesList.innerHTML = '';
+        
+        foundTalhoes.sort((a, b) => {
+            const codA = String(a.props.COD_TALHAO || a.props.TALHAO || '');
+            const codB = String(b.props.COD_TALHAO || b.props.TALHAO || '');
+            return codA.localeCompare(codB, undefined, {numeric: true, sensitivity: 'base'});
+        });
+        
+        foundTalhoes.forEach(item => {
+            const codTal = item.props.COD_TALHAO || item.props.TALHAO || 'S/ID';
+            const area = item.props.AREA ? ' (' + item.props.AREA + ' ha)' : '';
+            const div = document.createElement('div');
+            div.style.marginBottom = '6px';
+            div.innerHTML = `
+                <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-size:13px; color:#e2e8f0;">
+                    <input type="checkbox" class="talhao-checkbox" value="${item.globalIndex}" checked style="width:16px;height:16px;">
+                    <span>Talh\u00e3o <strong>${codTal}</strong>${area}</span>
+                </label>
+            `;
+            talhoesList.appendChild(div);
+        });
+        
+        document.getElementById('select-all-talhoes').checked = true;
+    } else {
+        talhoesContainer.style.display = 'none';
+    }
+}
+
+// Checkbox "Selecionar Todos"
+document.getElementById('select-all-talhoes').addEventListener('change', function(e) {
+    document.querySelectorAll('.talhao-checkbox').forEach(cb => cb.checked = e.target.checked);
+});
+
+function populateFazendasDatalist() {
+    const datalist = document.getElementById('talhao-datalist');
+    
+    if (typeof GEOPORTAL_LAYERS !== 'undefined') {
+        const addedNames = new Set();
+        
+        // Nomes de Fazendas via TALHOES
+        if (GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
+            GEOPORTAL_LAYERS["TALHOES"].features.forEach(feature => {
+                const props = feature.properties;
+                const nomeFaz = props.NOME_FAZ || props.NAME || props.Name;
+                if (nomeFaz && !addedNames.has(nomeFaz)) {
+                    addedNames.add(nomeFaz);
+                    const option = document.createElement('option');
+                    option.value = nomeFaz;
+                    datalist.appendChild(option);
+                }
+            });
+        }
+        
+        // Fazendas (fallback)
+        if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
+            GEOPORTAL_LAYERS["FAZENDAS"].features.forEach(feature => {
+                const props = feature.properties;
+                const name = props.NOME_FAZ || props.NAME || props.Name || props.name;
+                if (name && !addedNames.has(name)) {
+                    addedNames.add(name);
+                    const option = document.createElement('option');
+                    option.value = name;
+                    datalist.appendChild(option);
+                }
+            });
+        }
+    }
+}
+
+/**
+ * Listener de mudança na Fazenda - popula a lista de talhões
+ */
 document.getElementById('talhao-select').addEventListener('input', function(e) {
     const searchString = String(e.target.value).trim().toLowerCase();
     

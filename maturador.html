@@ -32,12 +32,12 @@
                 <div class="panel">
                     <h2>Parâmetros de Análise</h2>
                     <form id="maturation-form">
-                        <div class="form-group">
+                        <div class="form-group" style="position: relative;">
                             <label for="talhao-select">1. Buscar Fazenda</label>
-                            <input type="text" id="talhao-select" class="form-control" list="talhao-datalist" placeholder="Digite o nome da fazenda..." autocomplete="off" required>
-                            <datalist id="talhao-datalist">
-                                <!-- Options will be populated by maturador.js -->
-                            </datalist>
+                            <input type="text" id="talhao-select" class="form-control" placeholder="Digite o nome da fazenda..." autocomplete="off">
+                            <!-- Lista suspensa customizada (funciona no Android) -->
+                            <div id="fazenda-dropdown" style="display:none; position:absolute; z-index:9999; width:100%; background:#1e293b; border:1px solid rgba(255,255,255,0.2); border-radius:8px; max-height:200px; overflow-y:auto; top:100%; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+                            </div>
                         </div>
                         
                         <div class="form-group" id="talhoes-container" style="display: none;">
@@ -46,7 +46,7 @@
                                     <input type="checkbox" id="select-all-talhoes"> <label for="select-all-talhoes" style="display:inline; cursor:pointer;">Selecionar Todos</label>
                                 </span>
                             </label>
-                            <div id="talhoes-list" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
+                            <div id="talhoes-list" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
                                 <!-- Checkboxes gerados via JS -->
                             </div>
                         </div>
