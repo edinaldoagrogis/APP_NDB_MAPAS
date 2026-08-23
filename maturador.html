@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Maturação - AgroGIS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="maturador.css">
+    
+    <!-- Dados GeoJSON (Fazendas/Talhões) -->
+    <script src="fazendas_data.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Monitoramento de Maturação (Sentinel-2)</h1>
+            <a href="monitoramento.html" class="back-link">← Voltar ao Portal</a>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Coluna Esquerda: Controles e Status -->
+            <div class="left-column">
+                <div class="panel">
+                    <h2>Parâmetros de Análise</h2>
+                    <form id="maturation-form">
+                        <div class="form-group">
+                            <label for="talhao-select">Buscar Fazenda / Talhão</label>
+                            <input type="text" id="talhao-select" class="form-control" list="talhao-datalist" placeholder="Digite o nome da fazenda ou talhão..." autocomplete="off" required>
+                            <datalist id="talhao-datalist">
+                                <!-- Options will be populated by maturador.js -->
+                            </datalist>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date-d0">Data de Aplicação (D0)</label>
+                            <input type="date" id="date-d0" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date-dt">Data Base da Análise (Dt)</label>
+                            <input type="date" id="date-dt" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="ripener-type">Tipo de Maturador</label>
+                            <select id="ripener-type" class="form-control">
+                                <option value="inibidor">Inibidor de Crescimento (Glifosato)</option>
+                                <option value="modificador" selected>Modificador de Crescimento (Etefom)</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" id="btn-analyze" class="btn">Processar Análise</button>
+                    </form>
+                    
+                    <div id="loading-indicator">
+                        <div class="spinner"></div>
+                        <span>Consultando STAC Sentinel-2...</span>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 20px;">
+                    <h2>Diagnóstico Atual</h2>
+                    <div class="diagnostic-card" id="diagnostic-result" style="display: none;">
+                        <div id="status-badge" class="badge status-pending">Aguardando Análise</div>
+                        
+                        <div id="percentage-circle" class="percentage-circle">
+                            <span id="percentage-value">0%</span>
+                        </div>
+                        
+                        <div class="stat-row">
+                            <span class="stat-label">Dias Pós-Aplicação:</span>
+                            <span class="stat-value" id="days-elapsed">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">NDRE Base:</span>
+                            <span class="stat-value" id="ndre-base">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">NDRE Atual:</span>
+                            <span class="stat-value" id="ndre-current">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Redução (Δ NDRE):</span>
+                            <span class="stat-value" id="ndre-delta">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Estimativa para Ponto Ótimo:</span>
+                            <span class="stat-value" id="days-remaining">-</span>
+                        </div>
+                    </div>
+                    <div id="diagnostic-empty" style="text-align: center; color: #94a3b8; padding: 20px;">
+                        Preencha os parâmetros e clique em processar.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Gráficos e Mapas -->
+            <div class="right-column">
+                <div class="panel">
+                    <h2>Curva Teórica vs. Medição Real (NDRE)</h2>
+                    <div class="chart-container">
+                        <canvas id="maturationChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 20px;">
+                    <h2>Variabilidade Espacial (NDRE Interpolado)</h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+                        Visualização de desuniformidade da maturação na área do talhão selecionado.
+                    </p>
+                    <div id="map-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts da Aplicação -->
+    <script src="maturador.js"></script>
+</body>
+</html>

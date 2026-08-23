@@ -266,6 +266,19 @@
                                 </div>
                                 <div id="weed-tool-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #555;" title="Status do servidor"></div>
                             </button>
+                            
+                            <!-- Botão Análise de Maturação (Sentinel-2) -->
+                            <button id="tool-maturation-btn" class="tool-action-btn" onclick="window.location.href='maturador.html'" style="display: flex; align-items: center; gap: 12px; background: rgba(46,196,182,0.08); border: 1px solid rgba(46,196,182,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" title="Monitoramento de maturação de cana por satélite">
+                                <div style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ec4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                </div>
+                                <div style="flex: 1; text-align: left;">
+                                    <div style="font-size: 13px; font-weight: 600; color: #2ec4b6;">🌾 Maturação de Cana</div>
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px;">Sentinel-2 · NDRE</div>
+                                </div>
+                            </button>
 
                             <!-- Separador -->
                             <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 4px 0;"></div>
