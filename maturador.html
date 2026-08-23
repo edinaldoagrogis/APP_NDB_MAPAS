@@ -33,11 +33,22 @@
                     <h2>Parâmetros de Análise</h2>
                     <form id="maturation-form">
                         <div class="form-group">
-                            <label for="talhao-select">Buscar Fazenda / Talhão</label>
-                            <input type="text" id="talhao-select" class="form-control" list="talhao-datalist" placeholder="Digite o nome da fazenda ou talhão..." autocomplete="off" required>
+                            <label for="talhao-select">1. Buscar Fazenda</label>
+                            <input type="text" id="talhao-select" class="form-control" list="talhao-datalist" placeholder="Digite o nome da fazenda..." autocomplete="off" required>
                             <datalist id="talhao-datalist">
                                 <!-- Options will be populated by maturador.js -->
                             </datalist>
+                        </div>
+                        
+                        <div class="form-group" id="talhoes-container" style="display: none;">
+                            <label>2. Selecionar Talhões
+                                <span style="float: right; font-size: 12px; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" id="select-all-talhoes"> <label for="select-all-talhoes" style="display:inline; cursor:pointer;">Selecionar Todos</label>
+                                </span>
+                            </label>
+                            <div id="talhoes-list" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
+                                <!-- Checkboxes gerados via JS -->
+                            </div>
                         </div>
                         
                         <div class="form-group">

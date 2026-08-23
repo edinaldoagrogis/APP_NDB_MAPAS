@@ -37,390 +37,170 @@ document.addEventListener('DOMContentLoaded', () => {
 function populateFazendasDatalist() {
     const datalist = document.getElementById('talhao-datalist');
     
-    // Tenta carregar as fazendas da camada principal
-    if (typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
-        GEOPORTAL_LAYERS["FAZENDAS"].features.forEach(feature => {
-            const name = feature.properties.NAME || feature.properties.Name || feature.properties.name || "Fazenda sem nome";
-            const option = document.createElement('option');
-            option.value = name;
-            datalist.appendChild(option);
-        });
-    }
-    // Suporte caso a camada chame 'TALHOES' ou similar
-    else if (typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
-        GEOPORTAL_LAYERS["TALHOES"].features.forEach(feature => {
-            const name = feature.properties.NAME || feature.properties.Name || feature.properties.name || "Talhão sem nome";
-            const option = document.createElement('option');
-            option.value = name;
-            datalist.appendChild(option);
-        });
+    if (typeof GEOPORTAL_LAYERS !== 'undefined') {
+        const addedNames = new Set();
+        
+        // Nomes de Fazendas via TALHOES
+        if (GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
+            GEOPORTAL_LAYERS["TALHOES"].features.forEach(feature => {
+                const props = feature.properties;
+                const nomeFaz = props.NOME_FAZ || props.NAME || props.Name;
+                if (nomeFaz && !addedNames.has(nomeFaz)) {
+                    addedNames.add(nomeFaz);
+                    const option = document.createElement('option');
+                    option.value = nomeFaz;
+                    datalist.appendChild(option);
+                }
+            });
+        }
+        
+        // Fazendas (fallback)
+        if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
+            GEOPORTAL_LAYERS["FAZENDAS"].features.forEach(feature => {
+                const props = feature.properties;
+                const name = props.NOME_FAZ || props.NAME || props.Name || props.name;
+                if (name && !addedNames.has(name)) {
+                    addedNames.add(name);
+                    const option = document.createElement('option');
+                    option.value = name;
+                    datalist.appendChild(option);
+                }
+            });
+        }
     }
 }
 
 /**
- * Inicializa o mapa Leaflet base
+ * Listener de mudança na Fazenda - popula a lista de talhões
  */
-function initMap() {
-    map = L.map('map-container').setView([-22.5, -48.5], 14); // Ponto padrão genérico
+document.getElementById('talhao-select').addEventListener('input', function(e) {
+    const fazendaNome = e.target.value;
+    const talhoesContainer = document.getElementById('talhoes-container');
+    const talhoesList = document.getElementById('talhoes-list');
     
-    // Basemap de Satélite
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri'
-    }).addTo(map);
-}
-
-/**
- * Lida com o processamento do formulário principal
- */
-async function handleProcessAnalysis(e) {
-    e.preventDefault();
-    
-    const talhao = document.getElementById('talhao-select').value;
-    const dateD0 = document.getElementById('date-d0').value;
-    const dateDt = document.getElementById('date-dt').value;
-    const ripenerType = document.getElementById('ripener-type').value;
-    
-    if (!talhao || !dateD0 || !dateDt) {
-        alert("Preencha todos os parâmetros.");
+    if (!fazendaNome || typeof GEOPORTAL_LAYERS === 'undefined') {
+        talhoesContainer.style.display = 'none';
         return;
     }
     
-    const btn = document.getElementById('btn-analyze');
-    const loader = document.getElementById('loading-indicator');
-    
-    btn.style.display = 'none';
-    loader.style.display = 'block';
-    
-    try {
-        // Obter polígono do talhão (Geometria mockada baseada na seleção)
-        const polygon = getTalhaoGeometry(talhao);
-        
-        // Atualizar mapa com o talhão
-        renderTalhaoOnMap(polygon);
-        
-        // 1. STAC Pipeline (Mockado na função para uso em Frontend)
-        const timeSeriesData = await fetchSentinel2Data(polygon, new Date(dateD0), new Date(dateDt));
-        
-        // 2. Modelo de Curva de Maturação
-        const analysis = calculateMaturityMetrics(timeSeriesData, new Date(dateD0), ripenerType);
-        
-        // 3. Atualizar UI
-        updateDiagnosticUI(analysis);
-        renderChart(analysis.timeSeries, analysis.baseNdre, analysis.targetNdre, new Date(dateD0));
-        
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao processar análise: " + error.message);
-    } finally {
-        btn.style.display = 'block';
-        loader.style.display = 'none';
-    }
-}
-
-/**
- * 1. PIPELINE DE DADOS SENTINEL-2 (STAC)
- * Simula a consulta STAC no Planetary Computer e o cálculo dos índices NDRE/NDVI
- */
-async function fetchSentinel2Data(polygon, d0, dt) {
-    // Aqui estaria a requisição real para o STAC API:
-    /*
-    const d0Minus7 = new Date(d0);
-    d0Minus7.setDate(d0Minus7.getDate() - 7);
-    
-    const payload = {
-        collections: ["sentinel-2-l2a"],
-        intersects: polygon,
-        datetime: `${d0Minus7.toISOString()}/${dt.toISOString()}`,
-        query: {
-            "eo:cloud_cover": { "lt": 30 } // Filtro inicial de nuvem
-        }
-    };
-    const response = await fetch(STAC_API_URL, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
-    const stacFeatures = await response.json();
-    */
-
-    // Simulação da série temporal (Pixel reduction do NDRE)
-    // O NDRE começa perto de 0.40 - 0.45, cai gradativamente após D0.
-    
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const series = [];
-            let currentDate = new Date(d0);
-            currentDate.setDate(currentDate.getDate() - 5); // Uma passagem antes de D0
-            
-            // Simular passagens a cada ~5-7 dias, descartando algumas por nuvens
-            let currentNdre = 0.42; 
-            
-            while(currentDate <= dt) {
-                // Randomly skip due to "clouds" (20% chance)
-                if (Math.random() > 0.2) {
-                    let daysSinceD0 = (currentDate - d0) / (1000 * 60 * 60 * 24);
-                    
-                    if (daysSinceD0 > 0) {
-                        // Simular queda
-                        // A taxa de queda acelera um pouco depois estabiliza
-                        let dropRate = 0.0015;
-                        if (daysSinceD0 > 15) dropRate = 0.003;
-                        if (daysSinceD0 > 40) dropRate = 0.001;
-                        
-                        currentNdre -= (dropRate * (Math.random() * 2 + 3)); // Queda proporcional
-                        if (currentNdre < 0.15) currentNdre = 0.15;
-                    }
-                    
-                    series.push({
-                        date: new Date(currentDate),
-                        ndre: parseFloat(currentNdre.toFixed(4)),
-                        ndvi: parseFloat((currentNdre + 0.35).toFixed(4)), // Apenas para compor
-                        cloud_cover: Math.random() * 15 // Menos de 30% garantido pelo filtro
-                    });
-                }
-                currentDate.setDate(currentDate.getDate() + 5);
-            }
-            
-            resolve(series);
-        }, 1500); // Simulando delay de rede/processamento
-    });
-}
-
-/**
- * 2 e 3. CÁLCULO DA CURVA DE MATURAÇÃO
- */
-function calculateMaturityMetrics(timeSeries, d0, ripenerType) {
-    if (timeSeries.length === 0) throw new Error("Nenhuma imagem sem nuvem encontrada neste período.");
-    
-    // Obter Linha de Base (NDRE na imagem limpa mais recente antes ou igual a D0)
-    let baseImg = timeSeries.filter(t => t.date <= d0).pop();
-    if (!baseImg) {
-        // Se não tiver imagem antes, pega a primeira logo após
-        baseImg = timeSeries[0];
+    let foundTalhoes = [];
+    if (GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
+        foundTalhoes = GEOPORTAL_LAYERS["TALHOES"].features.filter(f => {
+            const props = f.properties;
+            const nomeFaz = props.NOME_FAZ || props.NAME || props.Name;
+            return nomeFaz === fazendaNome;
+        });
     }
     
-    const baseNdre = baseImg.ndre;
-    
-    // Alvo: 22% de redução padrão, ou dependendo do maturador
-    const targetReductionPct = 0.22; 
-    const targetNdre = baseNdre * (1 - targetReductionPct);
-    
-    // Imagem mais recente
-    const currentImg = timeSeries[timeSeries.length - 1];
-    const currentNdre = currentImg.ndre;
-    
-    // Cálculos Principais
-    const deltaNdre = baseNdre - currentNdre;
-    let maturationPercent = ((baseNdre - currentNdre) / (baseNdre - targetNdre)) * 100;
-    
-    // Clamp entre 0 e 150
-    maturationPercent = Math.max(0, Math.min(150, maturationPercent));
-    
-    const daysSinceD0 = Math.floor((currentImg.date - d0) / (1000 * 60 * 60 * 24));
-    
-    // Calcular janela ótima estimada com base no tipo de maturador
-    const optimalDays = ripenerType === 'inibidor' ? 35 : 55;
-    const daysRemaining = optimalDays - daysSinceD0;
-    
-    // Determinar Status
-    let statusId, statusText;
-    
-    if (daysSinceD0 > 20 && maturationPercent < 15) {
-        statusId = 'inert';
-        statusText = 'Inércia: Sem Resposta ao Maturador';
-    } else if (maturationPercent > 100) {
-        statusId = 'danger';
-        statusText = 'Risco de Isoporização / Secamento';
-    } else if (maturationPercent >= 76) {
-        statusId = 'optimal';
-        statusText = 'Janela Ótima de Colheita';
-    } else if (maturationPercent >= 26) {
-        statusId = 'evolving';
-        statusText = 'Maturação em Evolução Positiva';
+    if (foundTalhoes.length > 0) {
+        talhoesContainer.style.display = 'block';
+        talhoesList.innerHTML = ''; 
+        
+        foundTalhoes.sort((a, b) => {
+            const codA = String(a.properties.COD_TALHAO || a.properties.TALHAO || '');
+            const codB = String(b.properties.COD_TALHAO || b.properties.TALHAO || '');
+            return codA.localeCompare(codB, undefined, {numeric: true, sensitivity: 'base'});
+        });
+        
+        foundTalhoes.forEach((f, idx) => {
+            const props = f.properties;
+            const codTal = props.COD_TALHAO || props.TALHAO || `SemID-${idx}`;
+            
+            const div = document.createElement('div');
+            div.style.marginBottom = '5px';
+            div.innerHTML = `
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                    <input type="checkbox" class="talhao-checkbox" value="${codTal}" checked>
+                    Talhão ${codTal}
+                </label>
+            `;
+            talhoesList.appendChild(div);
+        });
     } else {
-        statusId = 'initial';
-        statusText = 'Efeito Inicial / Latência';
+        talhoesContainer.style.display = 'none';
     }
-    
-    return {
-        timeSeries,
-        baseNdre,
-        currentNdre,
-        targetNdre,
-        deltaNdre,
-        maturationPercent,
-        daysSinceD0,
-        daysRemaining,
-        statusId,
-        statusText
-    };
-}
+});
+
+// Checkbox "Selecionar Todos"
+document.getElementById('select-all-talhoes').addEventListener('change', function(e) {
+    const isChecked = e.target.checked;
+    const checkboxes = document.querySelectorAll('.talhao-checkbox');
+    checkboxes.forEach(cb => cb.checked = isChecked);
+});
 
 /**
- * 4. ATUALIZAÇÃO DA INTERFACE (DIAGNÓSTICO)
+ * Retorna FeatureCollection combinando todos os talhões selecionados,
+ * ou o polígono/ponto da fazenda se nenhum talhão estiver disponível
  */
-function updateDiagnosticUI(analysis) {
-    document.getElementById('diagnostic-empty').style.display = 'none';
-    const resultCard = document.getElementById('diagnostic-result');
-    resultCard.style.display = 'flex';
+function getSelectedGeometry() {
+    const fazendaNome = document.getElementById('talhao-select').value;
+    const checkboxes = document.querySelectorAll('.talhao-checkbox:checked');
     
-    // Badge
-    const badge = document.getElementById('status-badge');
-    badge.className = `badge status-${analysis.statusId}`;
-    badge.textContent = analysis.statusText;
+    let features = [];
     
-    // Porcentagem
-    const circle = document.getElementById('percentage-circle');
-    document.getElementById('percentage-value').textContent = `${Math.round(analysis.maturationPercent)}%`;
-    
-    // Cor do círculo de acordo com o status
-    let circleColor = '#94a3b8';
-    if (analysis.statusId === 'initial') circleColor = '#3498db';
-    if (analysis.statusId === 'evolving') circleColor = '#2ecc71';
-    if (analysis.statusId === 'optimal') circleColor = '#9b59b6';
-    if (analysis.statusId === 'danger') circleColor = '#ff4d4d';
-    if (analysis.statusId === 'inert') circleColor = '#f39c12';
-    
-    circle.style.borderTopColor = circleColor;
-    if (analysis.maturationPercent > 50) circle.style.borderRightColor = circleColor;
-    if (analysis.maturationPercent > 75) circle.style.borderBottomColor = circleColor;
-    if (analysis.maturationPercent > 100) circle.style.borderLeftColor = circleColor;
-    
-    // Stats
-    document.getElementById('days-elapsed').textContent = `${analysis.daysSinceD0} dias`;
-    document.getElementById('ndre-base').textContent = analysis.baseNdre.toFixed(3);
-    document.getElementById('ndre-current').textContent = analysis.currentNdre.toFixed(3);
-    document.getElementById('ndre-delta').textContent = analysis.deltaNdre.toFixed(3);
-    
-    const rem = analysis.daysRemaining;
-    let remText = rem > 0 ? `~ ${rem} dias` : (rem === 0 ? "Chegou no Ponto!" : `Passou ${Math.abs(rem)} dias`);
-    if (analysis.statusId === 'inert' || analysis.statusId === 'danger') remText = 'N/A';
-    document.getElementById('days-remaining').textContent = remText;
-}
-
-/**
- * Renderiza o gráfico Chart.js
- */
-function renderChart(series, baseNdre, targetNdre, d0) {
-    const ctx = document.getElementById('maturationChart').getContext('2d');
-    
-    if (maturationChart) {
-        maturationChart.destroy();
+    if (checkboxes.length > 0 && typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["TALHOES"]) {
+        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+        features = GEOPORTAL_LAYERS["TALHOES"].features.filter(f => {
+            const props = f.properties;
+            const nomeFaz = props.NOME_FAZ || props.NAME || props.Name;
+            const codTal = String(props.COD_TALHAO || props.TALHAO || '');
+            return nomeFaz === fazendaNome && selectedIds.includes(codTal);
+        });
     }
     
-    const labels = series.map(s => {
-        const d = s.date;
-        return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}`;
-    });
+    if (features.length > 0) {
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        };
+    }
     
-    const dataNdre = series.map(s => s.ndre);
-    
-    // Linha Teórica Ideal (Interpolação linear da Base até o Alvo no prazo de 45 dias pós D0)
-    const targetDate = new Date(d0);
-    targetDate.setDate(targetDate.getDate() + 45); // Ponto ideal teórico genérico
-    
-    const theoreticalLine = series.map(s => {
-        if (s.date <= d0) return baseNdre;
-        if (s.date >= targetDate) return targetNdre;
+    if (typeof GEOPORTAL_LAYERS !== 'undefined' && GEOPORTAL_LAYERS["FAZENDAS"]) {
+        let feat = GEOPORTAL_LAYERS["FAZENDAS"].features.find(f => {
+            const props = f.properties;
+            const name = props.NOME_FAZ || props.NAME || props.Name || props.name;
+            return name === fazendaNome;
+        });
         
-        const totalDuration = targetDate - d0;
-        const currentDuration = s.date - d0;
-        const ratio = currentDuration / totalDuration;
-        return baseNdre - ((baseNdre - targetNdre) * ratio);
-    });
-
-    maturationChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'NDRE Medido (S2)',
-                    data: dataNdre,
-                    borderColor: '#2ec4b6',
-                    backgroundColor: 'rgba(46, 196, 182, 0.2)',
-                    borderWidth: 3,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#fff',
-                    fill: true,
-                    tension: 0.3
-                },
-                {
-                    label: 'Curva Ideal Teórica',
-                    data: theoreticalLine,
-                    borderColor: '#ffb732',
-                    borderDash: [5, 5],
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: '#e2e8f0' } },
-                tooltip: { mode: 'index', intersect: false }
-            },
-            scales: {
-                y: {
-                    title: { display: true, text: 'Índice NDRE', color: '#94a3b8' },
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    ticks: { color: '#94a3b8' },
-                    min: Math.min(targetNdre - 0.05, Math.min(...dataNdre) - 0.05),
-                    max: baseNdre + 0.05
-                },
-                x: {
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    ticks: { color: '#94a3b8' }
-                }
+        if (feat) {
+            if (feat.geometry.type === "Point") {
+                const coord = feat.geometry.coordinates;
+                const offset = 0.005; // ~500m
+                return {
+                    "type": "FeatureCollection",
+                    "features": [{
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[
+                                [coord[0] - offset, coord[1] - offset],
+                                [coord[0] + offset, coord[1] - offset],
+                                [coord[0] + offset, coord[1] + offset],
+                                [coord[0] - offset, coord[1] + offset],
+                                [coord[0] - offset, coord[1] - offset]
+                            ]]
+                        }
+                    }]
+                };
             }
-        }
-    });
-}
-
-/**
- * Retorna geometria GeoJSON da fazenda selecionada
- */
-function getTalhaoGeometry(id) {
-    let feature = null;
-    
-    if (typeof GEOPORTAL_LAYERS !== 'undefined') {
-        if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
-            feature = GEOPORTAL_LAYERS["FAZENDAS"].features.find(f => 
-                (f.properties.NAME === id || f.properties.Name === id || f.properties.name === id)
-            );
-        }
-        if (!feature && GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
-            feature = GEOPORTAL_LAYERS["TALHOES"].features.find(f => 
-                (f.properties.NAME === id || f.properties.Name === id || f.properties.name === id)
-            );
-        }
-    }
-    
-    if (feature) {
-        // Se for um ponto, vamos criar um polígono pequeno (buffer) ao redor para fins de visualização de talhão simulado
-        if (feature.geometry.type === "Point") {
-            const coord = feature.geometry.coordinates;
-            const offset = 0.005; // ~500m
             return {
-                "type": "Polygon",
-                "coordinates": [[
-                    [coord[0] - offset, coord[1] - offset],
-                    [coord[0] + offset, coord[1] - offset],
-                    [coord[0] + offset, coord[1] + offset],
-                    [coord[0] - offset, coord[1] + offset],
-                    [coord[0] - offset, coord[1] - offset]
-                ]]
+                "type": "FeatureCollection",
+                "features": [feat]
             };
         }
-        return feature.geometry;
     }
     
-    // Fallback default caso não encontre
     return {
-        "type": "Polygon",
-        "coordinates": [[
-            [-48.50, -22.50], [-48.51, -22.50], [-48.51, -22.51], [-48.50, -22.51], [-48.50, -22.50]
-        ]]
+        "type": "FeatureCollection",
+        "features": [{
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [-48.50, -22.50], [-48.51, -22.50], [-48.51, -22.51], [-48.50, -22.51], [-48.50, -22.50]
+                ]]
+            }
+        }]
     };
 }
 
@@ -430,7 +210,6 @@ function renderTalhaoOnMap(geojson) {
     if (talhaoLayer) map.removeLayer(talhaoLayer);
     if (rasterLayer) map.removeLayer(rasterLayer);
     
-    // Renderiza o contorno do polígono
     talhaoLayer = L.geoJSON(geojson, {
         style: {
             fillColor: "transparent",
@@ -444,26 +223,25 @@ function renderTalhaoOnMap(geojson) {
     const bounds = talhaoLayer.getBounds();
     map.fitBounds(bounds, { padding: [50, 50] });
     
-    // Gerar uma imagem falsa-cor (NDRE) dinâmica para simular os pixels do satélite
-    const imgDataUrl = generateSimulatedNDRERaster(bounds, geojson.geometry || geojson);
+    const imgDataUrl = generateSimulatedNDRERaster(bounds, geojson);
     
-    rasterLayer = L.imageOverlay(imgDataUrl, bounds, {
-        opacity: 0.7,
-        alt: "NDRE Raster Simulado"
-    }).addTo(map);
+    if (imgDataUrl) {
+        rasterLayer = L.imageOverlay(imgDataUrl, bounds, {
+            opacity: 0.7,
+            alt: "NDRE Raster Simulado"
+        }).addTo(map);
+    }
 }
 
 /**
  * Gera um raster PNG em base64 simulando pixels de 10m do Sentinel-2 (Gradiente NDRE)
- * Recorta a imagem exatamente nos limites do polígono do talhão
  */
-function generateSimulatedNDRERaster(bounds, geometry) {
+function generateSimulatedNDRERaster(bounds, geojson) {
     const canvas = document.createElement('canvas');
-    canvas.width = 150; // Resolução melhorada
-    canvas.height = 150;
+    canvas.width = 200;
+    canvas.height = 200;
     const ctx = canvas.getContext('2d');
     
-    // 1. Criar máscara de recorte (Clipping) com o formato exato da fazenda
     const latMin = bounds.getSouth();
     const latMax = bounds.getNorth();
     const lngMin = bounds.getWest();
@@ -472,49 +250,60 @@ function generateSimulatedNDRERaster(bounds, geometry) {
     const latDiff = latMax - latMin;
     const lngDiff = lngMax - lngMin;
     
+    if (latDiff === 0 || lngDiff === 0) return null;
+    
     function project(coord) {
         const x = ((coord[0] - lngMin) / lngDiff) * canvas.width;
         const y = ((latMax - coord[1]) / latDiff) * canvas.height;
         return [x, y];
     }
     
-    ctx.beginPath();
-    // Se for um Feature, a geometria real fica em geometry.geometry
-    const geom = geometry.type === 'Feature' ? geometry.geometry : geometry;
-    
-    if (geom && geom.type === 'Polygon') {
-        const ring = geom.coordinates[0];
+    function drawRing(ring) {
         ring.forEach((coord, i) => {
             const [x, y] = project(coord);
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
         });
-    } else if (geom && geom.type === 'MultiPolygon') {
-        geom.coordinates.forEach(polygon => {
-            const ring = polygon[0];
-            ring.forEach((coord, i) => {
-                const [x, y] = project(coord);
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            });
-        });
     }
-    ctx.closePath();
-    ctx.clip(); // Tudo desenhado daqui em diante ficará DENTRO deste polígono
     
-    // 2. Simulação de distribuição espacial da maturação (Ruído Pixelado)
+    ctx.beginPath();
+    
+    const features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
+    let hasDrawableGeometry = false;
+    
+    features.forEach(feat => {
+        const geom = feat.geometry || feat;
+        if (geom.type === 'Polygon') {
+            hasDrawableGeometry = true;
+            geom.coordinates.forEach(ring => drawRing(ring));
+        } else if (geom.type === 'MultiPolygon') {
+            hasDrawableGeometry = true;
+            geom.coordinates.forEach(polygon => polygon.forEach(ring => drawRing(ring)));
+        } else if (geom.type === 'LineString') {
+            hasDrawableGeometry = true;
+            drawRing(geom.coordinates);
+        } else if (geom.type === 'MultiLineString') {
+            hasDrawableGeometry = true;
+            geom.coordinates.forEach(line => drawRing(line));
+        }
+    });
+    
+    if (!hasDrawableGeometry) return null;
+    
+    ctx.closePath();
+    ctx.clip('evenodd'); 
+    
     for (let x = 0; x < canvas.width; x += 3) {
         for (let y = 0; y < canvas.height; y += 3) {
-            // Criar um padrão pseudo-realista (bordas mais secas, centro mais verde)
             const distToCenter = Math.sqrt(Math.pow(x - (canvas.width/2), 2) + Math.pow(y - (canvas.height/2), 2));
             let baseProb = 1 - (distToCenter / (canvas.width/1.2)); 
-            baseProb += (Math.random() * 0.5 - 0.25); // ruído
+            baseProb += (Math.random() * 0.5 - 0.25);
             
             let color;
-            if (baseProb > 0.7) color = '#2ecc71'; // Verde (Alto NDRE)
-            else if (baseProb > 0.4) color = '#f1c40f'; // Amarelo (Médio)
-            else if (baseProb > 0.2) color = '#e67e22'; // Laranja (Baixo)
-            else color = '#e74c3c'; // Vermelho (Seco / Isoporizado)
+            if (baseProb > 0.7) color = '#2ecc71'; 
+            else if (baseProb > 0.4) color = '#f1c40f'; 
+            else if (baseProb > 0.2) color = '#e67e22'; 
+            else color = '#e74c3c'; 
             
             ctx.fillStyle = color;
             ctx.fillRect(x, y, 3, 3);
