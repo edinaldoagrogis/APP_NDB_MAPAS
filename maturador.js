@@ -424,27 +424,62 @@ function getTalhaoGeometry(id) {
     };
 }
 
+let rasterLayer = null;
+
 function renderTalhaoOnMap(geojson) {
-    if (talhaoLayer) {
-        map.removeLayer(talhaoLayer);
-    }
+    if (talhaoLayer) map.removeLayer(talhaoLayer);
+    if (rasterLayer) map.removeLayer(rasterLayer);
     
-    // Cor condicional simulando mapa de variabilidade NDRE
+    // Renderiza o contorno do polígono
     talhaoLayer = L.geoJSON(geojson, {
-        style: function (feature) {
-            return {
-                fillColor: "#ffb732", // Cor simulando estado de maturação médio
-                weight: 2,
-                opacity: 1,
-                color: 'white',
-                dashArray: '3',
-                fillOpacity: 0.5
-            };
+        style: {
+            fillColor: "transparent",
+            weight: 3,
+            color: '#fff',
+            dashArray: '5',
+            fillOpacity: 0
         }
     }).addTo(map);
     
-    map.fitBounds(talhaoLayer.getBounds(), { padding: [50, 50] });
+    const bounds = talhaoLayer.getBounds();
+    map.fitBounds(bounds, { padding: [50, 50] });
     
-    // Adicionar gradiente/variabilidade interna (Mock visual usando uma imagem overlay ou sub-polígonos)
-    // Para simplificar, estamos adicionando apenas o polígono principal pintado
+    // Gerar uma imagem falsa-cor (NDRE) dinâmica para simular os pixels do satélite
+    const imgDataUrl = generateSimulatedNDRERaster();
+    
+    rasterLayer = L.imageOverlay(imgDataUrl, bounds, {
+        opacity: 0.7,
+        alt: "NDRE Raster Simulado"
+    }).addTo(map);
+}
+
+/**
+ * Gera um raster PNG em base64 simulando pixels de 10m do Sentinel-2 (Gradiente NDRE)
+ */
+function generateSimulatedNDRERaster() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 100;
+    const ctx = canvas.getContext('2d');
+    
+    // Simulação de distribuição espacial da maturação (Ruído)
+    for (let x = 0; x < 100; x += 2) {
+        for (let y = 0; y < 100; y += 2) {
+            // Criar um padrão pseudo-realista (bordas mais secas, centro mais verde)
+            const distToCenter = Math.sqrt(Math.pow(x - 50, 2) + Math.pow(y - 50, 2));
+            let baseProb = 1 - (distToCenter / 70); 
+            baseProb += (Math.random() * 0.4 - 0.2); // adicionar ruído
+            
+            let color;
+            if (baseProb > 0.7) color = '#2ecc71'; // Verde (Alto NDRE)
+            else if (baseProb > 0.4) color = '#f1c40f'; // Amarelo (Médio)
+            else if (baseProb > 0.2) color = '#e67e22'; // Laranja (Baixo)
+            else color = '#e74c3c'; // Vermelho (Seco / Isoporizado)
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, 2, 2);
+        }
+    }
+    
+    return canvas.toDataURL('image/png');
 }
