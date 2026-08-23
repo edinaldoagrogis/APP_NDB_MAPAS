@@ -1,0 +1,105 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id_talhao": "T001",
+        "variedade": "RB867515",
+        "area_ha": 45.2,
+        "data_corte_plantio": "2023-01-15",
+        "estagio_desenvolvimento": "crescimento"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-47.820, -21.170],
+          [-47.825, -21.170],
+          [-47.825, -21.175],
+          [-47.820, -21.175],
+          [-47.820, -21.170]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_talhao": "T002",
+        "variedade": "CTC4",
+        "area_ha": 32.5,
+        "data_corte_plantio": "2022-10-10",
+        "estagio_desenvolvimento": "maturação"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-47.800, -21.190],
+          [-47.806, -21.190],
+          [-47.806, -21.194],
+          [-47.800, -21.194],
+          [-47.800, -21.190]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_talhao": "T003",
+        "variedade": "SP80-1842",
+        "area_ha": 58.0,
+        "data_corte_plantio": "2023-04-20",
+        "estagio_desenvolvimento": "perfilhamento"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-47.780, -21.210],
+          [-47.788, -21.210],
+          [-47.788, -21.217],
+          [-47.780, -21.217],
+          [-47.780, -21.210]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_talhao": "T004",
+        "variedade": "RB92579",
+        "area_ha": 28.3,
+        "data_corte_plantio": "2022-08-05",
+        "estagio_desenvolvimento": "colheita"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-47.850, -21.150],
+          [-47.855, -21.150],
+          [-47.855, -21.154],
+          [-47.850, -21.154],
+          [-47.850, -21.150]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_talhao": "T005",
+        "variedade": "IAC91-1099",
+        "area_ha": 41.1,
+        "data_corte_plantio": "2023-02-12",
+        "estagio_desenvolvimento": "crescimento"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-47.830, -21.230],
+          [-47.837, -21.230],
+          [-47.837, -21.235],
+          [-47.830, -21.235],
+          [-47.830, -21.230]
+        ]]
+      }
+    }
+  ]
+}
