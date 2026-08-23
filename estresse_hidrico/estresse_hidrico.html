@@ -1,858 +1,142 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor de Estresse Hídrico | AgroGIS NDB</title>
+    <title>Monitoramento de Estresse Hídrico - AgroGIS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <!-- Usando o CSS do Maturador para manter a interface idêntica -->
+    <link rel="stylesheet" href="../maturador.css">
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
-    <!-- Estilos do módulo -->
-    <link rel="stylesheet" href="ieh_styles.css">
-    
-    <!-- Dados GeoJSON (Camadas principais para busca de fazenda) -->
+    <!-- Dados GeoJSON (Camadas principais) -->
     <script src="../layers_data.js"></script>
-    
+
     <style>
-        /* Sobrescritas globais */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-primary); height: 100vh; overflow: hidden; }
+        /* Ajustes específicos de cores para o Estresse Hídrico */
+        .status-sem-estresse { background: rgba(46, 204, 113, 0.2) !important; color: #2ecc71 !important; border: 1px solid #2ecc71 !important; }
+        .status-leve { background: rgba(241, 196, 15, 0.2) !important; color: #f1c40f !important; border: 1px solid #f1c40f !important; }
+        .status-moderado { background: rgba(230, 126, 34, 0.2) !important; color: #e67e22 !important; border: 1px solid #e67e22 !important; }
+        .status-severo { background: rgba(231, 76, 60, 0.2) !important; color: #e74c3c !important; border: 1px solid #e74c3c !important; }
         
-        /* Leaflet popup tema claro (sobre mapa) */
-        .leaflet-popup-content-wrapper { border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-        .leaflet-popup-content { margin: 14px 16px; }
-        .leaflet-container { font-family: 'Inter', sans-serif; }
+        .percentage-circle.sem-estresse { border-color: #2ecc71 !important; color: #2ecc71 !important; }
+        .percentage-circle.leve { border-color: #f1c40f !important; color: #f1c40f !important; }
+        .percentage-circle.moderado { border-color: #e67e22 !important; color: #e67e22 !important; }
+        .percentage-circle.severo { border-color: #e74c3c !important; color: #e74c3c !important; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div class="header">
+            <h1>Monitoramento de Estresse Hídrico (Sentinel-2)</h1>
+            <a href="javascript:void(0)" onclick="if(document.referrer) { window.history.back(); } else { window.location.href='../index.html'; }" class="back-link">← Voltar ao App</a>
+        </div>
 
-<!-- ============================================================
-     BARRA DE NAVEGAÇÃO
-============================================================ -->
-<nav class="navbar">
-    <div class="navbar-brand">
-        <span style="color: var(--accent-orange); font-weight:800; font-size:18px; margin-right:6px">♥</span>
-        AgroGIS NDB
-        <span style="color:var(--text-muted); font-weight:400; font-size:13px; margin-left:8px">| Monitor de Estresse Hídrico</span>
+        <div class="dashboard-grid">
+            <!-- Coluna Esquerda: Controles e Status -->
+            <div class="left-column">
+                <div class="panel">
+                    <h2>Parâmetros de Análise</h2>
+                    <form id="ieh-form">
+                        <div class="form-group" style="position: relative;">
+                            <label for="talhao-select">1. Buscar Fazenda</label>
+                            <input type="text" id="talhao-select" class="form-control" placeholder="Digite o nome da fazenda..." autocomplete="off">
+                            <div id="fazenda-dropdown" style="display:none; position:absolute; z-index:9999; width:100%; background:#1e293b; border:1px solid rgba(255,255,255,0.2); border-radius:8px; max-height:200px; overflow-y:auto; top:100%; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" id="talhoes-container" style="display: none;">
+                            <label>2. Selecionar Talhões (Var. identificada)
+                                <span style="float: right; font-size: 12px; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" id="select-all-talhoes"> <label for="select-all-talhoes" style="display:inline; cursor:pointer;">Selecionar Todos</label>
+                                </span>
+                            </label>
+                            <div id="talhoes-list" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
+                                <!-- Checkboxes gerados via JS -->
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date-inicio">Data Inicial do Período</label>
+                            <input type="date" id="date-inicio" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date-fim">Data Final do Período</label>
+                            <input type="date" id="date-fim" class="form-control" required>
+                        </div>
+                        
+                        <button type="submit" id="btn-analyze" class="btn">Processar Análise</button>
+                    </form>
+                    
+                    <div id="loading-indicator">
+                        <div class="spinner"></div>
+                        <span>Processando análise hídrica...</span>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 20px;">
+                    <h2>Diagnóstico Atual</h2>
+                    <div class="diagnostic-card" id="diagnostic-result" style="display: none;">
+                        <div id="status-badge" class="badge status-pending">Aguardando Análise</div>
+                        
+                        <!-- IEH Médio -->
+                        <div id="percentage-circle" class="percentage-circle">
+                            <span id="percentage-value">0.0</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:-15px; margin-bottom:15px;">IEH Médio da Fazenda</div>
+                        
+                        <div class="stat-row">
+                            <span class="stat-label">Área Analisada:</span>
+                            <span class="stat-value" id="stat-area">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Talhões com Seca Severa:</span>
+                            <span class="stat-value" id="stat-severo">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Variedade Predominante:</span>
+                            <span class="stat-value" id="stat-var">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Última Imagem (Nuvens):</span>
+                            <span class="stat-value" id="stat-cloud">-</span>
+                        </div>
+                    </div>
+                    <div id="diagnostic-empty" style="text-align: center; color: #94a3b8; padding: 20px;">
+                        Preencha os parâmetros e clique em processar.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Gráficos e Mapas -->
+            <div class="right-column">
+                <div class="panel">
+                    <h2>Distribuição do Estresse Hídrico (IEH)</h2>
+                    <div class="chart-container">
+                        <canvas id="iehChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 20px;">
+                    <h2>Mapa de Risco Hídrico (Sentinel-2)</h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+                        Visualização da variabilidade hídrica baseada em umidade da planta (MSI) e tipo de solo.
+                    </p>
+                    <div id="map-container"></div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <!-- Status do backend -->
-    <div style="display:flex;align-items:center;gap:8px">
-        <div id="backend-status" class="status-badge" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.06);border:1px solid var(--border-color)">
-            <div id="status-dot" style="width:7px;height:7px;border-radius:50%;background:#64748b"></div>
-            <span id="status-text">Verificando...</span>
-        </div>
-        <a href="../index.html" style="color:var(--text-muted);text-decoration:none;font-size:13px;padding:5px 12px;border:1px solid var(--border-color);border-radius:8px">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-    </div>
-</nav>
 
-<!-- ============================================================
-     LAYOUT PRINCIPAL: SIDEBAR + MAPA
-============================================================ -->
-<div class="app-wrapper" style="height:calc(100vh - 56px)">
-
-    <!-- ===== SIDEBAR ===== -->
-    <aside class="sidebar" id="sidebar">
-
-        <!-- SEÇÃO 1: BUSCAR FAZENDA / TALHÕES -->
-        <div class="sidebar-section">
-            <div class="sidebar-section-title"><i class="fas fa-search" style="margin-right:6px"></i>1. Buscar Fazenda</div>
-            
-            <div class="form-group" style="position: relative;">
-                <input type="text" id="talhao-select" class="form-control" placeholder="Digite o nome da fazenda..." autocomplete="off">
-                <div id="fazenda-dropdown" style="display:none; position:absolute; z-index:9999; width:100%; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; max-height:200px; overflow-y:auto; top:100%; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);">
-                </div>
-            </div>
-
-            <div class="form-group" id="talhoes-container" style="display: none; margin-top: 15px;">
-                <label class="form-label">
-                    Selecione os Talhões
-                    <span style="float: right; cursor: pointer; color: var(--accent-teal);">
-                        <input type="checkbox" id="select-all-talhoes"> <label for="select-all-talhoes" style="display:inline; cursor:pointer;">Todos</label>
-                    </span>
-                </label>
-                <div id="talhoes-list" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
-                    <!-- Checkboxes gerados via JS -->
-                </div>
-                
-                <button id="btn-load-selected" class="btn btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="loadSelectedTalhoes()">
-                    <i class="fas fa-check"></i> Confirmar Seleção
-                </button>
-            </div>
-            
-            <!-- Info após carregar -->
-            <div id="upload-info" style="display:none;margin-top:10px">
-                <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px">
-                    <i class="fas fa-check-circle" style="color:var(--ieh-verde)"></i>
-                    <div>
-                        <div id="upload-count" style="font-size:13px;font-weight:600">5 talhões carregados</div>
-                        <div id="upload-bounds" style="font-size:11px;color:var(--text-muted)"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SEÇÃO 2: PERÍODO -->
-        <div class="sidebar-section">
-            <div class="sidebar-section-title"><i class="fas fa-calendar-alt" style="margin-right:6px"></i>2. Período de Análise</div>
-            
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div class="form-group">
-                    <label class="form-label">Data Inicial</label>
-                    <input type="date" id="start-date" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Data Final</label>
-                    <input type="date" id="end-date" class="form-control">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Limite de nuvens: <span id="cloud-val" style="color:var(--accent-teal)">20%</span></label>
-                <div class="slider-container">
-                    <i class="fas fa-cloud" style="color:var(--text-muted);font-size:12px"></i>
-                    <input type="range" id="cloud-threshold" min="5" max="60" value="20" oninput="document.getElementById('cloud-val').textContent=this.value+'%'">
-                    <span class="slider-value">60%</span>
-                </div>
-            </div>
-            
-            <p style="font-size:11px;color:var(--text-muted);line-height:1.5">
-                <i class="fas fa-info-circle"></i>
-                Busca automática da melhor cena Sentinel-2 L2A sem nuvens no período via Microsoft Planetary Computer.
-            </p>
-        </div>
-
-        <!-- SEÇÃO 3: ANÁLISE -->
-        <div class="sidebar-section">
-            <div class="sidebar-section-title"><i class="fas fa-satellite" style="margin-right:6px"></i>3. Análise</div>
-            
-            <button id="btn-analyze" class="btn btn-primary" style="width:100%;font-size:15px;padding:13px;" onclick="runAnalysis()" disabled>
-                <i class="fas fa-play"></i> Analisar Estresse Hídrico
-            </button>
-            
-            <!-- Barra de progresso -->
-            <div id="progress-container" style="display:none;margin-top:12px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                    <div class="loading-spinner"></div>
-                    <span id="progress-text" style="font-size:12px;color:var(--text-muted)">Processando...</span>
-                </div>
-                <div class="analysis-progress">
-                    <div class="analysis-progress-bar" id="progress-bar" style="width:0%"></div>
-                </div>
-            </div>
-            
-            <!-- Pesos do IEH (expansível) -->
-            <details style="margin-top:10px">
-                <summary style="font-size:12px;color:var(--text-muted);cursor:pointer"><i class="fas fa-sliders-h"></i> Pesos do IEH (avançado)</summary>
-                <div style="padding-top:10px">
-                    <div class="form-group">
-                        <label class="form-label">w1 MSI (Umidade Foliar): <span id="w1-val">35%</span></label>
-                        <input type="range" id="w1" min="10" max="60" value="35" oninput="updateWeights()">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">w2 NDWI (Dossel): <span id="w2-val">30%</span></label>
-                        <input type="range" id="w2" min="10" max="60" value="30" oninput="updateWeights()">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">w3 Solo/CAD: <span id="w3-val">20%</span></label>
-                        <input type="range" id="w3" min="5" max="50" value="20" oninput="updateWeights()">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">w4 TWI (Terreno): <span id="w4-val">15%</span></label>
-                        <input type="range" id="w4" min="5" max="40" value="15" oninput="updateWeights()">
-                    </div>
-                    <div id="weights-warning" style="font-size:11px;color:var(--accent-orange);display:none">
-                        <i class="fas fa-exclamation-triangle"></i> Pesos normalizados automaticamente.
-                    </div>
-                </div>
-            </details>
-        </div>
-
-        <!-- SEÇÃO 4: TABELA DE TALHÕES -->
-        <div class="sidebar-section" id="talhoes-section" style="display:none">
-            <div class="sidebar-section-title"><i class="fas fa-table" style="margin-right:6px"></i>4. Talhões</div>
-            <div style="overflow-x:auto;max-height:220px;overflow-y:auto">
-                <table class="talhoes-table" id="talhoes-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Variedade</th>
-                            <th>Estágio</th>
-                            <th>Área</th>
-                            <th>IEH</th>
-                        </tr>
-                    </thead>
-                    <tbody id="talhoes-tbody"></tbody>
-                </table>
-            </div>
-            <button id="btn-apply-varieties" class="btn btn-outline btn-sm" style="width:100%;margin-top:8px" onclick="applyVarietyEdits()">
-                <i class="fas fa-check"></i> Aplicar Variedades
-            </button>
-        </div>
-
-        <!-- SEÇÃO 5: ESTATÍSTICAS -->
-        <div class="sidebar-section" id="stats-section" style="display:none">
-            <div class="sidebar-section-title"><i class="fas fa-chart-pie" style="margin-right:6px"></i>5. Distribuição IEH</div>
-            <div class="stats-grid">
-                <div class="stat-card verde">
-                    <div class="stat-value" id="stat-verde">0</div>
-                    <div class="stat-label">Sem Estresse</div>
-                    <div style="font-size:10px;color:var(--text-muted)" id="stat-verde-ha">0 ha</div>
-                </div>
-                <div class="stat-card amarelo">
-                    <div class="stat-value" id="stat-amarelo">0</div>
-                    <div class="stat-label">Estresse Leve</div>
-                    <div style="font-size:10px;color:var(--text-muted)" id="stat-amarelo-ha">0 ha</div>
-                </div>
-                <div class="stat-card laranja">
-                    <div class="stat-value" id="stat-laranja">0</div>
-                    <div class="stat-label">Moderado</div>
-                    <div style="font-size:10px;color:var(--text-muted)" id="stat-laranja-ha">0 ha</div>
-                </div>
-                <div class="stat-card vermelho">
-                    <div class="stat-value" id="stat-vermelho">0</div>
-                    <div class="stat-label">Severo</div>
-                    <div style="font-size:10px;color:var(--text-muted)" id="stat-vermelho-ha">0 ha</div>
-                </div>
-            </div>
-            
-            <!-- Mini gráfico donut -->
-            <div style="display:flex;justify-content:center;margin-top:10px">
-                <canvas id="donut-chart" width="140" height="140"></canvas>
-            </div>
-        </div>
-
-        <!-- SEÇÃO 6: EXPORTAÇÃO -->
-        <div class="sidebar-section">
-            <div class="sidebar-section-title"><i class="fas fa-download" style="margin-right:6px"></i>6. Exportar</div>
-            <div class="export-grid">
-                <button class="btn btn-outline btn-sm export-btn" id="btn-csv" onclick="doExport('csv')" disabled style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px">
-                    <i class="fas fa-file-csv" style="font-size:18px;color:var(--accent-teal)"></i>
-                    <span style="font-size:10px">CSV</span>
-                </button>
-                <button class="btn btn-outline btn-sm export-btn" id="btn-pdf" onclick="doExport('pdf')" disabled style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px">
-                    <i class="fas fa-file-pdf" style="font-size:18px;color:var(--accent-orange)"></i>
-                    <span style="font-size:10px">PDF</span>
-                </button>
-                <button class="btn btn-outline btn-sm export-btn" id="btn-geojson" onclick="doExport('geojson')" disabled style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px">
-                    <i class="fas fa-map-marked-alt" style="font-size:18px;color:#a78bfa"></i>
-                    <span style="font-size:10px">GeoJSON</span>
-                </button>
-            </div>
-        </div>
-
-    </aside>
-
-    <!-- ===== MAPA ===== -->
-    <div class="map-container">
-        <div id="map" style="width:100%;height:100%"></div>
-        
-        <!-- Controles de camadas flutuantes -->
-        <div class="layer-controls">
-            <div class="floating-panel" style="display:flex;flex-direction:column;gap:4px">
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Camadas</div>
-                <button class="layer-btn active" id="layer-ieh"    onclick="switchLayer('ieh')">IEH</button>
-                <button class="layer-btn"         id="layer-ndvi"   onclick="switchLayer('ndvi')">NDVI</button>
-                <button class="layer-btn"         id="layer-ndwi"   onclick="switchLayer('ndwi')">NDWI</button>
-                <button class="layer-btn"         id="layer-msi"    onclick="switchLayer('msi')">MSI</button>
-                <button class="layer-btn"         id="layer-nmdi"   onclick="switchLayer('nmdi')">NMDI</button>
-            </div>
-        </div>
-        
-        <!-- Container de toasts -->
-        <div class="toast-container" id="toast-container"></div>
-    </div>
-</div>
-
-<!-- Scripts CDN -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-<script type="module">
-import UploadManager from './upload_manager.js';
-import ApiClient from './api_client.js';
-import MapController from './map_controller.js';
-
-// ============================================================
-// VARIÁVEIS GLOBAIS
-// ============================================================
-const API_BASE = 'http://localhost:8000';
-let currentGeoJSON = null;
-let currentResults = null;
-let donutChart = null;
-let availableVarieties = [];
-let currentWeights = { w1: 0.35, w2: 0.30, w3: 0.20, w4: 0.15 };
-
-// Instancias
-const mapCtrl = new MapController('map');
-const apiClient = new ApiClient(API_BASE);
-const uploadMgr = new UploadManager({
-    dropZone: document.getElementById('drop-zone'),
-    fileInput: document.getElementById('file-input'),
-    onSuccess: onUploadSuccess,
-    onError: (msg) => showToast(msg, 'error'),
-    onProgress: (pct, msg) => console.log(pct, msg)
-});
-
-// ============================================================
-// INICIALIZAÇÃO
-// ============================================================
-document.addEventListener('DOMContentLoaded', async () => {
-    mapCtrl.init();
-    initFarmSearch();
-    setDefaultDates();
-    await checkBackend();
-    await loadVarieties();
-});
-
-// Expor funções para acesso global (onclick nos botões)
-window.loadSample = loadSample;
-window.runAnalysis = runAnalysis;
-window.switchLayer = switchLayer;
-window.doExport = doExport;
-window.applyVarietyEdits = applyVarietyEdits;
-window.updateWeights = updateWeights;
-window.loadSelectedTalhoes = loadSelectedTalhoes;
-
-// ============================================================
-// BACKEND STATUS
-// ============================================================
-async function checkBackend() {
-    const dot = document.getElementById('status-dot');
-    const txt = document.getElementById('status-text');
-    const online = await apiClient.checkConnection();
-    if (online) {
-        dot.style.background = '#22c55e';
-        txt.textContent = 'Backend online';
-        showToast('Backend conectado com sucesso!', 'info');
-    } else {
-        dot.style.background = '#ef4444';
-        txt.textContent = 'Backend offline';
-        showToast('Backend não encontrado em localhost:8000. Inicie o servidor Python.', 'error');
-        document.getElementById('btn-analyze').disabled = true;
-    }
-    return online;
-}
-
-// ============================================================
-// CARREGA VARIEDADES
-// ============================================================
-async function loadVarieties() {
-    try {
-        availableVarieties = await apiClient.getVarieties();
-    } catch {
-        // Fallback com variedades principais
-        availableVarieties = [
-            { id: 'RB867515', nome: 'RB867515', tolerancia: 'tolerante' },
-            { id: 'RB92579',  nome: 'RB92579',  tolerancia: 'muito_tolerante' },
-            { id: 'CTC4',     nome: 'CTC4',     tolerancia: 'sensivel' },
-            { id: 'SP80-1842',nome: 'SP80-1842',tolerancia: 'sensivel' },
-            { id: 'IAC91-1099',nome:'IAC91-1099',tolerancia: 'moderada'},
-            { id: 'Desconhecida', nome: 'Desconhecida', tolerancia: 'moderada' },
-        ];
-    }
-}
-
-// ============================================================
-// BUSCA CUSTOMIZADA DE FAZENDA E TALHÕES
-// ============================================================
-function removeAcentos(str) {
-    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-}
-
-function initFarmSearch() {
-    const input = document.getElementById('talhao-select');
-    input.addEventListener('input', (e) => doFazendaSearch(e.target.value));
-    
-    // Select All
-    document.getElementById('select-all-talhoes').addEventListener('change', (e) => {
-        document.querySelectorAll('.talhao-chk').forEach(chk => chk.checked = e.target.checked);
-    });
-}
-
-function doFazendaSearch(query) {
-    const dropdown = document.getElementById('fazenda-dropdown');
-    if (!dropdown) return;
-
-    const q = removeAcentos(query);
-    if (q.length < 1) { dropdown.style.display = 'none'; return; }
-
-    if (typeof GEOPORTAL_LAYERS === 'undefined') {
-        dropdown.innerHTML = '<div style="padding:10px;color:var(--text-muted);">Carregando dados...</div>';
-        dropdown.style.display = 'block';
-        return;
-    }
-
-    const seen = new Set();
-    const results = [];
-
-    const searchInLayer = (layerName) => {
-        if (GEOPORTAL_LAYERS[layerName] && GEOPORTAL_LAYERS[layerName].features) {
-            GEOPORTAL_LAYERS[layerName].features.forEach(f => {
-                const nome = String(f.properties.NOME_FAZ || f.properties.NAME || f.properties.Name || f.properties.name || '');
-                if (nome && removeAcentos(nome).includes(q) && !seen.has(nome)) {
-                    seen.add(nome);
-                    results.push(nome);
-                }
-            });
-        }
-    };
-
-    searchInLayer("TALHOES");
-    searchInLayer("FAZENDAS");
-
-    results.sort();
-    dropdown.innerHTML = '';
-
-    if (results.length === 0) {
-        dropdown.innerHTML = '<div style="padding:10px;color:var(--text-muted);">Nenhuma fazenda encontrada</div>';
-        dropdown.style.display = 'block';
-        return;
-    }
-
-    results.slice(0, 30).forEach(nome => {
-        const item = document.createElement('div');
-        item.textContent = nome;
-        item.style.cssText = 'padding:10px 14px;cursor:pointer;color:var(--text-primary);font-size:14px;border-bottom:1px solid rgba(255,255,255,0.06);';
-
-        const selectFazenda = () => {
-            document.getElementById('talhao-select').value = nome;
-            dropdown.style.display = 'none';
-            populateTalhoesCheckboxes(nome);
-        };
-
-        item.addEventListener('mouseenter', () => { item.style.background = 'rgba(255,255,255,0.1)'; });
-        item.addEventListener('mouseleave', () => { item.style.background = ''; });
-        item.addEventListener('mousedown', ev => ev.preventDefault());
-        item.addEventListener('click', selectFazenda);
-        item.addEventListener('touchend', ev => { ev.preventDefault(); selectFazenda(); });
-
-        dropdown.appendChild(item);
-    });
-
-    dropdown.style.display = 'block';
-}
-
-function populateTalhoesCheckboxes(fazendaNome) {
-    const container = document.getElementById('talhoes-container');
-    const lista = document.getElementById('talhoes-list');
-    
-    if (!fazendaNome || typeof GEOPORTAL_LAYERS === 'undefined') {
-        container.style.display = 'none';
-        return;
-    }
-
-    const qFaz = removeAcentos(fazendaNome);
-    const found = [];
-
-    if (GEOPORTAL_LAYERS["TALHOES"] && GEOPORTAL_LAYERS["TALHOES"].features) {
-        GEOPORTAL_LAYERS["TALHOES"].features.forEach(f => {
-            const fName = String(f.properties.NOME_FAZ || f.properties.NAME || f.properties.Name || '');
-            if (removeAcentos(fName) === qFaz) {
-                found.push(f);
-            }
-        });
-    }
-
-    if (found.length === 0) {
-        lista.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhum talhão encontrado para esta fazenda.</div>';
-    } else {
-        // Ordena por nome do talhão
-        found.sort((a,b) => {
-            const na = String(a.properties.id_talhao || a.properties.ID_TALHAO || a.properties.TALHAO || '');
-            const nb = String(b.properties.id_talhao || b.properties.ID_TALHAO || b.properties.TALHAO || '');
-            return na.localeCompare(nb, undefined, {numeric: true});
-        });
-
-        lista.innerHTML = '';
-        found.forEach((f, idx) => {
-            const nomeT = String(f.properties.id_talhao || f.properties.ID_TALHAO || f.properties.TALHAO || `Talhão ${idx+1}`);
-            // Normalizar ID do talhão
-            if (!f.properties.id_talhao) f.properties.id_talhao = nomeT;
-            
-            const area = f.properties.AREA_HA || f.properties.area_ha || 0;
-            const areaStr = area > 0 ? ` (${Number(area).toFixed(1)} ha)` : '';
-
-            const div = document.createElement('div');
-            div.style.cssText = 'padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 8px; font-size: 13px; color:var(--text-primary);';
-            
-            const chk = document.createElement('input');
-            chk.type = 'checkbox';
-            chk.className = 'talhao-chk';
-            chk.value = idx; // armazena o índice do array 'found'
-            // Salva a feature inteira no dataset não funciona bem, vamos usar uma variável global temporária
-            chk.dataset.idx = idx;
-
-            const lbl = document.createElement('label');
-            lbl.textContent = `${nomeT}${areaStr}`;
-            lbl.style.cursor = 'pointer';
-            lbl.onclick = () => { chk.checked = !chk.checked; };
-
-            div.appendChild(chk);
-            div.appendChild(lbl);
-            lista.appendChild(div);
-        });
-    }
-    
-    // Armazena temporariamente
-    window.tempTalhoesList = found;
-    document.getElementById('select-all-talhoes').checked = false;
-    container.style.display = 'block';
-}
-
-function loadSelectedTalhoes() {
-    const checkboxes = document.querySelectorAll('.talhao-chk:checked');
-    if (checkboxes.length === 0) {
-        showToast('Selecione pelo menos um talhão!', 'error');
-        return;
-    }
-    
-    const selectedFeatures = [];
-    checkboxes.forEach(chk => {
-        const idx = parseInt(chk.dataset.idx);
-        if (window.tempTalhoesList && window.tempTalhoesList[idx]) {
-            selectedFeatures.push(window.tempTalhoesList[idx]);
-        }
-    });
-    
-    const featureCollection = { type: 'FeatureCollection', features: selectedFeatures };
-    
-    // Calcular bounds
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    selectedFeatures.forEach(f => {
-        if(f.geometry && f.geometry.coordinates) {
-             const extract = (arr, depth) => {
-                 if (depth === 0) {
-                     if(arr[0] < minX) minX = arr[0]; if(arr[1] < minY) minY = arr[1];
-                     if(arr[0] > maxX) maxX = arr[0]; if(arr[1] > maxY) maxY = arr[1];
-                     return;
-                 }
-                 arr.forEach(item => extract(item, depth - 1));
-             };
-             if (f.geometry.type === 'Polygon') extract(f.geometry.coordinates, 2);
-             else if (f.geometry.type === 'MultiPolygon') extract(f.geometry.coordinates, 3);
-        }
-    });
-    
-    const stats = {
-        featureCount: selectedFeatures.length,
-        center: [(minX + maxX) / 2, (minY + maxY) / 2]
-    };
-    
-    onUploadSuccess(featureCollection, stats);
-}
-
-function onUploadSuccess(geojson, stats) {
-    currentGeoJSON = geojson;
-    document.getElementById('upload-info').style.display = 'block';
-    document.getElementById('upload-count').textContent = `${stats.featureCount} talhões carregados`;
-    document.getElementById('upload-bounds').textContent =
-        `Centro: ${stats.center[1].toFixed(4)}°, ${stats.center[0].toFixed(4)}°`;
-    
-    mapCtrl.loadTalhoes(geojson);
-    populateTalhoesTable(geojson.features);
-    document.getElementById('talhoes-section').style.display = 'block';
-    document.getElementById('btn-analyze').disabled = false;
-    showToast(`${stats.featureCount} talhões carregados no mapa!`, 'success');
-}
-
-async function loadSample() {
-    try {
-        const res = await fetch('./sample_talhoes.geojson');
-        const geojson = await res.json();
-        const uploadMgrTemp = new UploadManager({ dropZone: {}, fileInput: {}, onSuccess: onUploadSuccess, onError: alert });
-        const validated = uploadMgrTemp.validateGeoJSON(geojson);
-        const stats = uploadMgrTemp.getFileStats(validated);
-        onUploadSuccess(validated, stats);
-        document.getElementById('drop-zone').classList.add('has-file');
-        showToast('Arquivo de exemplo carregado!', 'info');
-    } catch (err) {
-        showToast('Erro ao carregar exemplo: ' + err.message, 'error');
-    }
-}
-
-// ============================================================
-// TABELA DE TALHÕES
-// ============================================================
-function populateTalhoesTable(features) {
-    const tbody = document.getElementById('talhoes-tbody');
-    tbody.innerHTML = '';
-    
-    const varOptions = availableVarieties.map(v =>
-        `<option value="${v.id}">${v.nome}</option>`
-    ).join('');
-    
-    features.forEach((feat, idx) => {
-        const p = feat.properties;
-        const row = document.createElement('tr');
-        row.setAttribute('data-idx', idx);
-        row.innerHTML = `
-            <td style="font-weight:600">${p.id_talhao}</td>
-            <td>
-                <select class="variety-select" data-idx="${idx}" title="Selecionar variedade">
-                    <option value="">--</option>
-                    ${varOptions}
-                </select>
-            </td>
-            <td style="font-size:11px;color:var(--text-muted)">${p.estagio_desenvolvimento || '-'}</td>
-            <td>${p.area_ha ? Number(p.area_ha).toFixed(1) : '-'}</td>
-            <td id="ieh-cell-${idx}">-</td>`;
-        tbody.appendChild(row);
-        
-        // Pré-seleciona variedade se já existir
-        const sel = row.querySelector('select');
-        if (p.variedade) {
-            const opt = Array.from(sel.options).find(o => o.value === p.variedade || o.text.includes(p.variedade));
-            if (opt) sel.value = opt.value;
-            else sel.options[0] = new Option(p.variedade, p.variedade, true, true);
-        }
-    });
-}
-
-function applyVarietyEdits() {
-    if (!currentGeoJSON) return;
-    document.querySelectorAll('.variety-select').forEach(sel => {
-        const idx = parseInt(sel.dataset.idx);
-        if (!isNaN(idx) && currentGeoJSON.features[idx]) {
-            currentGeoJSON.features[idx].properties.variedade = sel.value;
-        }
-    });
-    showToast('Variedades atualizadas!', 'success');
-}
-
-// ============================================================
-// ANÁLISE PRINCIPAL
-// ============================================================
-async function runAnalysis() {
-    if (!currentGeoJSON) {
-        showToast('Carregue os talhões primeiro!', 'error');
-        return;
-    }
-    
-    applyVarietyEdits();
-    
-    const startDate = document.getElementById('start-date').value;
-    const endDate = document.getElementById('end-date').value;
-    const cloudThreshold = parseInt(document.getElementById('cloud-threshold').value);
-    
-    if (!startDate || !endDate) {
-        showToast('Selecione o período de análise!', 'error');
-        return;
-    }
-    
-    // UI: estado de carregamento
-    document.getElementById('btn-analyze').disabled = true;
-    document.getElementById('progress-container').style.display = 'block';
-    setProgress(5, 'Conectando ao servidor...');
-    
-    try {
-        // Verifica conexão
-        const online = await apiClient.checkConnection();
-        if (!online) throw new Error('Backend offline. Inicie o servidor com: uvicorn main:app --reload');
-        
-        setProgress(15, 'Buscando imagens Sentinel-2...');
-        
-        // Simula progresso visual durante processamento
-        const progressInterval = setInterval(() => {
-            const bar = document.getElementById('progress-bar');
-            const current = parseInt(bar.style.width);
-            if (current < 85) {
-                const steps = ['Baixando bandas do Sentinel-2...', 'Calculando NDVI, NDWI, MSI...', 'Consultando SoilGrids...', 'Calculando TWI...', 'Calculando IEH combinado...'];
-                const step = Math.floor((current - 15) / 14);
-                setProgress(current + 2, steps[Math.min(step, steps.length-1)]);
-            }
-        }, 1500);
-        
-        const result = await apiClient.analyzeGeoJSON(currentGeoJSON, {
-            startDate,
-            endDate,
-            cloudThreshold,
-            weights: currentWeights
-        });
-        
-        clearInterval(progressInterval);
-        setProgress(100, 'Análise concluída!');
-        
-        currentResults = result;
-        
-        // Renderiza resultados
-        setTimeout(() => {
-            mapCtrl.renderIEH(result.geojson);
-            updateStatsPanel(result.estatisticas);
-            updateTalhoesTableWithResults(result.geojson.features);
-            enableExportButtons();
-            document.getElementById('stats-section').style.display = 'block';
-            document.getElementById('progress-container').style.display = 'none';
-            showToast(`Análise concluída! ${result.total_talhoes} talhões processados.`, 'success');
-        }, 500);
-        
-    } catch (err) {
-        document.getElementById('progress-container').style.display = 'none';
-        showToast('Erro na análise: ' + err.message, 'error');
-    } finally {
-        document.getElementById('btn-analyze').disabled = false;
-    }
-}
-
-// ============================================================
-// PAINEL DE ESTATÍSTICAS
-// ============================================================
-function updateStatsPanel(stats) {
-    document.getElementById('stat-verde').textContent    = stats.sem_estresse?.count || 0;
-    document.getElementById('stat-verde-ha').textContent = `${stats.sem_estresse?.area_ha || 0} ha`;
-    document.getElementById('stat-amarelo').textContent  = stats.estresse_leve?.count || 0;
-    document.getElementById('stat-amarelo-ha').textContent = `${stats.estresse_leve?.area_ha || 0} ha`;
-    document.getElementById('stat-laranja').textContent  = stats.estresse_moderado?.count || 0;
-    document.getElementById('stat-laranja-ha').textContent = `${stats.estresse_moderado?.area_ha || 0} ha`;
-    document.getElementById('stat-vermelho').textContent = stats.estresse_severo?.count || 0;
-    document.getElementById('stat-vermelho-ha').textContent = `${stats.estresse_severo?.area_ha || 0} ha`;
-    
-    // Donut chart
-    const data = [
-        stats.sem_estresse?.count || 0,
-        stats.estresse_leve?.count || 0,
-        stats.estresse_moderado?.count || 0,
-        stats.estresse_severo?.count || 0,
-    ];
-    if (donutChart) donutChart.destroy();
-    const ctx = document.getElementById('donut-chart').getContext('2d');
-    donutChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Sem Estresse', 'Leve', 'Moderado', 'Severo'],
-            datasets: [{ data, backgroundColor: ['#22c55e','#eab308','#f97316','#ef4444'], borderWidth: 2, borderColor: '#141720' }]
-        },
-        options: {
-            responsive: false,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${c.raw} talhões` } } },
-            cutout: '65%'
-        }
-    });
-}
-
-function updateTalhoesTableWithResults(features) {
-    features.forEach((feat, idx) => {
-        const p = feat.properties;
-        const cell = document.getElementById(`ieh-cell-${idx}`);
-        if (!cell) return;
-        if (p.ieh_value != null) {
-            const pct = (p.ieh_value * 100).toFixed(1);
-            const cor = p.ieh_cor || '#64748b';
-            const textCor = p.ieh_classe === 'Estresse Leve' ? '#000' : '#fff';
-            cell.innerHTML = `<span class="ieh-badge" style="background:${cor};color:${textCor}">${pct}%</span>`;
-        } else {
-            cell.innerHTML = '<span style="color:var(--text-muted);font-size:11px">N/D</span>';
-        }
-    });
-}
-
-// ============================================================
-// CAMADAS DO MAPA
-// ============================================================
-function switchLayer(layerName) {
-    if (!currentResults) {
-        showToast('Execute a análise primeiro!', 'info');
-        return;
-    }
-    
-    document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`layer-${layerName}`)?.classList.add('active');
-    
-    if (layerName === 'ieh') {
-        mapCtrl.renderIEH(currentResults.geojson);
-    } else {
-        mapCtrl.renderLayerIndex(layerName, currentResults.geojson);
-    }
-}
-
-// ============================================================
-// EXPORTAÇÃO
-// ============================================================
-async function doExport(type) {
-    if (!currentResults) return;
-    try {
-        const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
-        if (type === 'csv') {
-            const blob = await apiClient.exportCSV();
-            apiClient.downloadBlob(blob, `estresse_hidrico_${date}.csv`);
-            showToast('CSV exportado!', 'success');
-        } else if (type === 'pdf') {
-            const blob = await apiClient.exportPDF();
-            apiClient.downloadBlob(blob, `relatorio_estresse_${date}.pdf`);
-            showToast('PDF exportado!', 'success');
-        } else if (type === 'geojson') {
-            const data = await apiClient.exportGeoJSON();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            apiClient.downloadBlob(blob, `estresse_hidrico_${date}.geojson`);
-            showToast('GeoJSON exportado!', 'success');
-        }
-    } catch (err) {
-        showToast('Erro ao exportar: ' + err.message, 'error');
-    }
-}
-
-function enableExportButtons() {
-    ['btn-csv','btn-pdf','btn-geojson'].forEach(id => {
-        document.getElementById(id).disabled = false;
-    });
-}
-
-// ============================================================
-// PESOS DO IEH
-// ============================================================
-function updateWeights() {
-    const w1 = parseInt(document.getElementById('w1').value);
-    const w2 = parseInt(document.getElementById('w2').value);
-    const w3 = parseInt(document.getElementById('w3').value);
-    const w4 = parseInt(document.getElementById('w4').value);
-    const total = w1 + w2 + w3 + w4;
-    
-    document.getElementById('w1-val').textContent = Math.round(w1/total*100) + '%';
-    document.getElementById('w2-val').textContent = Math.round(w2/total*100) + '%';
-    document.getElementById('w3-val').textContent = Math.round(w3/total*100) + '%';
-    document.getElementById('w4-val').textContent = Math.round(w4/total*100) + '%';
-    
-    currentWeights = { w1: w1/total, w2: w2/total, w3: w3/total, w4: w4/total };
-    document.getElementById('weights-warning').style.display = total !== 100 ? 'block' : 'none';
-}
-
-// ============================================================
-// UTILITÁRIOS
-// ============================================================
-function setDefaultDates() {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 45);
-    document.getElementById('end-date').valueAsDate = end;
-    document.getElementById('start-date').valueAsDate = start;
-}
-
-function setProgress(pct, text) {
-    document.getElementById('progress-bar').style.width = pct + '%';
-    document.getElementById('progress-text').textContent = text;
-}
-
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
-    toast.innerHTML = `<i class="fas ${icons[type]||'fa-info-circle'}"></i> ${message}`;
-    container.appendChild(toast);
-    setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 4000);
-}
-</script>
-
+    <!-- Scripts da Aplicação -->
+    <script src="estresse_hidrico.js"></script>
 </body>
 </html>
