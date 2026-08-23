@@ -445,7 +445,7 @@ function renderTalhaoOnMap(geojson) {
     map.fitBounds(bounds, { padding: [50, 50] });
     
     // Gerar uma imagem falsa-cor (NDRE) dinâmica para simular os pixels do satélite
-    const imgDataUrl = generateSimulatedNDRERaster();
+    const imgDataUrl = generateSimulatedNDRERaster(bounds, geojson.geometry || geojson);
     
     rasterLayer = L.imageOverlay(imgDataUrl, bounds, {
         opacity: 0.7,
@@ -455,20 +455,60 @@ function renderTalhaoOnMap(geojson) {
 
 /**
  * Gera um raster PNG em base64 simulando pixels de 10m do Sentinel-2 (Gradiente NDRE)
+ * Recorta a imagem exatamente nos limites do polígono do talhão
  */
-function generateSimulatedNDRERaster() {
+function generateSimulatedNDRERaster(bounds, geometry) {
     const canvas = document.createElement('canvas');
-    canvas.width = 100;
-    canvas.height = 100;
+    canvas.width = 150; // Resolução melhorada
+    canvas.height = 150;
     const ctx = canvas.getContext('2d');
     
-    // Simulação de distribuição espacial da maturação (Ruído)
-    for (let x = 0; x < 100; x += 2) {
-        for (let y = 0; y < 100; y += 2) {
+    // 1. Criar máscara de recorte (Clipping) com o formato exato da fazenda
+    const latMin = bounds.getSouth();
+    const latMax = bounds.getNorth();
+    const lngMin = bounds.getWest();
+    const lngMax = bounds.getEast();
+    
+    const latDiff = latMax - latMin;
+    const lngDiff = lngMax - lngMin;
+    
+    function project(coord) {
+        const x = ((coord[0] - lngMin) / lngDiff) * canvas.width;
+        const y = ((latMax - coord[1]) / latDiff) * canvas.height;
+        return [x, y];
+    }
+    
+    ctx.beginPath();
+    // Se for um Feature, a geometria real fica em geometry.geometry
+    const geom = geometry.type === 'Feature' ? geometry.geometry : geometry;
+    
+    if (geom && geom.type === 'Polygon') {
+        const ring = geom.coordinates[0];
+        ring.forEach((coord, i) => {
+            const [x, y] = project(coord);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+    } else if (geom && geom.type === 'MultiPolygon') {
+        geom.coordinates.forEach(polygon => {
+            const ring = polygon[0];
+            ring.forEach((coord, i) => {
+                const [x, y] = project(coord);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+        });
+    }
+    ctx.closePath();
+    ctx.clip(); // Tudo desenhado daqui em diante ficará DENTRO deste polígono
+    
+    // 2. Simulação de distribuição espacial da maturação (Ruído Pixelado)
+    for (let x = 0; x < canvas.width; x += 3) {
+        for (let y = 0; y < canvas.height; y += 3) {
             // Criar um padrão pseudo-realista (bordas mais secas, centro mais verde)
-            const distToCenter = Math.sqrt(Math.pow(x - 50, 2) + Math.pow(y - 50, 2));
-            let baseProb = 1 - (distToCenter / 70); 
-            baseProb += (Math.random() * 0.4 - 0.2); // adicionar ruído
+            const distToCenter = Math.sqrt(Math.pow(x - (canvas.width/2), 2) + Math.pow(y - (canvas.height/2), 2));
+            let baseProb = 1 - (distToCenter / (canvas.width/1.2)); 
+            baseProb += (Math.random() * 0.5 - 0.25); // ruído
             
             let color;
             if (baseProb > 0.7) color = '#2ecc71'; // Verde (Alto NDRE)
@@ -477,7 +517,7 @@ function generateSimulatedNDRERaster() {
             else color = '#e74c3c'; // Vermelho (Seco / Isoporizado)
             
             ctx.fillStyle = color;
-            ctx.fillRect(x, y, 2, 2);
+            ctx.fillRect(x, y, 3, 3);
         }
     }
     
