@@ -1071,6 +1071,12 @@
 
                 
                 document.getElementById('btn-refresh-app').addEventListener('click', () => {
+                    const updatesEnabled = localStorage.getItem('agrogis_updates_enabled') === 'true';
+                    if (!updatesEnabled) {
+                        alert('Atenção: Sua conta não tem permissão para receber atualizações do sistema.');
+                        return;
+                    }
+
                     // Show updating overlay
                     let updateOverlay = document.getElementById('update-overlay');
                     if (!updateOverlay) {
@@ -1139,9 +1145,23 @@
         // Register PWA Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('PWA Service Worker Registrado!'))
-                    .catch(err => console.error('Erro no PWA Service Worker', err));
+                const updatesEnabled = localStorage.getItem('agrogis_updates_enabled') === 'true';
+                if (updatesEnabled) {
+                    navigator.serviceWorker.register('sw.js')
+                        .then(reg => {
+                            console.log('PWA Service Worker Registrado!');
+                            // Force check for update every load if enabled
+                            reg.update().catch(e => console.log('Update check ignored', e));
+                        })
+                        .catch(err => console.error('Erro no PWA Service Worker', err));
+                } else {
+                    // Updates disabled: Unregister to freeze current cache state (or drop offline entirely, but stops new code arriving)
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        for(let registration of registrations) {
+                            registration.unregister();
+                        }
+                    });
+                }
             });
         }
         // PWA Install Prompt Logic

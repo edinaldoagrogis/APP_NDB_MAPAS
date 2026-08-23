@@ -63,6 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             localStorage.removeItem('agrogis_entomologia');
                         }
+                        
+                        // Sync Auth Level
+                        if (data.level) {
+                            localStorage.setItem('agrogis_auth_level', data.level);
+                        }
                     }
                 }).catch(e => {
                     // Ignore network errors (offline mode support)
