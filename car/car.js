@@ -48,15 +48,96 @@ function loadBaseLayers() {
     }
     
     // Any other polygon layers could be added here
-    const otherLayers = ["APP", "RESERVA", "HIDROGRAFIA"];
-    otherLayers.forEach(layerName => {
-        if (GEOPORTAL_LAYERS[layerName]) {
-            L.geoJSON(GEOPORTAL_LAYERS[layerName], {
-                style: { ...styleUnselectable, color: '#999999' },
-                interactive: false
-            }).addTo(baseLayersGroup);
-        }
-    });
+    if (GEOPORTAL_LAYERS["HIDROGRAFIA"]) {
+        L.geoJSON(GEOPORTAL_LAYERS["HIDROGRAFIA"], {
+            style: { ...styleUnselectable, color: '#3b82f6' },
+            interactive: false
+        }).addTo(baseLayersGroup);
+    }
+
+    // Setup Map Controls (GPS and Fullscreen)
+    setupMapControls();
+}
+
+let currentAppLayer = null;
+let currentReservaLayer = null;
+
+function setupMapControls() {
+    // GPS
+    const btnGps = document.getElementById('btn-gps');
+    if (btnGps) {
+        btnGps.addEventListener('click', () => {
+            map.locate({setView: true, maxZoom: 16});
+        });
+        map.on('locationfound', function(e) {
+            L.marker(e.latlng).addTo(map).bindPopup("Você está aqui!").openPopup();
+            L.circle(e.latlng, e.accuracy).addTo(map);
+        });
+        map.on('locationerror', function(e) {
+            alert("Não foi possível acessar a localização GPS: " + e.message);
+        });
+    }
+
+    // Tela Cheia
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const mapDiv = document.getElementById('car-map');
+    if (btnFullscreen) {
+        btnFullscreen.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                mapDiv.requestFullscreen().catch(err => {
+                    alert(`Erro ao tentar entrar em tela cheia: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    }
+
+    // Toggle APP
+    const toggleApp = document.getElementById('toggle-app');
+    if (toggleApp) {
+        toggleApp.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                if (GEOPORTAL_LAYERS["APP"]) {
+                    currentAppLayer = L.geoJSON(GEOPORTAL_LAYERS["APP"], {
+                        style: { color: '#10b981', weight: 2, fillOpacity: 0.3 }, // Verde claro
+                        interactive: true,
+                        onEachFeature: function(f, l) { l.bindPopup("Área de Preservação Permanente (APP)"); }
+                    }).addTo(map);
+                } else {
+                    alert("A camada de APP não está disponível nos dados atuais.");
+                    e.target.checked = false;
+                }
+            } else if (currentAppLayer) {
+                map.removeLayer(currentAppLayer);
+                currentAppLayer = null;
+            }
+        });
+    }
+
+    // Toggle Reserva Legal
+    const toggleReserva = document.getElementById('toggle-reserva');
+    if (toggleReserva) {
+        toggleReserva.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                const layerData = GEOPORTAL_LAYERS["RESERVA_LEGAL"] || GEOPORTAL_LAYERS["RESERVA"];
+                if (layerData) {
+                    currentReservaLayer = L.geoJSON(layerData, {
+                        style: { color: '#059669', weight: 2, fillOpacity: 0.3 }, // Verde escuro
+                        interactive: true,
+                        onEachFeature: function(f, l) { l.bindPopup("Reserva Legal"); }
+                    }).addTo(map);
+                } else {
+                    alert("A camada de Reserva Legal não está disponível nos dados atuais.");
+                    e.target.checked = false;
+                }
+            } else if (currentReservaLayer) {
+                map.removeLayer(currentReservaLayer);
+                currentReservaLayer = null;
+            }
+        });
+    }
+}
 
     // Extract Fazendas for search
     if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {

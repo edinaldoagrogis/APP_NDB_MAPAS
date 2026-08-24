@@ -17,6 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
     map.createPane('harvestLinesPane');
     map.getPane('harvestLinesPane').style.zIndex = 450;
     
+    // Fix map rendering issues when returning from other tools (bfcache)
+    window.addEventListener('pageshow', (e) => {
+        if (window.map) {
+            setTimeout(() => {
+                window.map.invalidateSize();
+            }, 300);
+        }
+    });
+
     // Prevent map interactions when scrolling or clicking the floating panels
     setTimeout(() => {
         ['floating-layers-panel', 'floating-tools-panel', 'measure-result', 'route-panel', 'custom-name-modal', 'clima-farm-panel'].forEach(id => {
