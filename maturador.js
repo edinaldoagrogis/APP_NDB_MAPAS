@@ -225,29 +225,53 @@ function getBboxFromGeojson(geojson) {
 // ============================================================
 async function findBestSentinel2Scene(bbox, targetDateStr) {
     const target = new Date(targetDateStr);
-    const start = new Date(target); start.setDate(start.getDate() - 20);
-    const end = new Date(target);   end.setDate(end.getDate() + 20);
+    const start = new Date(target); start.setDate(start.getDate() - 25);
+    const end   = new Date(target); end.setDate(end.getDate() + 25);
 
+    const startStr = start.toISOString().split('T')[0];
+    const endStr   = end.toISOString().split('T')[0];
+
+    // Corpo compatível com EarthSearch v1 e Planetary Computer
     const body = {
         collections: [SENTINEL_COLLECTION],
         bbox: bbox,
-        datetime: start.toISOString().split('T')[0] + '/' + end.toISOString().split('T')[0],
-        'filter-lang': 'cql2-json',
-        filter: { op: 'lt', args: [{ property: 'eo:cloud_cover' }, 30] },
-        sortby: [{ field: 'eo:cloud_cover', direction: 'asc' }],
+        datetime: startStr + '/' + endStr,
+        query: { 'eo:cloud_cover': { 'lt': 40 } },
         limit: 5
     };
 
-    const resp = await fetch(STAC_SEARCH_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    });
+    // Tenta Element84 primeiro, depois Planetary Computer como fallback
+    const endpoints = [
+        'https://earth-search.aws.element84.com/v1/search',
+        'https://planetarycomputer.microsoft.com/api/stac/v1/search'
+    ];
 
-    if (!resp.ok) throw new Error('STAC search falhou: ' + resp.status);
-    const data = await resp.json();
-    return data.features && data.features.length > 0 ? data.features[0] : null;
+    for (const endpoint of endpoints) {
+        try {
+            const resp = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (!resp.ok) continue; // tenta próximo endpoint
+
+            const data = await resp.json();
+            if (data.features && data.features.length > 0) {
+                // Ordena pelo menor cloud cover
+                data.features.sort((a, b) =>
+                    (a.properties['eo:cloud_cover'] || 99) - (b.properties['eo:cloud_cover'] || 99)
+                );
+                return data.features[0];
+            }
+        } catch (err) {
+            continue; // tenta próximo endpoint
+        }
+    }
+
+    return null; // nenhuma cena encontrada
 }
+
 
 // ============================================================
 // TITILER: BUSCAR ESTATÍSTICAS DE BANDA
