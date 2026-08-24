@@ -55,88 +55,133 @@ function loadBaseLayers() {
         }).addTo(baseLayersGroup);
     }
 
-    // Setup Map Controls (GPS and Fullscreen)
+    // Adiciona as camadas sobre o mapa usando o controle nativo do Leaflet no canto superior esquerdo
     setupMapControls();
 }
 
-let currentAppLayer = null;
-let currentReservaLayer = null;
+let userLocationMarker = null;
+let userLocationCircle = null;
+let lastKnownLocation = null;
 
 function setupMapControls() {
-    // GPS
-    const btnGps = document.getElementById('btn-gps');
-    if (btnGps) {
-        btnGps.addEventListener('click', () => {
-            map.locate({setView: true, maxZoom: 16});
+    // 1. Controle de Camadas (APP e Reserva Legal) - Topo Esquerdo
+    const overlayMaps = {};
+    
+    if (GEOPORTAL_LAYERS["APP"]) {
+        const appLayer = L.geoJSON(GEOPORTAL_LAYERS["APP"], {
+            style: { color: '#10b981', weight: 2, fillOpacity: 0.3 },
+            interactive: false
         });
-        map.on('locationfound', function(e) {
-            L.marker(e.latlng).addTo(map).bindPopup("Você está aqui!").openPopup();
-            L.circle(e.latlng, e.accuracy).addTo(map);
+        overlayMaps["APP (Área de Preservação)"] = appLayer;
+    }
+    
+    const rlData = GEOPORTAL_LAYERS["RESERVA_LEGAL"] || GEOPORTAL_LAYERS["RESERVA"];
+    if (rlData) {
+        const rlLayer = L.geoJSON(rlData, {
+            style: { color: '#059669', weight: 2, fillOpacity: 0.3 },
+            interactive: false
         });
-        map.on('locationerror', function(e) {
-            alert("Não foi possível acessar a localização GPS: " + e.message);
-        });
+        overlayMaps["Reserva Legal"] = rlLayer;
     }
 
-    // Tela Cheia
-    const btnFullscreen = document.getElementById('btn-fullscreen');
-    const mapDiv = document.getElementById('car-map');
-    if (btnFullscreen) {
-        btnFullscreen.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                mapDiv.requestFullscreen().catch(err => {
-                    alert(`Erro ao tentar entrar em tela cheia: ${err.message}`);
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        });
+    // Só adiciona o controle se tiver camadas
+    if (Object.keys(overlayMaps).length > 0) {
+        L.control.layers(null, overlayMaps, { position: 'topleft', collapsed: true }).addTo(map);
     }
 
-    // Toggle APP
-    const toggleApp = document.getElementById('toggle-app');
-    if (toggleApp) {
-        toggleApp.addEventListener('change', function(e) {
-            if (e.target.checked) {
-                if (GEOPORTAL_LAYERS["APP"]) {
-                    currentAppLayer = L.geoJSON(GEOPORTAL_LAYERS["APP"], {
-                        style: { color: '#10b981', weight: 2, fillOpacity: 0.3 }, // Verde claro
-                        interactive: true,
-                        onEachFeature: function(f, l) { l.bindPopup("Área de Preservação Permanente (APP)"); }
-                    }).addTo(map);
+    // 2. Controle de Tela Cheia - Topo Direito
+    L.Control.FullscreenCustom = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            const btn = L.DomUtil.create('a', '', container);
+            btn.innerHTML = '⛶'; // Ícone unicode simples
+            btn.href = '#';
+            btn.title = 'Tela Cheia';
+            btn.style.fontSize = '18px';
+            btn.style.lineHeight = '30px';
+            btn.style.textAlign = 'center';
+            btn.style.textDecoration = 'none';
+
+            L.DomEvent.disableClickPropagation(container);
+            
+            L.DomEvent.on(btn, 'click', function(e) {
+                L.DomEvent.preventDefault(e);
+                const mapDiv = document.getElementById('car-map');
+                if (!document.fullscreenElement) {
+                    mapDiv.requestFullscreen().catch(err => {
+                        console.error(`Erro fullscreen: ${err.message}`);
+                    });
                 } else {
-                    alert("A camada de APP não está disponível nos dados atuais.");
-                    e.target.checked = false;
+                    document.exitFullscreen();
                 }
-            } else if (currentAppLayer) {
-                map.removeLayer(currentAppLayer);
-                currentAppLayer = null;
-            }
-        });
-    }
+            });
+            return container;
+        }
+    });
+    new L.Control.FullscreenCustom({ position: 'topright' }).addTo(map);
 
-    // Toggle Reserva Legal
-    const toggleReserva = document.getElementById('toggle-reserva');
-    if (toggleReserva) {
-        toggleReserva.addEventListener('change', function(e) {
-            if (e.target.checked) {
-                const layerData = GEOPORTAL_LAYERS["RESERVA_LEGAL"] || GEOPORTAL_LAYERS["RESERVA"];
-                if (layerData) {
-                    currentReservaLayer = L.geoJSON(layerData, {
-                        style: { color: '#059669', weight: 2, fillOpacity: 0.3 }, // Verde escuro
-                        interactive: true,
-                        onEachFeature: function(f, l) { l.bindPopup("Reserva Legal"); }
-                    }).addTo(map);
+    // 3. Rastreamento da Localização do Usuário (aparecer localização dentro do mapa)
+    map.locate({ watch: true, enableHighAccuracy: true });
+    
+    map.on('locationfound', function(e) {
+        lastKnownLocation = e.latlng;
+        const radius = e.accuracy / 2;
+        
+        if (!userLocationMarker) {
+            // Criação do marcador de ponto azul
+            userLocationMarker = L.circleMarker(e.latlng, {
+                radius: 6,
+                fillColor: "#2196F3",
+                color: "#fff",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(map);
+            
+            userLocationCircle = L.circle(e.latlng, {
+                radius: radius,
+                color: "#2196F3",
+                weight: 1,
+                fillOpacity: 0.1
+            }).addTo(map);
+        } else {
+            userLocationMarker.setLatLng(e.latlng);
+            userLocationCircle.setLatLng(e.latlng);
+            userLocationCircle.setRadius(radius);
+        }
+    });
+
+    // 4. Controle GPS / Zoom - Canto Inferior Direito (Ícone da tela principal)
+    L.Control.GpsZoom = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            const btn = L.DomUtil.create('a', '', container);
+            btn.href = '#';
+            btn.title = 'Minha Localização';
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.style.padding = '4px';
+            btn.style.background = '#fff';
+            
+            // O mesmo SVG do index.html (Gravar Rota GPS)
+            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
+            
+            L.DomEvent.disableClickPropagation(container);
+            
+            L.DomEvent.on(btn, 'click', function(e) {
+                L.DomEvent.preventDefault(e);
+                if (lastKnownLocation) {
+                    map.setView(lastKnownLocation, 16);
                 } else {
-                    alert("A camada de Reserva Legal não está disponível nos dados atuais.");
-                    e.target.checked = false;
+                    // Tenta forçar a localização se ainda não encontrou
+                    map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
                 }
-            } else if (currentReservaLayer) {
-                map.removeLayer(currentReservaLayer);
-                currentReservaLayer = null;
-            }
-        });
-    }
+            });
+            return container;
+        }
+    });
+    new L.Control.GpsZoom({ position: 'bottomright' }).addTo(map);
 }
 
     // Extract Fazendas for search
