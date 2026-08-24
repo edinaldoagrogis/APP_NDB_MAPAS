@@ -1073,7 +1073,7 @@
                 document.getElementById('btn-refresh-app').addEventListener('click', () => {
                     const updatesEnabled = localStorage.getItem('agrogis_updates_enabled') === 'true';
                     if (!updatesEnabled) {
-                        alert('Atenção: Sua conta não tem permissão para receber atualizações do sistema.');
+                        alert('Não há nenhuma atualização disponível no momento.');
                         return;
                     }
 
