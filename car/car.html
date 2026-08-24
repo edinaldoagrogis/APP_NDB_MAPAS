@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Limites do CAR - AgroGIS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="car.css">
+    
+    <!-- Dados GeoJSON -->
+    <script src="../layers_data.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Consulta de Limites do CAR</h1>
+            <a href="../index.html" class="back-link">← Voltar ao App</a>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Coluna Esquerda: Controles -->
+            <div class="left-column">
+                <div class="panel">
+                    <h2>Pesquisa de Fazenda</h2>
+                    <form id="car-form">
+                        <div class="form-group" style="position: relative;">
+                            <label for="fazenda-select">Buscar Fazenda</label>
+                            <input type="text" id="fazenda-select" class="form-control" placeholder="Digite o nome da fazenda..." autocomplete="off">
+                            <div id="fazenda-dropdown" style="display:none; position:absolute; z-index:9999; width:100%; background:#1e293b; border:1px solid rgba(255,255,255,0.2); border-radius:8px; max-height:200px; overflow-y:auto; top:100%; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" id="btn-buscar-car" disabled>
+                                Buscar Imóvel no CAR
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="panel" id="car-info-panel" style="display: none; margin-top: 20px;">
+                    <h3>Informações do CAR</h3>
+                    <div id="car-info-content">
+                        <!-- Conteúdo será preenchido via JS -->
+                    </div>
+                </div>
+                
+                <div id="loading-indicator" style="display: none; margin-top: 20px; text-align: center;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px; color: #94a3b8; font-size: 14px;">Buscando base do SICAR...</p>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Mapa -->
+            <div class="right-column">
+                <div class="map-container">
+                    <div id="car-map" style="height: 100%; width: 100%; border-radius: 12px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts da Ferramenta -->
+    <script src="car.js"></script>
+</body>
+</html>
