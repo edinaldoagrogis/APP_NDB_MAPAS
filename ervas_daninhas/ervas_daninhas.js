@@ -43,6 +43,18 @@ function initMap() {
     focosLayer = L.layerGroup().addTo(map);
 }
 
+function getFeatureAreaHa(f) {
+    let area = parseFloat(f.properties.AREA_HA || f.properties.area_ha || f.properties.TALHAO_ARE || f.properties['DL AREA'] || f.properties.AREA || f.properties.area || 0);
+    if (!area || isNaN(area) || area <= 0) {
+        if (typeof turf !== 'undefined') {
+            try {
+                area = turf.area(f) / 10000;
+            } catch(e) {}
+        }
+    }
+    return (area && !isNaN(area) && area > 0) ? area : 1;
+}
+
 function removeAcentos(str) {
     if (!str) return "";
     return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
@@ -149,7 +161,7 @@ function populateTalhoes(fazendaNome) {
         lista.innerHTML = '';
         currentFeatures.forEach((f, idx) => {
             const nomeT = String(f.properties.id_talhao || f.properties.ID_TALHAO || f.properties.TALHAO || `Talhão ${idx+1}`);
-            const area = f.properties.AREA_HA || f.properties.area_ha || 0;
+            const area = getFeatureAreaHa(f);
             const areaStr = area > 0 ? ` (${Number(area).toFixed(1)} ha)` : '';
             
             const div = document.createElement('div');
@@ -219,7 +231,7 @@ function simulateAnalysis() {
             else if (infestacao <= 0.30) f.properties._infestacao_class = "Infestação Moderada";
             else f.properties._infestacao_class = "Infestação Severa";
             
-            const area = parseFloat(f.properties.AREA_HA || f.properties.area_ha || 0);
+            const area = getFeatureAreaHa(f);
             totalArea += area;
             areaInfestada += area * infestacao;
             
