@@ -2,6 +2,7 @@
 
 let map;
 let talhoesLayer;
+let focosLayer;
 let currentFeatures = [];
 let chartInstance = null;
 
@@ -38,6 +39,8 @@ function initMap() {
         maxZoom: 19,
         attribution: 'Tiles &copy; Esri'
     }).addTo(map);
+    
+    focosLayer = L.layerGroup().addTo(map);
 }
 
 function removeAcentos(str) {
@@ -290,6 +293,7 @@ function updateDiagnosticPanel(avgInf, totalArea, areaInfestada, totalFocos) {
 
 function renderPolygonsOnMap(features, isAnalyzed) {
     if (talhoesLayer) map.removeLayer(talhoesLayer);
+    if (focosLayer) focosLayer.clearLayers();
     
     talhoesLayer = L.geoJSON(features, {
         style: function(feature) {
@@ -298,7 +302,7 @@ function renderPolygonsOnMap(features, isAnalyzed) {
             }
             const inf = feature.properties._simulated_infestacao;
             const color = getColorForInfestacao(inf);
-            return { fillColor: color, color: '#fff', weight: 1.5, fillOpacity: 0.75 };
+            return { fillColor: color, color: '#fff', weight: 1.5, fillOpacity: 0.5 };
         },
         onEachFeature: function(feature, layer) {
             if (isAnalyzed) {
@@ -316,6 +320,33 @@ function renderPolygonsOnMap(features, isAnalyzed) {
                         <div style="display:flex; justify-content:space-between;"><b>Focos:</b> <span>${focos}</span></div>
                     </div>
                 `);
+
+                // Generate random focos visually
+                if (focos > 0 && typeof turf !== 'undefined') {
+                    try {
+                        const bbox = turf.bbox(feature);
+                        let pointsDrawn = 0;
+                        let attempts = 0;
+                        while(pointsDrawn < focos && attempts < focos * 5) {
+                            attempts++;
+                            const pt = turf.randomPoint(1, {bbox: bbox}).features[0];
+                            if(turf.booleanPointInPolygon(pt, feature)) {
+                                pointsDrawn++;
+                                const coords = pt.geometry.coordinates;
+                                L.circleMarker([coords[1], coords[0]], {
+                                    radius: 3,
+                                    fillColor: '#ff1744',
+                                    color: '#fff',
+                                    weight: 1,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                }).bindPopup(`Foco de Infestação - Talhão ${id}`).addTo(focosLayer);
+                            }
+                        }
+                    } catch(e) {
+                        console.error('Erro ao gerar focos', e);
+                    }
+                }
             }
         }
     }).addTo(map);
