@@ -99,31 +99,46 @@ function setupMapControls() {
         L.control.layers(null, overlayMaps, { position: 'topleft', collapsed: true }).addTo(map);
     }
 
-    // 2. Controle de Tela Cheia - Topo Direito
+    // 2. Controle de Tela Cheia (CSS) - Topo Direito
+    // Usa CSS em vez de requestFullscreen para evitar a mensagem do navegador
     L.Control.FullscreenCustom = L.Control.extend({
         onAdd: function(map) {
             const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
             const btn = L.DomUtil.create('a', '', container);
-            btn.innerHTML = '⛶'; // Ícone unicode simples
+            btn.innerHTML = '⛶';
             btn.href = '#';
-            btn.title = 'Tela Cheia';
+            btn.title = 'Expandir Mapa';
             btn.style.fontSize = '18px';
             btn.style.lineHeight = '30px';
             btn.style.textAlign = 'center';
             btn.style.textDecoration = 'none';
 
+            let isExpanded = false;
+            const mapDiv = document.getElementById('car-map');
+            const dashboardGrid = document.querySelector('.dashboard-grid');
+
             L.DomEvent.disableClickPropagation(container);
             
             L.DomEvent.on(btn, 'click', function(e) {
                 L.DomEvent.preventDefault(e);
-                const mapDiv = document.getElementById('car-map');
-                if (!document.fullscreenElement) {
-                    mapDiv.requestFullscreen().catch(err => {
-                        console.error(`Erro fullscreen: ${err.message}`);
-                    });
+                isExpanded = !isExpanded;
+                if (isExpanded) {
+                    // Expande: esconde coluna esquerda e torna mapa tela toda
+                    document.querySelector('.left-column').style.display = 'none';
+                    dashboardGrid.style.gridTemplateColumns = '1fr';
+                    mapDiv.style.height = 'calc(100vh - 80px)';
+                    btn.innerHTML = '⊠'; // ícone de minimizar
+                    btn.title = 'Minimizar Mapa';
                 } else {
-                    document.exitFullscreen();
+                    // Minimiza: volta ao normal
+                    document.querySelector('.left-column').style.display = '';
+                    dashboardGrid.style.gridTemplateColumns = '';
+                    mapDiv.style.height = '';
+                    btn.innerHTML = '⛶';
+                    btn.title = 'Expandir Mapa';
                 }
+                // Força Leaflet a recalcular o tamanho do mapa
+                setTimeout(() => map.invalidateSize(), 100);
             });
             return container;
         }
@@ -161,30 +176,26 @@ function setupMapControls() {
         }
     });
 
-    // 4. Controle GPS / Zoom - Canto Inferior Direito (Ícone da tela principal)
+    // 4. Controle GPS / Zoom - Canto Inferior Direito (Ícone de navegação igual ao print)
     L.Control.GpsZoom = L.Control.extend({
         onAdd: function(map) {
             const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
             const btn = L.DomUtil.create('a', '', container);
             btn.href = '#';
             btn.title = 'Minha Localização';
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.justifyContent = 'center';
-            btn.style.padding = '4px';
-            btn.style.background = '#fff';
+            btn.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:4px;background:#fff;width:30px;height:30px;';
             
-            // O mesmo SVG do index.html (Gravar Rota GPS)
-            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
+            // Ícone de seta de navegação (igual ao print 2)
+            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="#2196F3" stroke="none">
+                <path d="M12 2L4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/>
+            </svg>`;
             
             L.DomEvent.disableClickPropagation(container);
-            
             L.DomEvent.on(btn, 'click', function(e) {
                 L.DomEvent.preventDefault(e);
                 if (lastKnownLocation) {
                     map.setView(lastKnownLocation, 16);
                 } else {
-                    // Tenta forçar a localização se ainda não encontrou
                     map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
                 }
             });
@@ -192,6 +203,37 @@ function setupMapControls() {
         }
     });
     new L.Control.GpsZoom({ position: 'bottomright' }).addTo(map);
+
+    // 5. Botão para centralizar na feição do CAR - Canto Inferior Esquerdo
+    L.Control.CenterCAR = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            const btn = L.DomUtil.create('a', '', container);
+            btn.href = '#';
+            btn.title = 'Centralizar no Limite do CAR';
+            btn.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:4px;background:#fff;width:30px;height:30px;font-size:14px;';
+            // Ícone de quadrado com seta (centralizar/enquadrar)
+            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>`;
+            
+            L.DomEvent.disableClickPropagation(container);
+            L.DomEvent.on(btn, 'click', function(e) {
+                L.DomEvent.preventDefault(e);
+                // Pega todos os layers do carLayerGroup e faz fitBounds
+                const layers = carLayerGroup.getLayers();
+                if (layers.length > 0) {
+                    const group = L.featureGroup(layers);
+                    map.fitBounds(group.getBounds(), { padding: [30, 30] });
+                }
+            });
+            return container;
+        }
+    });
+    new L.Control.CenterCAR({ position: 'bottomleft' }).addTo(map);
 }
 
 
