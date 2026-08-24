@@ -10,7 +10,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Custom CSS -->
+    <!-- Usando o CSS do Maturador para padronizar o layout -->
+    <link rel="stylesheet" href="../maturador.css">
+    
+    <!-- Custom CSS (específico do CAR) -->
     <link rel="stylesheet" href="car.css">
     
     <!-- Dados GeoJSON -->
@@ -58,11 +61,7 @@
             </div>
 
             <!-- Coluna Direita: Mapa -->
-            <div class="right-column">
-                <div class="map-container">
-                    <div id="car-map" style="height: 100%; width: 100%; border-radius: 12px;"></div>
-                </div>
-            </div>
+            <div id="car-map"></div>
         </div>
     </div>
 
