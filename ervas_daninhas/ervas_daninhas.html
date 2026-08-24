@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Ervas Daninhas - AgroGIS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Usando o CSS do Maturador para manter a interface idêntica -->
+    <link rel="stylesheet" href="../maturador.css">
+    
+    <!-- Dados GeoJSON (Camadas principais) -->
+    <script src="../layers_data.js"></script>
+
+    <style>
+        /* Ajustes específicos de cores para Ervas Daninhas */
+        .status-sem-infestacao { background: rgba(46, 204, 113, 0.2) !important; color: #2ecc71 !important; border: 1px solid #2ecc71 !important; }
+        .status-leve { background: rgba(241, 196, 15, 0.2) !important; color: #f1c40f !important; border: 1px solid #f1c40f !important; }
+        .status-moderado { background: rgba(230, 126, 34, 0.2) !important; color: #e67e22 !important; border: 1px solid #e67e22 !important; }
+        .status-severo { background: rgba(231, 76, 60, 0.2) !important; color: #e74c3c !important; border: 1px solid #e74c3c !important; }
+        
+        .percentage-circle.sem-infestacao { border-color: #2ecc71 !important; color: #2ecc71 !important; }
+        .percentage-circle.leve { border-color: #f1c40f !important; color: #f1c40f !important; }
+        .percentage-circle.moderado { border-color: #e67e22 !important; color: #e67e22 !important; }
+        .percentage-circle.severo { border-color: #e74c3c !important; color: #e74c3c !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Detecção de Ervas Daninhas (Sentinel-2)</h1>
+            <a href="../index.html" class="back-link">← Voltar ao App</a>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Coluna Esquerda: Controles e Status -->
+            <div class="left-column">
+                <div class="panel">
+                    <h2>Parâmetros de Análise</h2>
+                    <form id="ervas-form">
+                        <div class="form-group" style="position: relative;">
+                            <label for="talhao-select">1. Buscar Fazenda</label>
+                            <input type="text" id="talhao-select" class="form-control" placeholder="Digite o nome da fazenda..." autocomplete="off">
+                            <div id="fazenda-dropdown" style="display:none; position:absolute; z-index:9999; width:100%; background:#1e293b; border:1px solid rgba(255,255,255,0.2); border-radius:8px; max-height:200px; overflow-y:auto; top:100%; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" id="talhoes-container" style="display: none;">
+                            <label>2. Selecionar Talhões
+                                <span style="float: right; font-size: 12px; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" id="select-all-talhoes"> <label for="select-all-talhoes" style="display:inline; cursor:pointer;">Selecionar Todos</label>
+                                </span>
+                            </label>
+                            <div id="talhoes-list" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
+                                <!-- Checkboxes gerados via JS -->
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date-analise">Data Base da Análise</label>
+                            <input type="date" id="date-analise" class="form-control" required>
+                        </div>
+                        
+                        <button type="submit" id="btn-analyze" class="btn" style="background: linear-gradient(135deg, #c62828, #ff1744); border-color: #ff1744;">Processar Análise</button>
+                    </form>
+                    
+                    <div id="loading-indicator">
+                        <div class="spinner" style="border-top-color: #ff1744;"></div>
+                        <span>Buscando imagens e detectando reboleiras...</span>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 20px;">
+                    <h2>Diagnóstico Atual</h2>
+                    <div class="diagnostic-card" id="diagnostic-result" style="display: none;">
+                        <div id="status-badge" class="badge status-pending">Aguardando Análise</div>
+                        
+                        <!-- % Infestação -->
+                        <div id="percentage-circle" class="percentage-circle">
+                            <span id="percentage-value">0%</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:-15px; margin-bottom:15px;">Infestação Média da Área</div>
+                        
+                        <div class="stat-row">
+                            <span class="stat-label">Área Analisada:</span>
+                            <span class="stat-value" id="stat-area">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Área Infestada Estimada:</span>
+                            <span class="stat-value" id="stat-infestada" style="color: #ff1744; font-weight: bold;">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Focos (Reboleiras):</span>
+                            <span class="stat-value" id="stat-focos">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Última Imagem (Nuvens):</span>
+                            <span class="stat-value" id="stat-cloud">-</span>
+                        </div>
+                    </div>
+                    <div id="diagnostic-empty" style="text-align: center; color: #94a3b8; padding: 20px;">
+                        Preencha os parâmetros e clique em processar.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Gráficos e Mapas -->
+            <div class="right-column">
+                <div class="panel">
+                    <h2>Distribuição de Infestação por Talhão (%)</h2>
+                    <div class="chart-container">
+                        <canvas id="ervasChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 20px;">
+                    <h2>Mapa de Risco de Infestação (NDVI/Z-Score)</h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+                        Visualização da variabilidade e possíveis reboleiras de ervas daninhas.
+                    </p>
+                    <div id="map-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts da Aplicação -->
+    <script src="ervas_daninhas.js"></script>
+</body>
+</html>
