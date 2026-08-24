@@ -55,6 +55,16 @@ function loadBaseLayers() {
         }).addTo(baseLayersGroup);
     }
 
+    // Extract Fazendas for search
+    if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
+        allFazendas = GEOPORTAL_LAYERS["FAZENDAS"].features.map(f => {
+            return {
+                name: f.properties.NAME || f.properties.Fazenda || 'Desconhecido',
+                coords: f.geometry.coordinates // [lon, lat]
+            };
+        }).filter(f => f.coords && f.coords.length >= 2);
+    }
+
     // Adiciona as camadas sobre o mapa usando o controle nativo do Leaflet no canto superior esquerdo
     setupMapControls();
 }
@@ -184,16 +194,7 @@ function setupMapControls() {
     new L.Control.GpsZoom({ position: 'bottomright' }).addTo(map);
 }
 
-    // Extract Fazendas for search
-    if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
-        allFazendas = GEOPORTAL_LAYERS["FAZENDAS"].features.map(f => {
-            return {
-                name: f.properties.NAME || f.properties.Fazenda || 'Desconhecido',
-                coords: f.geometry.coordinates // [lon, lat]
-            };
-        }).filter(f => f.coords && f.coords.length >= 2);
-    }
-}
+
 
 // Setup Farm Search Autocomplete
 function setupFazendaSearch() {
