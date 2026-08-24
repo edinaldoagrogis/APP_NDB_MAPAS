@@ -223,6 +223,11 @@ function renderCARFeature(feature) {
     
     // Abre popup do limite do CAR automaticamente
     carGeoJSON.getLayers()[0].fire('click');
+
+    // Rola a tela suavemente para as informações do CAR em dispositivos móveis
+    setTimeout(() => {
+        infoPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
 }
 
 // Inicializar na carga da página
