@@ -74,166 +74,197 @@ let userLocationCircle = null;
 let lastKnownLocation = null;
 
 function setupMapControls() {
-    // 1. Controle de Camadas (APP e Reserva Legal) - Topo Esquerdo
-    const overlayMaps = {};
-    
-    if (GEOPORTAL_LAYERS["APP"]) {
-        const appLayer = L.geoJSON(GEOPORTAL_LAYERS["APP"], {
-            style: { color: '#10b981', weight: 2, fillOpacity: 0.3 },
-            interactive: false
-        });
-        overlayMaps["APP (Área de Preservação)"] = appLayer;
-    }
-    
-    const rlData = GEOPORTAL_LAYERS["RESERVA_LEGAL"] || GEOPORTAL_LAYERS["RESERVA"];
-    if (rlData) {
-        const rlLayer = L.geoJSON(rlData, {
-            style: { color: '#059669', weight: 2, fillOpacity: 0.3 },
-            interactive: false
-        });
-        overlayMaps["Reserva Legal"] = rlLayer;
-    }
+    // Estilo base para todos os botões de controle (igual ao app principal)
+    const btnStyle = `
+        display:flex; align-items:center; justify-content:center;
+        width:44px; height:44px; border-radius:12px;
+        background:rgba(5,8,7,0.85); backdrop-filter:blur(12px);
+        border:1px solid rgba(255,255,255,0.1);
+        color:#fff; cursor:pointer; text-decoration:none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
 
-    // Só adiciona o controle se tiver camadas
-    if (Object.keys(overlayMaps).length > 0) {
-        L.control.layers(null, overlayMaps, { position: 'topleft', collapsed: true }).addTo(map);
-    }
+    // ─── 1. Controle de Camadas (APP e Reserva Legal) ─ Topo Esquerdo ───────────
+    // Usa um controle personalizado com o ícone de camadas igual ao app (print 2)
+    L.Control.LayersCAR = L.Control.extend({
+        onAdd: function(map) {
+            const wrapper = L.DomUtil.create('div', '');
+            wrapper.style.cssText = 'position:relative;';
 
-    // 2. Controle de Tela Cheia (CSS) - Topo Direito
-    // Usa CSS em vez de requestFullscreen para evitar a mensagem do navegador
+            const btn = L.DomUtil.create('div', 'leaflet-bar', wrapper);
+            btn.style.cssText = btnStyle + 'margin:0;';
+            btn.title = 'Camadas';
+            // Ícone de camadas em stack (mesmo do app principal - print 2)
+            btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 12 12 17 22 12"></polyline>
+                <polyline points="2 17 12 22 22 17"></polyline>
+            </svg>`;
+
+            // Painel flutuante de camadas
+            const panel = L.DomUtil.create('div', '', wrapper);
+            panel.style.cssText = `
+                display:none; position:absolute; top:52px; left:0;
+                width:200px; background:rgba(5,8,7,0.95); backdrop-filter:blur(20px);
+                border:1px solid rgba(255,255,255,0.1); border-radius:12px;
+                box-shadow:0 8px 32px rgba(0,0,0,0.5); padding:12px; z-index:9999;
+                color:#fff; font-family:inherit; font-size:14px;
+            `;
+
+            const appLayer = GEOPORTAL_LAYERS["APP"] ? L.geoJSON(GEOPORTAL_LAYERS["APP"], { style: { color: '#10b981', weight: 2, fillOpacity: 0.3 }, interactive: false }) : null;
+            const rlData = GEOPORTAL_LAYERS["RESERVA_LEGAL"] || GEOPORTAL_LAYERS["RESERVA"];
+            const rlLayer = rlData ? L.geoJSON(rlData, { style: { color: '#059669', weight: 2, fillOpacity: 0.3 }, interactive: false }) : null;
+
+            const mkRow = (label, layer, color) => {
+                const row = document.createElement('label');
+                row.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);';
+                const chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.style.cssText = 'width:16px;height:16px;cursor:pointer;';
+                chk.disabled = !layer;
+                const dot = document.createElement('span');
+                dot.style.cssText = `width:10px;height:10px;border-radius:2px;background:${color};flex-shrink:0;`;
+                const txt = document.createElement('span');
+                txt.textContent = label;
+                txt.style.color = chk.disabled ? '#666' : '#fff';
+                chk.onchange = () => {
+                    if (!layer) return;
+                    if (chk.checked) layer.addTo(map); else map.removeLayer(layer);
+                };
+                row.append(chk, dot, txt);
+                return row;
+            };
+
+            panel.appendChild(mkRow('APP (Preservação)', appLayer, '#10b981'));
+            panel.appendChild(mkRow('Reserva Legal', rlLayer, '#059669'));
+
+            L.DomEvent.disableClickPropagation(wrapper);
+            L.DomEvent.disableScrollPropagation(wrapper);
+            btn.onclick = () => { panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; };
+            document.addEventListener('click', (e) => { if (!wrapper.contains(e.target)) panel.style.display = 'none'; });
+
+            return wrapper;
+        }
+    });
+    new L.Control.LayersCAR({ position: 'topleft' }).addTo(map);
+
+    // ─── 2. Controle de Expandir Mapa (ícone print 3) ─ Topo Direito ────────────
     L.Control.FullscreenCustom = L.Control.extend({
         onAdd: function(map) {
-            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-            const btn = L.DomUtil.create('a', '', container);
-            btn.innerHTML = '⛶';
-            btn.href = '#';
+            const container = L.DomUtil.create('div', '');
+            const btn = L.DomUtil.create('div', 'leaflet-bar', container);
+            btn.style.cssText = btnStyle + 'margin:0;';
             btn.title = 'Expandir Mapa';
-            btn.style.fontSize = '18px';
-            btn.style.lineHeight = '30px';
-            btn.style.textAlign = 'center';
-            btn.style.textDecoration = 'none';
+            // Ícone print 3: seta diagonal + retângulo pequeno no canto
+            btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9V3h6"/>
+                <path d="M3 3l7 7"/>
+                <rect x="13" y="13" width="8" height="8" rx="1"/>
+            </svg>`;
 
             let isExpanded = false;
             const mapDiv = document.getElementById('car-map');
             const dashboardGrid = document.querySelector('.dashboard-grid');
 
             L.DomEvent.disableClickPropagation(container);
-            
-            L.DomEvent.on(btn, 'click', function(e) {
-                L.DomEvent.preventDefault(e);
+            btn.onclick = () => {
                 isExpanded = !isExpanded;
                 if (isExpanded) {
-                    // Expande: esconde coluna esquerda e torna mapa tela toda
                     document.querySelector('.left-column').style.display = 'none';
                     dashboardGrid.style.gridTemplateColumns = '1fr';
                     mapDiv.style.height = 'calc(100vh - 80px)';
-                    btn.innerHTML = '⊠'; // ícone de minimizar
                     btn.title = 'Minimizar Mapa';
+                    // Ícone de minimizar
+                    btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 3H3v6"/><path d="M10 10L3 3"/>
+                        <rect x="13" y="13" width="8" height="8" rx="1"/>
+                    </svg>`;
                 } else {
-                    // Minimiza: volta ao normal
                     document.querySelector('.left-column').style.display = '';
                     dashboardGrid.style.gridTemplateColumns = '';
                     mapDiv.style.height = '';
-                    btn.innerHTML = '⛶';
                     btn.title = 'Expandir Mapa';
+                    btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9V3h6"/>
+                        <path d="M3 3l7 7"/>
+                        <rect x="13" y="13" width="8" height="8" rx="1"/>
+                    </svg>`;
                 }
-                // Força Leaflet a recalcular o tamanho do mapa
                 setTimeout(() => map.invalidateSize(), 100);
-            });
+            };
             return container;
         }
     });
     new L.Control.FullscreenCustom({ position: 'topright' }).addTo(map);
 
-    // 3. Rastreamento da Localização do Usuário (aparecer localização dentro do mapa)
+    // ─── 3. Rastreamento GPS (ponto azul no mapa) ─────────────────────────────
     map.locate({ watch: true, enableHighAccuracy: true });
-    
     map.on('locationfound', function(e) {
         lastKnownLocation = e.latlng;
         const radius = e.accuracy / 2;
-        
         if (!userLocationMarker) {
-            // Criação do marcador de ponto azul
             userLocationMarker = L.circleMarker(e.latlng, {
-                radius: 6,
-                fillColor: "#2196F3",
-                color: "#fff",
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 1
+                radius: 6, fillColor: "#2196F3", color: "#fff",
+                weight: 2, opacity: 1, fillOpacity: 1
             }).addTo(map);
-            
             userLocationCircle = L.circle(e.latlng, {
-                radius: radius,
-                color: "#2196F3",
-                weight: 1,
-                fillOpacity: 0.1
+                radius: radius, color: "#2196F3", weight: 1, fillOpacity: 0.1
             }).addTo(map);
         } else {
             userLocationMarker.setLatLng(e.latlng);
-            userLocationCircle.setLatLng(e.latlng);
-            userLocationCircle.setRadius(radius);
+            userLocationCircle.setLatLng(e.latlng).setRadius(radius);
         }
     });
 
-    // 4. Controle GPS / Zoom - Canto Inferior Direito (Ícone de navegação igual ao print)
+    // ─── 4. Botão GPS / Localização ─ Canto Inferior Direito (ícone print 1) ──
     L.Control.GpsZoom = L.Control.extend({
         onAdd: function(map) {
-            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-            const btn = L.DomUtil.create('a', '', container);
-            btn.href = '#';
+            const container = L.DomUtil.create('div', '');
+            const btn = L.DomUtil.create('div', 'leaflet-bar', container);
+            btn.style.cssText = btnStyle + 'margin:0;margin-bottom:10px;margin-right:10px;';
             btn.title = 'Minha Localização';
-            btn.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:4px;background:#fff;width:30px;height:30px;';
-            
-            // Ícone de seta de navegação (igual ao print 2)
-            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="#2196F3" stroke="none">
-                <path d="M12 2L4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/>
+            // Ícone de seta de navegação - exatamente igual ao app principal (print 1)
+            btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
             </svg>`;
-            
             L.DomEvent.disableClickPropagation(container);
-            L.DomEvent.on(btn, 'click', function(e) {
-                L.DomEvent.preventDefault(e);
+            btn.onclick = () => {
                 if (lastKnownLocation) {
-                    map.setView(lastKnownLocation, 16);
+                    map.flyTo(lastKnownLocation, 16, { duration: 1.5 });
                 } else {
-                    map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
+                    map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true });
                 }
-            });
+            };
             return container;
         }
     });
     new L.Control.GpsZoom({ position: 'bottomright' }).addTo(map);
 
-    // 5. Botão para centralizar na feição do CAR - Canto Inferior Esquerdo
+    // ─── 5. Botão Centralizar no CAR ─ Canto Inferior Direito ─────────────────
     L.Control.CenterCAR = L.Control.extend({
         onAdd: function(map) {
-            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-            const btn = L.DomUtil.create('a', '', container);
-            btn.href = '#';
+            const container = L.DomUtil.create('div', '');
+            const btn = L.DomUtil.create('div', 'leaflet-bar', container);
+            btn.style.cssText = btnStyle + 'margin:0;margin-right:10px;';
             btn.title = 'Centralizar no Limite do CAR';
-            btn.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:4px;background:#fff;width:30px;height:30px;font-size:14px;';
-            // Ícone de quadrado com seta (centralizar/enquadrar)
-            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
+            // Ícone de enquadrar/zoom to fit
+            btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
             </svg>`;
-            
             L.DomEvent.disableClickPropagation(container);
-            L.DomEvent.on(btn, 'click', function(e) {
-                L.DomEvent.preventDefault(e);
-                // Pega todos os layers do carLayerGroup e faz fitBounds
+            btn.onclick = () => {
                 const layers = carLayerGroup.getLayers();
                 if (layers.length > 0) {
-                    const group = L.featureGroup(layers);
-                    map.fitBounds(group.getBounds(), { padding: [30, 30] });
+                    map.fitBounds(L.featureGroup(layers).getBounds(), { padding: [30, 30] });
                 }
-            });
+            };
             return container;
         }
     });
-    new L.Control.CenterCAR({ position: 'bottomleft' }).addTo(map);
+    new L.Control.CenterCAR({ position: 'bottomright' }).addTo(map);
 }
 
 
