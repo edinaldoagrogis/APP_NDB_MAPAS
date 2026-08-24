@@ -94,34 +94,49 @@ async function toggleCARLayer(layerKey, checked) {
     const nota = document.getElementById('layers-nota');
     if (nota) nota.textContent = `Carregando ${layerKey.toUpperCase()}...`;
 
-    // 1. Tentar buscar localmente em GEOPORTAL_LAYERS (se o usuário adicionar os geojsons)
-    const localKey = layerKey === 'app' ? 'APP' : 'RESERVA_LEGAL';
-    const fallbackKey = layerKey === 'app' ? 'APPS' : 'RESERVA';
-    let localData = GEOPORTAL_LAYERS[localKey] || GEOPORTAL_LAYERS[fallbackKey];
+    // 1. Tentar buscar no arquivo local reduzido (APP_FILTRADO e RESERVA_FILTRADA)
+    const localFile = layerKey === 'app' ? 'APP_FILTRADO.geojson' : 'RESERVA_FILTRADA.geojson';
+    
+    // Variáveis globais para cachear o arquivo na memória após o primeiro clique
+    if (!window.carLayerCache) window.carLayerCache = {};
 
-    if (localData && localData.features) {
-        // Filtrar apenas a feição que pertence ao imóvel atual
-        const filteredFeatures = localData.features.filter(f => 
-            f.properties && f.properties.cod_imovel === lastCarCodImovel
-        );
-
-        if (filteredFeatures.length > 0) {
-            const style = layerKey === 'app'
-                ? { color: '#10b981', weight: 2, fillOpacity: 0.35, fillColor: '#10b981' }
-                : { color: '#059669', weight: 2, fillOpacity: 0.35, fillColor: '#059669' };
-
-            const layer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, { style, interactive: false });
-
-            if (layerKey === 'app') { sicarAppLayer = layer; }
-            else { sicarReservaLayer = layer; }
-
-            layer.addTo(map);
-            if (nota) nota.textContent = `${filteredFeatures.length} feição(ões) carregada(s) do arquivo local.`;
-            return;
+    try {
+        let localData = window.carLayerCache[layerKey];
+        
+        if (!localData) {
+            const res = await fetch(`../CAMADAS VETORIAIS/${localFile}`);
+            if (res.ok) {
+                localData = await res.json();
+                window.carLayerCache[layerKey] = localData; // Cacheia
+            }
         }
+
+        if (localData && localData.features) {
+            // Filtrar apenas a feição que pertence ao imóvel atual
+            const filteredFeatures = localData.features.filter(f => 
+                f.properties && f.properties.cod_imovel === lastCarCodImovel
+            );
+
+            if (filteredFeatures.length > 0) {
+                const style = layerKey === 'app'
+                    ? { color: '#10b981', weight: 2, fillOpacity: 0.35, fillColor: '#10b981' }
+                    : { color: '#059669', weight: 2, fillOpacity: 0.35, fillColor: '#059669' };
+
+                const layer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, { style, interactive: false });
+
+                if (layerKey === 'app') { sicarAppLayer = layer; }
+                else { sicarReservaLayer = layer; }
+
+                layer.addTo(map);
+                if (nota) nota.textContent = `${filteredFeatures.length} feição(ões) de ${layerKey.toUpperCase()} carregada(s).`;
+                return; // Sai se encontrou localmente!
+            }
+        }
+    } catch (err) {
+        console.warn('Arquivo local não encontrado ou erro ao parsear:', err);
     }
 
-    // 2. Se não encontrou localmente, tentar a API pública do SICAR (atualmente não suportada pelo governo, mas mantida como fallback)
+    // 2. Se não encontrou no arquivo local (ou se o arquivo não existe), tenta a API pública do SICAR
     const uf = lastCarUf ? lastCarUf.toLowerCase() : 'es';
     const temaNome = layerKey === 'app' ? 'APPS' : 'RESERVA_LEGAL';
     const url = `https://geoserver.car.gov.br/geoserver/sicar/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=sicar:sicar_${temaNome.toLowerCase()}_${uf}&outputFormat=application/json&cql_filter=cod_imovel='${lastCarCodImovel}'`;
