@@ -99,8 +99,8 @@ self.addEventListener('fetch', event => {
         return;
     }
     
-    // Bypass cache for API calls and admin page (must always be fresh)
-    if (url.pathname.startsWith('/api/') || url.pathname.includes('admin.html')) {
+    // Bypass cache for API calls, admin page, and cross-origin requests (e.g. SICAR API)
+    if (url.pathname.startsWith('/api/') || url.pathname.includes('admin.html') || url.origin !== location.origin) {
         event.respondWith(fetch(event.request));
         return;
     }

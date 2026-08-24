@@ -77,7 +77,7 @@ let sicarReservaLayer = null;
 let lastCarCodImovel = null;
 let lastCarUf = null;
 
-// Busca e ativa/desativa camadas de APP ou Reserva Legal do SICAR
+// Busca e ativa/desativa camadas de APP ou Reserva Legal
 async function toggleCARLayer(layerKey, checked) {
     if (!checked) {
         if (layerKey === 'app' && sicarAppLayer) { map.removeLayer(sicarAppLayer); }
@@ -85,19 +85,46 @@ async function toggleCARLayer(layerKey, checked) {
         return;
     }
 
-    if (!lastCarCodImovel || !lastCarUf) {
+    if (!lastCarCodImovel) {
         alert('Busque um imóvel no CAR primeiro para ativar as camadas.');
         document.getElementById(`chk-${layerKey}`).checked = false;
         return;
     }
 
-    const uf = lastCarUf.toLowerCase();
-    const temaNome = layerKey === 'app' ? 'APPS' : 'RESERVA_LEGAL';
-    // URL do GeoServer SICAR para temas do imóvel
-    const url = `https://geoserver.car.gov.br/geoserver/sicar/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=sicar:sicar_${temaNome.toLowerCase()}_${uf}&outputFormat=application/json&cql_filter=cod_imovel='${lastCarCodImovel}'`;
-
     const nota = document.getElementById('layers-nota');
     if (nota) nota.textContent = `Carregando ${layerKey.toUpperCase()}...`;
+
+    // 1. Tentar buscar localmente em GEOPORTAL_LAYERS (se o usuário adicionar os geojsons)
+    const localKey = layerKey === 'app' ? 'APP' : 'RESERVA_LEGAL';
+    const fallbackKey = layerKey === 'app' ? 'APPS' : 'RESERVA';
+    let localData = GEOPORTAL_LAYERS[localKey] || GEOPORTAL_LAYERS[fallbackKey];
+
+    if (localData && localData.features) {
+        // Filtrar apenas a feição que pertence ao imóvel atual
+        const filteredFeatures = localData.features.filter(f => 
+            f.properties && f.properties.cod_imovel === lastCarCodImovel
+        );
+
+        if (filteredFeatures.length > 0) {
+            const style = layerKey === 'app'
+                ? { color: '#10b981', weight: 2, fillOpacity: 0.35, fillColor: '#10b981' }
+                : { color: '#059669', weight: 2, fillOpacity: 0.35, fillColor: '#059669' };
+
+            const layer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, { style, interactive: false });
+
+            if (layerKey === 'app') { sicarAppLayer = layer; }
+            else { sicarReservaLayer = layer; }
+
+            layer.addTo(map);
+            if (nota) nota.textContent = `${filteredFeatures.length} feição(ões) carregada(s) do arquivo local.`;
+            return;
+        }
+    }
+
+    // 2. Se não encontrou localmente, tentar a API pública do SICAR (atualmente não suportada pelo governo, mas mantida como fallback)
+    const uf = lastCarUf ? lastCarUf.toLowerCase() : 'es';
+    const temaNome = layerKey === 'app' ? 'APPS' : 'RESERVA_LEGAL';
+    const url = `https://geoserver.car.gov.br/geoserver/sicar/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=sicar:sicar_${temaNome.toLowerCase()}_${uf}&outputFormat=application/json&cql_filter=cod_imovel='${lastCarCodImovel}'`;
 
     try {
         const r = await fetch(url);
@@ -113,14 +140,14 @@ async function toggleCARLayer(layerKey, checked) {
             else { sicarReservaLayer = layer; }
 
             layer.addTo(map);
-            if (nota) nota.textContent = `${data.features.length} feição(ões) carregada(s).`;
+            if (nota) nota.textContent = `${data.features.length} feição(ões) carregada(s) do servidor SICAR.`;
         } else {
-            if (nota) nota.textContent = `Nenhuma feição de ${layerKey.toUpperCase()} encontrada.`;
+            if (nota) nota.textContent = `Feição não encontrada no arquivo local nem no SICAR.`;
             document.getElementById(`chk-${layerKey}`).checked = false;
         }
     } catch (err) {
         console.warn(`Erro ao buscar ${layerKey}:`, err);
-        if (nota) nota.textContent = `Erro ao carregar ${layerKey.toUpperCase()}. Tente novamente.`;
+        if (nota) nota.textContent = `Para ver a ${layerKey.toUpperCase()}, adicione-a no arquivo layers_data.js (o servidor SICAR não a fornece publicamente).`;
         document.getElementById(`chk-${layerKey}`).checked = false;
     }
 }
