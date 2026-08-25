@@ -352,7 +352,6 @@ function renderPolygonsOnMap(talhoesFeatures, weedGeoJSON, isAnalyzed) {
     }
 }
 
-let chartInstance = null;
 function renderChartReal(talhoesFeatures, weedGeoJSON) {
     const ctx = document.getElementById('ervasChart');
     if (!ctx) return;
