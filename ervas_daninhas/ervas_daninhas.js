@@ -199,7 +199,8 @@ function seededRandom(seed) {
     return x - Math.floor(x);
 }
 
-function simulateAnalysis() {
+
+async function processarAnaliseReal() {
     const checkboxes = document.querySelectorAll('#talhoes-list input[type="checkbox"]:checked');
     if (checkboxes.length === 0) {
         alert("Selecione pelo menos um talhão!");
@@ -212,64 +213,65 @@ function simulateAnalysis() {
     document.getElementById('diagnostic-result').style.display = 'none';
     document.getElementById('diagnostic-empty').style.display = 'none';
 
-    setTimeout(() => {
-        const selectedTalhoes = [];
-        let totalArea = 0;
-        let areaInfestada = 0;
-        let totalFocos = 0;
-        
-        checkboxes.forEach(chk => {
-            const idx = parseInt(chk.value);
-            const f = currentFeatures[idx];
-            if (!f) return;
-            
-            // Semente única baseada no ID ou índice do talhão para sempre dar o mesmo resultado
-            const seedStr = String(f.properties.id_talhao || f.properties.ID_TALHAO || f.properties.TALHAO || idx);
-            let seedNum = 0;
-            for(let i=0; i<seedStr.length; i++) seedNum += seedStr.charCodeAt(i);
-            seedNum += idx; // garantir unicidade
-            
-            // Simulação matemática de infestação (0 a 1) consistente
-            let infestacao = seededRandom(seedNum) * 0.4; // max 40%
-            // Algumas raras chegam a 80%
-            if(seededRandom(seedNum + 1) > 0.8) {
-                infestacao = 0.4 + seededRandom(seedNum + 2) * 0.4;
-            }
-            
-            // Salvar o seed no feature para usar no desenho da grade depois
-            f.properties._seed = seedNum;
-            
-            f.properties._simulated_infestacao = infestacao;
-            
-            // Classificação
-            if (infestacao <= 0.05) f.properties._infestacao_class = "Área Limpa (Sem Catação)";
-            else if (infestacao <= 0.15) f.properties._infestacao_class = "Catação Leve";
-            else if (infestacao <= 0.30) f.properties._infestacao_class = "Catação Moderada";
-            else f.properties._infestacao_class = "Catação Severa";
-            
-            const area = getFeatureAreaHa(f);
-            totalArea += area;
-            areaInfestada += area * infestacao;
-            
-            const focos = Math.floor(infestacao * 20); // Simula quantia de reboleiras
-            totalFocos += focos;
-            f.properties._simulated_focos = focos;
-            
-            selectedTalhoes.push(f);
-        });
+    const selectedFeatures = [];
+    let totalAreaAnalise = 0;
+    
+    checkboxes.forEach(chk => {
+        const idx = parseInt(chk.value);
+        const f = currentFeatures[idx];
+        if (f) {
+            selectedFeatures.push(f);
+            totalAreaAnalise += getFeatureAreaHa(f);
+        }
+    });
 
-        const avgInfestacao = totalArea > 0 ? (areaInfestada / totalArea) : 0;
+    const payload = {
+        type: "FeatureCollection",
+        features: selectedFeatures
+    };
+
+    try {
+        // CONEXÃO COM A API NO RENDER (SATÉLITE)
+        const response = await fetch("https://api-catacao-agrogis.onrender.com/api/processar-catacao", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
         
-        // Atualiza a UI
-        updateDiagnosticPanel(avgInfestacao, totalArea, areaInfestada, totalFocos);
-        renderPolygonsOnMap(selectedTalhoes, true);
-        renderChart(selectedTalhoes);
+        if (!response.ok) {
+            throw new Error("Erro no servidor da IA: " + response.statusText);
+        }
+
+        const resultGeoJSON = await response.json();
         
-        // Restore UI
+        const areaCatacao = resultGeoJSON.area_total_ha || 0;
+        const avgInfestacao = totalAreaAnalise > 0 ? (areaCatacao / totalAreaAnalise) : 0;
+        const totalFocos = resultGeoJSON.features ? resultGeoJSON.features.length : 0;
+        
+        // Atualiza Painel de Diagnóstico
+        updateDiagnosticPanel(avgInfestacao, totalAreaAnalise, areaCatacao, totalFocos);
+        
+        // Renderiza as Células de Catação no Mapa
+        renderPolygonsOnMap(selectedFeatures, resultGeoJSON, true);
+        
+        // Renderiza Gráfico Real
+        renderChartReal(selectedFeatures, resultGeoJSON);
+
+        // Atualiza UI
+        document.getElementById('diagnostic-result').style.display = 'block';
+        
+    } catch(err) {
+        alert("Falha ao comunicar com o Satélite/API: " + err.message);
+        console.error(err);
+    } finally {
         document.getElementById('btn-analyze').disabled = false;
         document.getElementById('loading-indicator').style.display = 'none';
+    }
+}
 
-    }, 2500); // Simulando o tempo de busca
+// Sobrescrevendo a função chamada pelo form
+function simulateAnalysis() {
+    processarAnaliseReal();
 }
 
 // ----------------------------------------------------
@@ -289,12 +291,11 @@ function getStyleClassForInfestacao(inf) {
     return 'severo';
 }
 
-function updateDiagnosticPanel(avgInf, totalArea, areaInfestada, totalFocos) {
+function updateDiagnosticPanel(avgInf, totalArea, areaCatacao, totalFocos) {
     const badge = document.getElementById('status-badge');
     const circle = document.getElementById('percentage-circle');
     const pctValue = document.getElementById('percentage-value');
     
-    // Reseta classes do badge/circle
     badge.className = 'badge';
     circle.className = 'percentage-circle';
     
@@ -303,152 +304,107 @@ function updateDiagnosticPanel(avgInf, totalArea, areaInfestada, totalFocos) {
     circle.classList.add(styleClass);
     
     let statusText = "MÉDIA: ";
-    if (avgInf <= 0.05) statusText += "SEM INFESTAÇÃO";
-    else if (avgInf <= 0.15) statusText += "INFESTAÇÃO LEVE";
-    else if (avgInf <= 0.30) statusText += "INFESTAÇÃO MODERADA";
-    else statusText += "INFESTAÇÃO SEVERA";
+    if (avgInf <= 0.05) statusText += "ÁREA LIMPA";
+    else if (avgInf <= 0.15) statusText += "CATAÇÃO LEVE";
+    else if (avgInf <= 0.30) statusText += "CATAÇÃO MODERADA";
+    else statusText += "CATAÇÃO SEVERA";
     
     badge.textContent = statusText;
     pctValue.textContent = (avgInf * 100).toFixed(1) + "%";
     
     document.getElementById('stat-area').textContent = totalArea > 0 ? `${totalArea.toFixed(1)} ha` : 'N/D';
-    document.getElementById('stat-infestada').textContent = areaInfestada > 0 ? `${areaInfestada.toFixed(1)} ha` : 'N/D';
+    document.getElementById('stat-infestada').textContent = areaCatacao > 0 ? `${areaCatacao.toFixed(1)} ha` : 'N/D';
     document.getElementById('stat-focos').textContent = totalFocos;
     document.getElementById('stat-cloud').textContent = "< 10%";
-    
-    document.getElementById('diagnostic-result').style.display = 'flex';
 }
 
-function renderPolygonsOnMap(features, isAnalyzed) {
+function renderPolygonsOnMap(talhoesFeatures, weedGeoJSON, isAnalyzed) {
     if (talhoesLayer) map.removeLayer(talhoesLayer);
     if (focosLayer) focosLayer.clearLayers();
     
-    talhoesLayer = L.geoJSON(features, {
+    // Desenha o limite dos talhões
+    talhoesLayer = L.geoJSON(talhoesFeatures, {
         style: function(feature) {
-            if (!isAnalyzed) {
-                return { fillColor: 'rgba(255,23,68,0.2)', color: '#ff1744', weight: 2, fillOpacity: 0.3, dashArray: '4' };
-            }
-            const inf = feature.properties._simulated_infestacao;
-            const color = getColorForInfestacao(inf);
-            return { fillColor: color, color: '#fff', weight: 1.5, fillOpacity: 0.5 };
-        },
-        onEachFeature: function(feature, layer) {
-            if (isAnalyzed) {
-                const p = feature.properties;
-                const inf = (p._simulated_infestacao * 100).toFixed(1) + "%";
-                const cls = p._infestacao_class;
-                const focos = p._simulated_focos;
-                const id = p.id_talhao || p.ID_TALHAO || p.TALHAO || 'T';
-                
-                layer.bindPopup(`
-                    <div style="font-family:Inter; color:#333; min-width:150px;">
-                        <h4 style="margin:0 0 8px 0; border-bottom:1px solid #ccc; padding-bottom:5px;">Talhão ${id}</h4>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Infestação:</b> <span style="color:${getColorForInfestacao(p._simulated_infestacao)}; font-weight:bold;">${inf}</span></div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Status:</b> <span>${cls}</span></div>
-                        <div style="display:flex; justify-content:space-between;"><b>Focos:</b> <span>${focos}</span></div>
-                    </div>
-                `);
-
-                // Generate 40x40m grid mapping visually
-                if (focos > 0 && typeof turf !== 'undefined') {
-                    try {
-                        const bbox = turf.bbox(feature);
-                        const cellSide = 0.04; // 40 metros em km
-                        const grid = turf.squareGrid(bbox, cellSide, {units: 'kilometers'});
-                        
-                        let cellsDrawn = 0;
-                        const weedCells = [];
-                        
-                        grid.features.forEach(cell => {
-                            // Verifica se o centro da celula de 40x40 cai dentro do talhao
-                            const center = turf.centroid(cell);
-                            if (turf.booleanPointInPolygon(center, feature)) {
-                                weedCells.push(cell);
-                            }
-                        });
-                        
-                        // Desenha as celulas baseado na proporcao de focos simulados
-                        // Mistura o array para distribuicao de forma consistente usando o seed do talhão
-                        let sortSeed = p._seed || 12345;
-                        weedCells.sort(() => 0.5 - seededRandom(sortSeed++));
-                        
-                        const cellsToDraw = Math.min(focos, weedCells.length);
-                        for(let i=0; i<cellsToDraw; i++) {
-                            L.geoJSON(weedCells[i], {
-                                style: {
-                                    fillColor: '#ff1744',
-                                    color: '#ff1744',
-                                    weight: 1,
-                                    fillOpacity: 0.6,
-                                    opacity: 0.8
-                                }
-                            }).bindPopup(`Célula de Catação (40x40m)<br>Talhão ${id}`).addTo(focosLayer);
-                        }
-                    } catch(e) {
-                        console.error('Erro ao gerar grade 40x40', e);
-                    }
-                }
-            }
+            return { fillColor: 'rgba(255,255,255,0.05)', color: '#666', weight: 2, fillOpacity: 0.1, dashArray: '4' };
         }
     }).addTo(map);
 
+    if (isAnalyzed && weedGeoJSON && weedGeoJSON.features && weedGeoJSON.features.length > 0) {
+        // Desenha as células reais de 40x40 retornadas pela API Python
+        L.geoJSON(weedGeoJSON, {
+            style: {
+                fillColor: '#ff1744',
+                color: '#ff1744',
+                weight: 1,
+                fillOpacity: 0.6,
+                opacity: 0.8
+            },
+            onEachFeature: function(feature, layer) {
+                const area = getFeatureAreaHa(feature);
+                layer.bindPopup(`Célula de Catação<br>Área: ${area.toFixed(2)} ha`);
+            }
+        }).addTo(focosLayer);
+    }
+    
     const bounds = talhoesLayer.getBounds();
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40] });
+    if (bounds.isValid()) {
+        map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+    }
 }
 
-function renderChart(features) {
+let chartInstance = null;
+function renderChartReal(talhoesFeatures, weedGeoJSON) {
     const ctx = document.getElementById('ervasChart');
     if (!ctx) return;
+    
+    const labels = [];
+    const data = [];
+    
+    // Para cada talhão, descobre a área de mato interceptada
+    // Como a API de GeoPandas manteve os IDs originais nos features de saída, podemos somar.
+    talhoesFeatures.forEach((t, idx) => {
+        const id = t.properties.id_talhao || t.properties.ID_TALHAO || t.properties.TALHAO || `T${idx+1}`;
+        labels.push(String(id).substring(0,6));
+        
+        // Achar todos os matos que pertencem a esse talhão
+        let matoNesseTalhao = 0;
+        if(weedGeoJSON && weedGeoJSON.features) {
+            weedGeoJSON.features.forEach(w => {
+                // Checa propriedades herdadas
+                const wId = w.properties.id_talhao || w.properties.ID_TALHAO || w.properties.TALHAO || `T${idx+1}`;
+                if (wId === id) {
+                    matoNesseTalhao += getFeatureAreaHa(w);
+                }
+            });
+        }
+        
+        const areaT = getFeatureAreaHa(t);
+        const percent = areaT > 0 ? (matoNesseTalhao / areaT) * 100 : 0;
+        data.push(percent.toFixed(1));
+    });
     
     if (chartInstance) {
         chartInstance.destroy();
     }
-    
-    const labels = [];
-    const dataValues = [];
-    const bgColors = [];
-    
-    features.forEach((f, idx) => {
-        labels.push(f.properties.id_talhao || f.properties.ID_TALHAO || f.properties.TALHAO || `T${idx+1}`);
-        const inf = f.properties._simulated_infestacao;
-        dataValues.push((inf * 100).toFixed(1));
-        bgColors.push(getColorForInfestacao(inf));
-    });
     
     chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Infestação (%)',
-                data: dataValues,
-                backgroundColor: bgColors,
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.1)'
+                label: '% Catação',
+                data: data,
+                backgroundColor: data.map(v => getColorForInfestacao(v/100)),
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: { color: 'rgba(255,255,255,0.1)' },
-                    ticks: { color: '#94a3b8' }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#94a3b8' }
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => ` Infestação: ${ctx.raw}%`
-                    }
-                }
+                y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } },
+                x: { grid: { display: false }, ticks: { color: '#94a3b8', maxRotation: 45, minRotation: 45 } }
             }
         }
     });
