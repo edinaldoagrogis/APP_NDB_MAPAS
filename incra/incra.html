@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Limites do CAR - AgroGIS</title>
+    <title>Consulta de Limites do INCRA - AgroGIS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Leaflet CSS & JS -->
@@ -13,8 +13,8 @@
     <!-- Usando o CSS do Maturador para padronizar o layout -->
     <link rel="stylesheet" href="../maturador.css">
     
-    <!-- Custom CSS (específico do CAR) -->
-    <link rel="stylesheet" href="car.css">
+    <!-- Custom CSS (específico do INCRA) -->
+    <link rel="stylesheet" href="incra.css">
     
     <!-- Dados GeoJSON (Camadas principais) -->
     <script defer src="../layers_data.js"></script>
@@ -22,7 +22,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Consulta de Limites do CAR</h1>
+            <h1>Consulta de Limites do INCRA</h1>
             <a href="#" onclick="window.location.href='../index.html?reload=1'; return false;" class="back-link">← Voltar ao App</a>
         </div>
 
@@ -31,7 +31,7 @@
             <div class="left-column">
                 <div class="panel">
                     <h2>Pesquisa de Fazenda</h2>
-                    <form id="car-form">
+                    <form id="incra-form">
                         <div class="form-group" style="position: relative;">
                             <label for="fazenda-select">Buscar Fazenda</label>
                             <input type="text" id="fazenda-select" class="form-control" placeholder="Digite o nome da fazenda..." autocomplete="off">
@@ -40,32 +40,32 @@
                         </div>
                         
                         <div class="form-group" style="margin-top: 20px;">
-                            <button type="submit" class="btn btn-primary" id="btn-buscar-car" disabled>
-                                Buscar Imóvel no CAR
+                            <button type="submit" class="btn btn-primary" id="btn-buscar-incra" disabled>
+                                Buscar Imóvel no INCRA
                             </button>
                         </div>
                     </form>
                 </div>
                 
-                <div class="panel" id="car-info-panel" style="display: none; margin-top: 20px;">
-                    <h3>Informações do CAR</h3>
-                    <div id="car-info-content">
+                <div class="panel" id="incra-info-panel" style="display: none; margin-top: 20px;">
+                    <h3>Informações do INCRA</h3>
+                    <div id="incra-info-content">
                         <!-- Conteúdo será preenchido via JS -->
                     </div>
                 </div>
 
                 <div id="loading-indicator" style="display: none; margin-top: 20px; text-align: center;">
                     <div class="spinner"></div>
-                    <p style="margin-top: 10px; color: #94a3b8; font-size: 14px;">Buscando base do SICAR...</p>
+                    <p style="margin-top: 10px; color: #94a3b8; font-size: 14px;">Buscando base do INCRA...</p>
                 </div>
             </div>
 
             <!-- Coluna Direita: Mapa -->
-            <div id="car-map"></div>
+            <div id="incra-map"></div>
         </div>
     </div>
 
     <!-- Scripts da Ferramenta -->
-    <script src="car.js"></script>
+    <script src="incra.js"></script>
 </body>
 </html>

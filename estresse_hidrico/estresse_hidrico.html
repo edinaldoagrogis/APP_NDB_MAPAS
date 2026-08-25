@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="../maturador.css">
     
     <!-- Dados GeoJSON (Camadas principais) -->
-    <script src="../layers_data.js"></script>
+    <script defer src="../layers_data.js"></script>
 
     <style>
         /* Ajustes específicos de cores para o Estresse Hídrico */
@@ -36,7 +36,7 @@
     <div class="container">
         <div class="header">
             <h1>Monitoramento de Estresse Hídrico (Sentinel-2)</h1>
-            <a href="../index.html" class="back-link">← Voltar ao App</a>
+            <a href="#" onclick="window.location.href='../index.html?reload=1'; return false;" class="back-link">← Voltar ao App</a>
         </div>
 
         <div class="dashboard-grid">
