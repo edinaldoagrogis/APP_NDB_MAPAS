@@ -293,7 +293,8 @@ async function fetchINCRAData(lon, lat) {
                 // INCRA WFS i3geo ignora cql_filter no WFS 1.0.0, então usamos BBOX com pequena tolerância
                 const tol = 0.01;
                 const bbox = `${lon-tol},${lat-tol},${lon+tol},${lat+tol}`;
-                const wfsUrl = `https://acervofundiario.incra.gov.br/i3geo/ogc.php?tema=${typeName}&service=WFS&version=1.0.0&request=GetFeature&maxfeatures=1&bbox=${bbox}`;
+                const rawUrl = `https://acervofundiario.incra.gov.br/i3geo/ogc.php?tema=${typeName}&service=WFS&version=1.0.0&request=GetFeature&maxfeatures=1&bbox=${bbox}`;
+                const wfsUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
                 
                 try {
                     const response = await fetch(wfsUrl);
