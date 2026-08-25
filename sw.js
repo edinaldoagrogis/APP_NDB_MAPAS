@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v167';
+const CACHE_NAME = 'agrogis-v168';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -99,8 +99,8 @@ self.addEventListener('fetch', event => {
         return;
     }
     
-    // Bypass cache for API calls, admin page, and cross-origin requests (e.g. SICAR API)
-    if (url.pathname.startsWith('/api/') || url.pathname.includes('admin.html') || url.origin !== location.origin) {
+    // Bypass cache for API calls, admin page, and SICAR GeoServer
+    if (url.pathname.startsWith('/api/') || url.pathname.includes('admin.html') || url.hostname === 'geoserver.car.gov.br') {
         event.respondWith(fetch(event.request));
         return;
     }
