@@ -333,30 +333,42 @@ function renderPolygonsOnMap(features, isAnalyzed) {
                     </div>
                 `);
 
-                // Generate random focos visually
+                // Generate 40x40m grid mapping visually
                 if (focos > 0 && typeof turf !== 'undefined') {
                     try {
                         const bbox = turf.bbox(feature);
-                        let pointsDrawn = 0;
-                        let attempts = 0;
-                        while(pointsDrawn < focos && attempts < focos * 5) {
-                            attempts++;
-                            const pt = turf.randomPoint(1, {bbox: bbox}).features[0];
-                            if(turf.booleanPointInPolygon(pt, feature)) {
-                                pointsDrawn++;
-                                const coords = pt.geometry.coordinates;
-                                L.circleMarker([coords[1], coords[0]], {
-                                    radius: 3,
-                                    fillColor: '#ff1744',
-                                    color: '#fff',
-                                    weight: 1,
-                                    opacity: 1,
-                                    fillOpacity: 0.8
-                                }).bindPopup(`Foco de Infestação - Talhão ${id}`).addTo(focosLayer);
+                        const cellSide = 0.04; // 40 metros em km
+                        const grid = turf.squareGrid(bbox, cellSide, {units: 'kilometers'});
+                        
+                        let cellsDrawn = 0;
+                        const weedCells = [];
+                        
+                        grid.features.forEach(cell => {
+                            // Verifica se o centro da celula de 40x40 cai dentro do talhao
+                            const center = turf.centroid(cell);
+                            if (turf.booleanPointInPolygon(center, feature)) {
+                                weedCells.push(cell);
                             }
+                        });
+                        
+                        // Desenha as celulas baseado na proporcao de focos simulados
+                        // Mistura o array para distribuicao organica
+                        weedCells.sort(() => 0.5 - Math.random());
+                        
+                        const cellsToDraw = Math.min(focos, weedCells.length);
+                        for(let i=0; i<cellsToDraw; i++) {
+                            L.geoJSON(weedCells[i], {
+                                style: {
+                                    fillColor: '#ff1744',
+                                    color: '#ff1744',
+                                    weight: 1,
+                                    fillOpacity: 0.6,
+                                    opacity: 0.8
+                                }
+                            }).bindPopup(`Célula de Catação (40x40m)<br>Talhão ${id}`).addTo(focosLayer);
                         }
                     } catch(e) {
-                        console.error('Erro ao gerar focos', e);
+                        console.error('Erro ao gerar grade 40x40', e);
                     }
                 }
             }
