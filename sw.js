@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v177';
+const CACHE_NAME = 'agrogis-v178';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -33,14 +33,7 @@ self.addEventListener('install', event => {
                     './maturador.js',
                     './manifest.json',
                     './app_icon_192.png',
-                    './app_icon_512.png',
-                    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-                    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-                    'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css',
-                    'https://unpkg.com/@turf/turf@6/turf.min.js',
-                    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-                    'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js',
-                    'https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js'
+                    './app_icon_512.png'
                 ];
                 
                 if (typeof OFFLINE_IMAGES_CONFIG !== 'undefined') {
