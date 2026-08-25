@@ -2272,17 +2272,27 @@ window.forceDownloadOfflineMaps = async function() {
 
 // Injetar o botão no painel de rotas se não existir
 setTimeout(() => {
-    const routePanelHeader = document.querySelector('#routing-panel .panel-actions');
+    const routePanelHeader = document.querySelector('#route-drag-handle');
     if (routePanelHeader && !document.getElementById('btn-download-offline')) {
         const btn = document.createElement('button');
         btn.id = 'btn-download-offline';
-        btn.className = 'icon-btn';
-        btn.style.width = 'auto';
-        btn.style.padding = '0 10px';
+        btn.style.background = 'rgba(46, 196, 182, 0.2)';
+        btn.style.border = '1px solid rgba(46, 196, 182, 0.5)';
+        btn.style.color = '#2ec4b6';
+        btn.style.borderRadius = '8px';
+        btn.style.cursor = 'pointer';
+        btn.style.fontSize = '11px';
+        btn.style.padding = '4px 8px';
+        btn.style.marginLeft = '10px';
+        btn.style.display = 'flex';
+        btn.style.alignItems = 'center';
+        btn.style.gap = '4px';
         btn.title = 'Baixar Malha Offline';
-        btn.innerHTML = '<i class="fas fa-download"></i> Baixar Malha';
+        btn.innerHTML = '<i class="fas fa-download"></i> Baixar Malha Offline';
         btn.onclick = window.forceDownloadOfflineMaps;
-        routePanelHeader.insertBefore(btn, routePanelHeader.firstChild);
+        
+        // Insere depois do texto "TRAÇAR ROTA"
+        routePanelHeader.insertBefore(btn, routePanelHeader.childNodes[1]);
     }
 }, 2000);
 
