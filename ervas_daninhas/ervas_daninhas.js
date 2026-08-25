@@ -192,6 +192,13 @@ function populateTalhoes(fazendaNome) {
 // ----------------------------------------------------
 // SIMULAÇÃO DE ERVAS DANINHAS
 // ----------------------------------------------------
+
+// Função para gerar números "aleatórios" consistentes baseados no talhão
+function seededRandom(seed) {
+    var x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
 function simulateAnalysis() {
     const checkboxes = document.querySelectorAll('#talhoes-list input[type="checkbox"]:checked');
     if (checkboxes.length === 0) {
@@ -216,12 +223,21 @@ function simulateAnalysis() {
             const f = currentFeatures[idx];
             if (!f) return;
             
-            // Simulação matemática de infestação (0 a 1)
-            let infestacao = Math.random() * 0.4; // max 40%
+            // Semente única baseada no ID ou índice do talhão para sempre dar o mesmo resultado
+            const seedStr = String(f.properties.id_talhao || f.properties.ID_TALHAO || f.properties.TALHAO || idx);
+            let seedNum = 0;
+            for(let i=0; i<seedStr.length; i++) seedNum += seedStr.charCodeAt(i);
+            seedNum += idx; // garantir unicidade
+            
+            // Simulação matemática de infestação (0 a 1) consistente
+            let infestacao = seededRandom(seedNum) * 0.4; // max 40%
             // Algumas raras chegam a 80%
-            if(Math.random() > 0.8) {
-                infestacao = 0.4 + Math.random() * 0.4;
+            if(seededRandom(seedNum + 1) > 0.8) {
+                infestacao = 0.4 + seededRandom(seedNum + 2) * 0.4;
             }
+            
+            // Salvar o seed no feature para usar no desenho da grade depois
+            f.properties._seed = seedNum;
             
             f.properties._simulated_infestacao = infestacao;
             
@@ -352,8 +368,9 @@ function renderPolygonsOnMap(features, isAnalyzed) {
                         });
                         
                         // Desenha as celulas baseado na proporcao de focos simulados
-                        // Mistura o array para distribuicao organica
-                        weedCells.sort(() => 0.5 - Math.random());
+                        // Mistura o array para distribuicao de forma consistente usando o seed do talhão
+                        let sortSeed = p._seed || 12345;
+                        weedCells.sort(() => 0.5 - seededRandom(sortSeed++));
                         
                         const cellsToDraw = Math.min(focos, weedCells.length);
                         for(let i=0; i<cellsToDraw; i++) {
