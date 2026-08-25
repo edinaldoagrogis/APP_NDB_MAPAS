@@ -112,8 +112,8 @@ class GeoJSONPathFinder {
                     path.unshift(coordsMap.get(curr));
                     curr = previous.get(curr);
                 }
-                path.unshift([startLon, startLat]);
-                path.push([endLon, endLat]);
+                // Removemos o unshift(startLon, startLat) e push(endLon, endLat) 
+                // para que a rota só passe pelas feições mapeadas e não crie retas falsas.
                 return path;
             }
 
