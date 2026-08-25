@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v176';
+const CACHE_NAME = 'agrogis-v177';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -48,15 +48,13 @@ self.addEventListener('install', event => {
                     coreAssets = coreAssets.concat(imageAssets);
                 }
 
-                await Promise.allSettled(
+                await Promise.all(
                     coreAssets.map(url => fetch(url).then(r => { 
                         if(r.ok) {
                             return cache.put(url, r); 
                         } else {
-                            console.error('[ServiceWorker] Failed to cache', url, r.status);
+                            throw new Error('Failed to fetch ' + url);
                         }
-                    }).catch(err => {
-                        console.error('[ServiceWorker] Network error caching', url, err);
                     }))
                 );
                 console.log('[ServiceWorker] Install complete');
