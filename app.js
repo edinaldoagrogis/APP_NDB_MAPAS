@@ -2244,8 +2244,50 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     // (Route map click to close removed per user request)
 
     let offlineRouteLayer = null;
-    let geojsonPathFinderInstance = null;
-    let isLoadingPathFinder = false;
+    // Função para baixar mapas manualmente e garantir o cache
+window.forceDownloadOfflineMaps = async function() {
+    try {
+        const btn = document.getElementById('btn-download-offline');
+        if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Baixando...';
+        
+        // Pega a versão mais recente do cache ou a atual (baseada no sw)
+        const cache = await caches.open('agrogis-v179');
+        const res = await fetch('rotas_offline.geojson');
+        if (!res.ok) throw new Error("Erro na rede: " + res.status);
+        await cache.put('rotas_offline.geojson', res.clone());
+        
+        // Também salva o pathfinder no cache
+        const resPath = await fetch('pathfinder.js');
+        await cache.put('pathfinder.js', resPath.clone());
+        
+        alert("Mapas offline baixados com sucesso! Agora você pode usar sem internet.");
+        if (btn) btn.innerHTML = '<i class="fas fa-check"></i> Mapas Baixados';
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao baixar mapas: " + e.message);
+        const btn = document.getElementById('btn-download-offline');
+        if (btn) btn.innerHTML = '<i class="fas fa-download"></i> Tentar Novamente';
+    }
+};
+
+// Injetar o botão no painel de rotas se não existir
+setTimeout(() => {
+    const routePanelHeader = document.querySelector('#routing-panel .panel-actions');
+    if (routePanelHeader && !document.getElementById('btn-download-offline')) {
+        const btn = document.createElement('button');
+        btn.id = 'btn-download-offline';
+        btn.className = 'icon-btn';
+        btn.style.width = 'auto';
+        btn.style.padding = '0 10px';
+        btn.title = 'Baixar Malha Offline';
+        btn.innerHTML = '<i class="fas fa-download"></i> Baixar Malha';
+        btn.onclick = window.forceDownloadOfflineMaps;
+        routePanelHeader.insertBefore(btn, routePanelHeader.firstChild);
+    }
+}, 2000);
+
+let geojsonPathFinderInstance = null;
+let isLoadingPathFinder = false;
 
     async function getOfflineRouter() {
         if (geojsonPathFinderInstance) return geojsonPathFinderInstance;
