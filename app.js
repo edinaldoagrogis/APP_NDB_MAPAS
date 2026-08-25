@@ -2261,7 +2261,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             return geojsonPathFinderInstance;
         } catch (e) {
             console.error(e);
-            alert("Erro ao carregar malha de rodovias offline.");
+            alert("Erro ao carregar malha offline: " + e.message);
             return null;
         } finally {
             isLoadingPathFinder = false;
