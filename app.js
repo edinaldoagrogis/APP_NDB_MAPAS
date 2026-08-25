@@ -2243,35 +2243,98 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     
     // (Route map click to close removed per user request)
 
-    function calculateRoute() {
+    let offlineRouteLayer = null;
+    let geojsonPathFinderInstance = null;
+    let isLoadingPathFinder = false;
+
+    async function getOfflineRouter() {
+        if (geojsonPathFinderInstance) return geojsonPathFinderInstance;
+        if (isLoadingPathFinder) return null;
+        isLoadingPathFinder = true;
+        try {
+            const distText = document.getElementById('route-distance-text');
+            if (distText) distText.textContent = 'Carregando malha...';
+            const response = await fetch('CAMADAS VETORIAIS/RODOVIAS/RODOVIAS_FILTRADAS.geojson');
+            const geojson = await response.json();
+            geojsonPathFinderInstance = new window.GeoJSONPathFinder(geojson);
+            return geojsonPathFinderInstance;
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao carregar malha de rodovias offline.");
+            return null;
+        } finally {
+            isLoadingPathFinder = false;
+        }
+    }
+
+    async function calculateRoute() {
         if (!routeOriginData || !routeDestData) {
             alert('Por favor, selecione origem e destino clicando no mapa.');
             return;
         }
         
-        if (!navigator.onLine) {
-            const closeBtn = document.getElementById('close-route-btn');
-            if (closeBtn) closeBtn.click();
-            alert("⚠️ Você está offline.\n\nO traçado de rotas por estradas exige internet. \nPara medir distâncias offline, utilize a ferramenta de MEDIÇÃO (ícone de régua).");
-            return;
-        }
-        
-        if (routingControl) {
-            map.removeControl(routingControl);
-        }
-        
-        // Check if L.Routing is available (Leaflet Routing Machine)
-        if (typeof L.Routing === 'undefined') {
-            alert('Erro: Sistema de rotas não está carregado.');
-            return;
-        }
-
         const routeInfo = document.getElementById('route-info');
         const distText = document.getElementById('route-distance-text');
         
         if (routeInfo) {
             routeInfo.style.display = 'flex';
             if (distText) distText.textContent = 'Calculando...';
+        }
+
+        if (routingControl) {
+            map.removeControl(routingControl);
+            routingControl = null;
+        }
+        if (offlineRouteLayer) {
+            map.removeLayer(offlineRouteLayer);
+            offlineRouteLayer = null;
+        }
+
+        if (!navigator.onLine) {
+            const pathFinder = await getOfflineRouter();
+            if (!pathFinder) {
+                if (distText) distText.textContent = 'Erro ao carregar';
+                return;
+            }
+
+            const path = pathFinder.findPath(
+                routeOriginData.lng, routeOriginData.lat,
+                routeDestData.lng, routeDestData.lat
+            );
+
+            if (!path || path.length < 2) {
+                alert("Não foi possível encontrar uma rota offline entre esses pontos.");
+                if (distText) distText.textContent = 'Rota não encontrada';
+                return;
+            }
+
+            const latlngs = path.map(c => [c[1], c[0]]);
+            offlineRouteLayer = L.polyline(latlngs, {color: '#e85d04', opacity: 0.8, weight: 6}).addTo(map);
+            
+            let totalDist = 0;
+            for(let i = 0; i < path.length - 1; i++){
+                totalDist += pathFinder.distance(path[i][0], path[i][1], path[i+1][0], path[i+1][1]);
+            }
+
+            if (distText) {
+                if (totalDist > 1000) {
+                    distText.textContent = (totalDist / 1000).toFixed(2) + ' km (Offline)';
+                } else {
+                    distText.textContent = Math.round(totalDist) + ' m (Offline)';
+                }
+            }
+            map.fitBounds(offlineRouteLayer.getBounds(), { padding: [50, 50] });
+            
+            if (typeof window.toggleCompass === 'function') {
+                window.toggleCompass(true);
+            }
+            return;
+        }
+        
+        // Check if L.Routing is available (Leaflet Routing Machine)
+        if (typeof L.Routing === 'undefined') {
+            alert('Erro: Sistema de rotas não está carregado.');
+            return;
         }
 
         routingControl = L.Routing.control({
