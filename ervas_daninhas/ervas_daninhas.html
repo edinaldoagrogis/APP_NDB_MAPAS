@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoramento de Ervas Daninhas - AgroGIS</title>
+    <title>Mapeamento de Catação - AgroGIS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Leaflet CSS & JS -->
@@ -38,7 +38,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Detecção de Ervas Daninhas (Sentinel-2)</h1>
+            <h1>Mapa de Catação (Sentinel-2)</h1>
             <a href="../index.html" class="back-link">← Voltar ao App</a>
         </div>
 
@@ -85,18 +85,18 @@
                     <div class="diagnostic-card" id="diagnostic-result" style="display: none;">
                         <div id="status-badge" class="badge status-pending">Aguardando Análise</div>
                         
-                        <!-- % Infestação -->
+                        <!-- % Infestação / Catação -->
                         <div id="percentage-circle" class="percentage-circle">
                             <span id="percentage-value">0%</span>
                         </div>
-                        <div style="font-size:12px; color:var(--text-muted); margin-top:-15px; margin-bottom:15px;">Infestação Média da Área</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:-15px; margin-bottom:15px;">Infestação / Catação Média da Área</div>
                         
                         <div class="stat-row">
                             <span class="stat-label">Área Analisada:</span>
                             <span class="stat-value" id="stat-area">-</span>
                         </div>
                         <div class="stat-row">
-                            <span class="stat-label">Área Infestada Estimada:</span>
+                            <span class="stat-label">Área Total de Catação:</span>
                             <span class="stat-value" id="stat-infestada" style="color: #ff1744; font-weight: bold;">-</span>
                         </div>
                         <div class="stat-row">
@@ -117,16 +117,16 @@
             <!-- Coluna Direita: Gráficos e Mapas -->
             <div class="right-column">
                 <div class="panel">
-                    <h2>Distribuição de Infestação por Talhão (%)</h2>
+                    <h2>Distribuição de Infestação / Catação por Talhão (%)</h2>
                     <div class="chart-container">
                         <canvas id="ervasChart"></canvas>
                     </div>
                 </div>
 
                 <div class="panel" style="margin-top: 20px;">
-                    <h2>Mapa de Risco de Infestação (NDVI/Z-Score)</h2>
+                    <h2>Geração de Mapa de Catação / Catação (NDVI/Z-Score)</h2>
                     <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
-                        Visualização da variabilidade e possíveis reboleiras de ervas daninhas.
+                        Visualização da variabilidade e possíveis reboleiras de plantas daninhas/catação.
                     </p>
                     <div id="map-container"></div>
                 </div>

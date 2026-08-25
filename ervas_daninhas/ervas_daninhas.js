@@ -226,10 +226,10 @@ function simulateAnalysis() {
             f.properties._simulated_infestacao = infestacao;
             
             // Classificação
-            if (infestacao <= 0.05) f.properties._infestacao_class = "Sem Infestação";
-            else if (infestacao <= 0.15) f.properties._infestacao_class = "Infestação Leve";
-            else if (infestacao <= 0.30) f.properties._infestacao_class = "Infestação Moderada";
-            else f.properties._infestacao_class = "Infestação Severa";
+            if (infestacao <= 0.05) f.properties._infestacao_class = "Área Limpa (Sem Catação)";
+            else if (infestacao <= 0.15) f.properties._infestacao_class = "Catação Leve";
+            else if (infestacao <= 0.30) f.properties._infestacao_class = "Catação Moderada";
+            else f.properties._infestacao_class = "Catação Severa";
             
             const area = getFeatureAreaHa(f);
             totalArea += area;
