@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v170';
+const CACHE_NAME = 'agrogis-v171';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -22,7 +22,7 @@ self.addEventListener('install', event => {
                     './style.css',
                     './app.js',
                     './pathfinder.js',
-                    './CAMADAS%20VETORIAIS/RODOVIAS/RODOVIAS_FILTRADAS.geojson',
+                    './rotas_offline.geojson',
                     
                     './clima_farm.js',
                     './auth.js',
