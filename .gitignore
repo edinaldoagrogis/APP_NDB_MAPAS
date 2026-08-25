@@ -1,2 +1,17 @@
-
 CAMADAS VETORIAIS/CAR/*.geojson
+
+# Arquivos grandes de rodovias (>100MB - limite do GitHub)
+CAMADAS VETORIAIS/RODOVIAS/*.geojson
+
+# Arquivos temporarios / scripts de trabalho local
+backup_js.js
+current_block.txt
+filter_geojson.py
+fix_json.py
+fix_json_regex.py
+mapa_catacao_resultado.geojson
+recortar_rodovias.py
+rename_tool.py
+sicar_reserva.json
+talhao_teste.geojson
+update_js_real_api.py
