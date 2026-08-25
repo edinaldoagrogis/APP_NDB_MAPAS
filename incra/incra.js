@@ -301,46 +301,38 @@ async function fetchINCRAData(lon, lat) {
                     
                     const xmlText = await response.text();
                     
-                    // Parse GML to GeoJSON
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                    const featureMembers = xmlDoc.getElementsByTagName("gml:featureMember");
-                    
-                    if (featureMembers && featureMembers.length > 0) {
-                        const featNode = featureMembers[0].firstElementChild;
-                        if (!featNode) continue;
+                    // Parse GML to GeoJSON using Regex (cross-browser safe and robust for namespaces)
+                    const coordsMatch = xmlText.match(/<gml:coordinates>([\s\S]*?)<\/gml:coordinates>/);
+                    if (coordsMatch) {
+                        const coordsStr = coordsMatch[1];
+                        let coordinates = [];
+                        
+                        const rings = coordsStr.trim().split(" ");
+                        coordinates = [rings.map(pair => {
+                            const [cLon, cLat] = pair.split(",");
+                            return [parseFloat(cLon), parseFloat(cLat)];
+                        })];
 
                         const properties = {};
-                        let coordinates = [];
-
-                        for (let j = 0; j < featNode.children.length; j++) {
-                            const child = featNode.children[j];
-                            const nodeName = child.localName;
-                            
-                            if (nodeName === "msGeometry") {
-                                const coordsNode = child.getElementsByTagName("gml:coordinates")[0];
-                                if (coordsNode) {
-                                    const coordsStr = coordsNode.textContent;
-                                    const rings = coordsStr.trim().split(" ");
-                                    coordinates = [rings.map(pair => {
-                                        const [cLon, cLat] = pair.split(",");
-                                        return [parseFloat(cLon), parseFloat(cLat)];
-                                    })];
-                                }
-                            } else {
-                                properties[nodeName] = child.textContent;
+                        // Find all tags inside ms: (which are the feature properties)
+                        const propMatches = xmlText.matchAll(/<ms:([^>]+)>([\s\S]*?)<\/ms:\1>/g);
+                        for (const match of propMatches) {
+                            if (match[1] !== 'msGeometry') {
+                                properties[match[1]] = match[2].trim();
                             }
                         }
-                        
-                        if (coordinates.length > 0) {
-                            incraFeature = {
-                                type: "Feature",
-                                properties: properties,
-                                geometry: { type: "Polygon", coordinates: coordinates }
-                            };
-                            foundUf = uf;
-                            break;
-                        }
+
+                        // Converter para GeoJSON Feature
+                        incraFeature = {
+                            type: "Feature",
+                            properties: properties,
+                            geometry: {
+                                type: "Polygon",
+                                coordinates: coordinates
+                            }
+                        };
+                        foundUf = uf;
+                        break;
                     }
                 } catch (err) {
                     console.warn(`Erro ao buscar no INCRA (${typeName}):`, err);
