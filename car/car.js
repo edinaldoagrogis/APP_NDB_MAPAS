@@ -470,12 +470,24 @@ async function fetchCARData(lon, lat) {
 
             renderCARFeature(carFeature);
         } else {
-            alert("Não foi possível encontrar o limite do CAR para esta localização no SICAR (buscado em ES, BA e MG). O servidor pode estar fora do ar.");
+            infoPanel.style.display = 'block';
+            infoContent.innerHTML = `
+                <div style="padding: 15px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #fca5a5; font-size: 14px; line-height: 1.5; text-align: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px; color: #ef4444;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <br>
+                    Não foi possível encontrar o limite do CAR para esta localização no SICAR. O servidor pode estar fora do ar.
+                </div>
+            `;
         }
 
     } catch (error) {
         console.error("Erro geral ao buscar dados do CAR:", error);
-        alert("Ocorreu um erro ao buscar os limites do CAR na Web.");
+        infoPanel.style.display = 'block';
+        infoContent.innerHTML = `
+            <div style="padding: 15px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #fca5a5; font-size: 14px; line-height: 1.5; text-align: center;">
+                Ocorreu um erro de rede ao buscar os limites do CAR.
+            </div>
+        `;
     } finally {
         btnBuscar.disabled = false;
         loading.style.display = 'none';
