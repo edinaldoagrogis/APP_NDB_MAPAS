@@ -84,14 +84,26 @@ class GeoJSONPathFinder {
         const distances = new Map();
         const previous = new Map();
         const coordsMap = new Map();
+        const visited = new Set();
         const pq = new MinPriorityQueue();
 
         distances.set(start.node, 0);
         coordsMap.set(start.node, start.coords);
         pq.enqueue(start.node, 0);
 
+        let visitedCount = 0;
+
         while (!pq.isEmpty()) {
             const current = pq.dequeue();
+            
+            if (visited.has(current)) continue;
+            visited.add(current);
+            visitedCount++;
+
+            if (visitedCount > 50000) {
+                // Safeguard para não travar o navegador se a rota for impossível/muito longa
+                return null; 
+            }
 
             if (current === end.node) {
                 const path = [];
@@ -100,7 +112,6 @@ class GeoJSONPathFinder {
                     path.unshift(coordsMap.get(curr));
                     curr = previous.get(curr);
                 }
-                // Add actual start and end
                 path.unshift([startLon, startLat]);
                 path.push([endLon, endLat]);
                 return path;
@@ -108,6 +119,8 @@ class GeoJSONPathFinder {
 
             const edges = this.graph.get(current) || [];
             for (let edge of edges) {
+                if (visited.has(edge.target)) continue;
+                
                 const alt = distances.get(current) + edge.dist;
                 if (alt < (distances.get(edge.target) || Infinity)) {
                     distances.set(edge.target, alt);
