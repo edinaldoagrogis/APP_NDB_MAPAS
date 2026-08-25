@@ -2176,6 +2176,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             map.removeControl(routingControl);
             routingControl = null;
         }
+        if (offlineRouteLayer) {
+            map.removeLayer(offlineRouteLayer);
+            offlineRouteLayer = null;
+        }
         if (rotasNdbLayer) {
             map.removeLayer(rotasNdbLayer);
             rotasNdbLayer = null;
@@ -2220,6 +2224,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (routingControl) {
             map.removeControl(routingControl);
             routingControl = null;
+        }
+        if (offlineRouteLayer) {
+            map.removeLayer(offlineRouteLayer);
+            offlineRouteLayer = null;
         }
         if (rotasNdbLayer) {
             map.removeLayer(rotasNdbLayer);
