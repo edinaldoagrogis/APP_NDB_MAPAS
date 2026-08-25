@@ -1712,7 +1712,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     setTimeout(() => {
                         searchInput.value = '';
                         searchInput.blur();
-                    
+                    }, 2000);
                 }
             });
         }
@@ -3068,7 +3068,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
 
         activateStep('step-search');
-        const t1 = setTimeout(() => { completeStep('step-search'); activateStep('step-download'); 
+        const t1 = setTimeout(() => { completeStep('step-search'); activateStep('step-download'); }, 2000);
         const t2 = setTimeout(() => { completeStep('step-download'); activateStep('step-ndvi'); }, 7000);
         const t3 = setTimeout(() => { completeStep('step-ndvi'); activateStep('step-detect'); }, 12000);
 
