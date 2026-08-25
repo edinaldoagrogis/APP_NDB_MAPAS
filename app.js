@@ -2254,7 +2254,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         try {
             const distText = document.getElementById('route-distance-text');
             if (distText) distText.textContent = 'Carregando malha...';
-            const response = await fetch('CAMADAS VETORIAIS/RODOVIAS/RODOVIAS_FILTRADAS.geojson');
+            const response = await fetch('CAMADAS%20VETORIAIS/RODOVIAS/RODOVIAS_FILTRADAS.geojson');
+            if (!response.ok) throw new Error("HTTP error " + response.status);
             const geojson = await response.json();
             geojsonPathFinderInstance = new window.GeoJSONPathFinder(geojson);
             return geojsonPathFinderInstance;
