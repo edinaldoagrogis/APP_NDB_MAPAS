@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v169';
+const CACHE_NAME = 'agrogis-v170';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -56,16 +56,26 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-    // Delete old caches when a new version activates
-    const currentCaches = [CACHE_NAME];
+    // IMPORTANTE: Manter o cache antigo disponível enquanto o novo carrega.
+    // Isso evita a tela preta quando o SW atualiza e os tiles do mapa ficam sem cache.
+    // Só deleta caches MUITO antigos (> 2 versões atrás) para liberar espaço.
     event.waitUntil(
         caches.keys().then(cacheNames => {
-            return cacheNames.filter(cacheName => !currentCaches.includes(cacheName));
-        }).then(cachesToDelete => {
-            return Promise.all(cachesToDelete.map(cacheToDelete => {
-                console.log('[ServiceWorker] Deleting old cache', cacheToDelete);
-                return caches.delete(cacheToDelete);
-            }));
+            const currentVersion = parseInt((CACHE_NAME.match(/v(\d+)/) || [0, 0])[1]);
+            return Promise.all(
+                cacheNames
+                    .filter(name => {
+                        const match = name.match(/agrogis-v(\d+)/);
+                        if (!match) return false;
+                        const version = parseInt(match[1]);
+                        // Deleta apenas caches com mais de 3 versões atrás
+                        return version < currentVersion - 3;
+                    })
+                    .map(oldCache => {
+                        console.log('[ServiceWorker] Removendo cache muito antigo:', oldCache);
+                        return caches.delete(oldCache);
+                    })
+            );
         }).then(() => self.clients.claim())
     );
 });

@@ -23,6 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 window.map.invalidateSize();
             }, 300);
+
+    // Dispara evento para remover o splash screen quando o mapa estiver pronto
+    map.whenReady(() => {
+        window.dispatchEvent(new Event('agrogis:ready'));
+    });
+
         }
     });
 

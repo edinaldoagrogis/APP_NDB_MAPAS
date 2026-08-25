@@ -89,6 +89,52 @@
     <script defer src="auth.js"></script>
 </head>
 <body>
+
+    <!-- SPLASH SCREEN: Cobre a tela preta enquanto o app inicializa -->
+    <div id="app-splash" style="
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #111418;
+        z-index: 99999;
+        display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        transition: opacity 0.5s ease;
+    ">
+        <img src="logo.png.jpg" alt="AgroGIS" style="width: 200px; margin-bottom: 24px; mix-blend-mode: screen;">
+        <div style="color:#e85d04; font-size:14px; font-family:Inter,sans-serif; letter-spacing:1px; margin-bottom:20px;">Carregando...</div>
+        <div style="width:180px; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
+            <div id="splash-bar" style="height:100%; width:0%; background:#e85d04; border-radius:2px; transition:width 0.4s ease;"></div>
+        </div>
+    </div>
+    <script>
+        // Anima a barra de progresso e remove o splash quando o app estiver pronto
+        (function() {
+            var bar = document.getElementById('splash-bar');
+            var splash = document.getElementById('app-splash');
+            var progress = 0;
+            // Sobe até 80% enquanto os scripts carregam
+            var ticker = setInterval(function() {
+                progress = Math.min(80, progress + Math.random() * 12);
+                if (bar) bar.style.width = progress + '%';
+            }, 300);
+
+            function hideSplash() {
+                clearInterval(ticker);
+                if (bar) bar.style.width = '100%';
+                setTimeout(function() {
+                    if (splash) {
+                        splash.style.opacity = '0';
+                        setTimeout(function() { if (splash) splash.style.display = 'none'; }, 500);
+                    }
+                }, 400);
+            }
+
+            // Esconde quando o mapa carregar (evento customizado disparado pelo app.js)
+            window.addEventListener('agrogis:ready', hideSplash);
+            // Fallback: esconde depois de 6 segundos em qualquer caso
+            setTimeout(hideSplash, 6000);
+        })();
+    </script>
+
     <!-- Login Overlay -->
     <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111418; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;">
         <div class="login-container" style="background: rgba(255,255,255,0.03); padding: 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 320px;">
