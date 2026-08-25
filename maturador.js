@@ -443,7 +443,7 @@ async function handleProcessAnalysis(e) {
         loadingEl.after(logEl);
     }
     logEl.innerHTML = '';
-    logEl.style.display = 'block';
+    logEl.style.display = 'none'; // Oculto a pedido do usuário
 
     const log = (msg) => {
         const line = document.createElement('div');
