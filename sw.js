@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v190';
+const CACHE_NAME = 'agrogis-v191';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -123,16 +123,34 @@ self.addEventListener('fetch', event => {
     // Garante que atualizações apareçam imediatamente, sem depender de cache antigo
     const alwaysFreshFiles = ['/', '/index.html', '/auth.js', '/app.js', '/style.css', '/sw.js'];
     if (alwaysFreshFiles.some(f => url.pathname === f || url.pathname.endsWith(f))) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5 seconds timeout
+
         event.respondWith(
-            fetch(event.request).then(response => {
+            fetch(event.request, { signal: controller.signal }).then(async response => {
+                clearTimeout(timeoutId);
+                // Se a resposta for ruim (ex: portal cativo, 404, 500), tenta usar o cache
+                if (!response || !response.ok) {
+                    let cached = await caches.match(event.request, { ignoreSearch: true });
+                    if (!cached && event.request.mode === 'navigate') {
+                        cached = await caches.match('./index.html') || await caches.match('./');
+                    }
+                    if (cached) return cached;
+                }
+                
                 if (response && response.status === 200) {
                     const responseToCache = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
                 }
                 return response;
-            }).catch(() => {
-                // Se offline, serve do cache ignorando parametros (ex: ?v=6 do start_url ou reload)
-                return caches.match(event.request, { ignoreSearch: true });
+            }).catch(async () => {
+                clearTimeout(timeoutId);
+                // Se offline ou Timeout (AbortError), serve do cache ignorando parametros
+                let cached = await caches.match(event.request, { ignoreSearch: true });
+                if (!cached && event.request.mode === 'navigate') {
+                    cached = await caches.match('./index.html') || await caches.match('./');
+                }
+                return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
             })
         );
         return;
