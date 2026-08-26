@@ -407,29 +407,33 @@ function renderINCRAFeature(feature) {
                 };
 
                 infoContent.innerHTML = `
-                    <div class="incra-info-item">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
                         <strong>Nome do Imóvel:</strong>
-                        <span>${props.nome_imovel || props.nome_area || 'N/A'}</span>
+                        <span>${props.nome_imovel || props.nome_area || props.nome || 'N/A'}</span>
                     </div>
-                    <div class="incra-info-item">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
                         <strong>Código INCRA / SIGEF:</strong>
-                        <span>${props.cod_imovel_rural || props.codigo_imovel || 'N/A'}</span>
+                        <span>${props.cod_imovel_rural || props.codigo_imovel || props.codigo || 'N/A'}</span>
                     </div>
-                    <div class="incra-info-item">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
                         <strong>Município:</strong>
-                        <span>${props.municipio || props.nome_municipio || 'N/A'} - ${props.uf || 'N/A'}</span>
+                        <span>${props.municipio || props.nome_municipio || props.codigo_municipio || 'N/A'} - ${props.uf || 'N/A'}</span>
                     </div>
-                    <div class="incra-info-item">
-                        <strong>Detentor:</strong>
-                        <span>${props.nome_detentor || props.detentor || 'N/A'}</span>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <strong>Detentor / RT:</strong>
+                        <span>${props.nome_detentor || props.detentor || props.rt || 'Não informado'}</span>
                     </div>
-                    <div class="incra-info-item">
-                        <strong>Nº Certificação:</strong>
-                        <span>${props.num_certificacao || 'N/A'}</span>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <strong>Nº Certificação / Parcela:</strong>
+                        <span>${props.num_certificacao || props.parcela_codigo || 'N/A'}</span>
                     </div>
-                    <div class="incra-info-item">
-                        <strong>Área:</strong>
-                        <span>${formatArea(props.qtd_area_peca_tecnica || props.area_ha || props.area)}</span>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <strong>Área (ha):</strong>
+                        <span>${(props.qtd_area_peca_tecnica || props.area_ha || props.area) ? formatArea(props.qtd_area_peca_tecnica || props.area_ha || props.area) : 'Calculada pelo mapa'}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <strong>Status:</strong>
+                        <span>${props.status || props.situacao_informada || 'N/A'}</span>
                     </div>
                 `;
             });
