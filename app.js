@@ -525,7 +525,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Create Map Layer
             
-            const geoJsonOptions = 
+            
+            const geoJsonOptions = {
                 pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
                 smoothFactor: isLinhasColheita ? 1.5 : 0.5,
                 style: styleFunc,
@@ -539,85 +540,40 @@ document.addEventListener('DOMContentLoaded', () => {
                         fillOpacity: isFazenda ? 0 : 0.8
                     });
                 },
-onEachFeature: (feature, layer) => {
+                onEachFeature: (feature, layer) => {
                     const props = feature.properties || {};
-                    
-                    // Helper function to find property case-insensitively
                     const getProp = (props, possibleNames) => {
                         if (!props) return '';
                         const keys = Object.keys(props);
                         for (const name of possibleNames) {
                             const upperName = name.toUpperCase();
-                            for (const key of keys) {
-                                if (key.toUpperCase().trim() === upperName) {
-                                    return props[key];
-                                }
-                            }
+                            const foundKey = keys.find(k => k.toUpperCase() === upperName);
+                            if (foundKey) return props[foundKey];
                         }
                         return '';
                     };
-
-                    const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'TALHAO', 'ID', 'DESIGNACAO']);
-                    const title = titleRaw || 'Elemento';
-                    
-                    // Popup is now bound dynamically on click so it doesn't interfere with routing clicks
-                    if (isFazenda) {
-                        if (!window.labeledFazendas) window.labeledFazendas = new Set();
-                        if (!window.labeledFazendas.has(title)) {
-                            layer.bindTooltip(title, {
-                                permanent: true,
-                                direction: 'center',
-                                className: 'fazenda-transparent-label'
-                            });
-                            window.labeledFazendas.add(title);
-                        }
-
-                        // Populate datalist for search
-                        const dataList = document.getElementById('fazendas-list');
-                        if (dataList && title !== 'Elemento') {
-                            const option = document.createElement('option');
-                            option.value = title;
-                            dataList.appendChild(option);
-                        }
-                    }
-
+                    const title = getProp(props, ['NOME_FAZ', 'FAZENDA', 'NOMEPROPRI', 'DESCFUNDOA', 'NOME', 'NAME', 'TALHAO', 'LOCAL']);
                     if (isTalhao) {
-                        const cod = getProp(props, ['COD_TALHAO', 'TALHAO', 'CODIGO', 'NOME', 'ID']);
-                        const areaVal = getProp(props, ['TALHAO_ARE', 'AREA_TOTAL', 'DL AREA', 'AREA', 'AREA_HA', 'HECTARES']);
-                        const area = parseFloat(areaVal || 0).toFixed(2);
-                        const varName = getProp(props, ['DL VARIEDADE', 'VARIEDADE', 'VAR', 'CULTURA']);
-                        
-                        const corteRaw = getProp(props, ['DL CORTE', 'CORTE', 'ESTAGIO', 'CICLO', 'CORTES']);
-                        const corte = corteRaw ? (String(corteRaw).toUpperCase().includes('C') ? corteRaw : corteRaw + 'C') : '';
-                        
+                        const cod = getProp(props, ['COD_TALHAO', 'TALHAO', 'COD_TALH']);
+                        const area = getProp(props, ['AREA', 'AREA_HA']);
+                        const varName = getProp(props, ['VARIEDADE', 'VAR', 'CULTIVAR']);
                         if (cod) {
-                            const html = `
-                                <div class="talhao-complex-label" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
-                                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                        ${corte ? `<div class="tc-corte" style="color: #ff0000; font-size: 8px; font-weight: 900; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">${corte}</div>` : ''}
+                            const html = `<div class="tc" style="color: #ffffff; text-align: center; text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;">
+                                    <div class="tc-top" style="display: flex; justify-content: center; align-items: center; gap: 2px;">
+                                        <div class="tc-icon">🌿</div>
                                         <div class="tc-cod" style="font-size: 9px; font-weight: 900;">${cod}</div>
                                     </div>
                                     <div class="tc-area" style="font-size: 8px; font-weight: bold; margin-top: 1px;">${area}</div>
                                     <div class="tc-var" style="font-size: 7.5px; font-weight: bold; opacity: 0.9;">${varName}</div>
-                                </div>
-                            `;
-                            // Store data but DEFER L.marker instantiation to massively speed up init
-                            layerLabels.TALHOES.push({
-                                latlng: layer.getBounds().getCenter(),
-                                html: html,
-                                marker: null
-                            });
+                                </div>`;
+                            layerLabels.TALHOES.push({ latlng: layer.getBounds().getCenter(), html: html, marker: null });
                         }
                     }
-
                     layer.on({
                         mouseover: (e) => {
                             if (!isFazenda) {
                                 const l = e.target;
-                                // Ignore mouseover highlight if it is the selected harvest line
-                                if (isLinhasColheita && window.selectedHarvestLayer === l) {
-                                    return;
-                                }
+                                if (isLinhasColheita && window.selectedHarvestLayer === l) return;
                                 l.setStyle(layerStyles[layerName].highlight);
                                 l.bringToFront();
                             }
@@ -625,104 +581,43 @@ onEachFeature: (feature, layer) => {
                         mouseout: (e) => {
                             if (!isFazenda) {
                                 const l = e.target;
-                                // Ignore mouseout if it is the selected harvest line
-                                if (isLinhasColheita && window.selectedHarvestLayer === l) {
-                                    return;
-                                }
+                                if (isLinhasColheita && window.selectedHarvestLayer === l) return;
                                 mapLayer.resetStyle(l);
                             }
                         },
                         click: (e) => {
                             const l = e.target;
-                            
                             if (window.routeSelectionMode) {
-                                const props = layer.feature.properties || {};
-                                const title = props.NOME_FAZ || props.FAZENDA || props.nome_faz || props.nome || props.NOME || props.NAME || props.Name || props.TALHAO || 'Local';
-                                let lat, lng;
-                                if (typeof turf !== 'undefined') {
-                                    const centroid = turf.centroid(layer.feature);
-                                    lat = centroid.geometry.coordinates[1];
-                                    lng = centroid.geometry.coordinates[0];
-                                } else {
-                                    const center = layer.getBounds().getCenter();
-                                    lat = center.lat;
-                                    lng = center.lng;
-                                }
+                                const lat = layer.getBounds ? layer.getBounds().getCenter().lat : e.latlng.lat;
+                                const lng = layer.getBounds ? layer.getBounds().getCenter().lng : e.latlng.lng;
                                 window.setRouteWaypoint(title, lat, lng);
                                 L.DomEvent.stopPropagation(e);
                                 return;
                             }
-
-                            // If we are measuring, ignore the polygon click and let it bubble to the map!
-                            if (window.measureActive) {
-                                return;
-                            }
-                            
-                            // Selecionar linha de colheita
+                            if (window.measureActive) return;
                             if (isLinhasColheita) {
-                                // Reset previously selected layer
                                 if (window.selectedHarvestLayer && mapLayer.hasLayer(window.selectedHarvestLayer)) {
                                     mapLayer.resetStyle(window.selectedHarvestLayer);
                                 }
-                                
-                                // Set new selected layer
                                 window.selectedHarvestLayer = l;
-                                l.setStyle({
-                                    color: '#ffffff',
-                                    weight: 2.0,
-                                    opacity: 1,
-                                    fillOpacity: 0
-                                });
+                                l.setStyle({ color: '#ffffff', weight: 2.0, opacity: 1, fillOpacity: 0 });
                                 l.bringToFront();
-                                
-                                // Prevent map click from clearing immediately
                                 L.DomEvent.stopPropagation(e);
                             }
-
-                            // If we are NOT tracing a route or measuring, open the attribute table popup
-                            L.popup({ autoPanPadding: [50, 50] })
-                                .setLatLng(e.latlng)
-                                .setContent(createPopupContent(title, props))
-                                .openOn(map);
-
+                            L.popup({ autoPanPadding: [50, 50] }).setLatLng(e.latlng).setContent(createPopupContent(title, props)).openOn(map);
                             if (isFazenda) {
-                                // Clear previous search/click highlight
                                 if (window.currentSearchedFarmLayer && window.currentSearchedFarmLayerGroup) {
                                     window.currentSearchedFarmLayerGroup.resetStyle(window.currentSearchedFarmLayer);
                                 }
-                                
                                 window.currentSearchedFarmLayer = layer;
                                 window.currentSearchedFarmLayerGroup = mapLayer;
-                                
-                                // Highlight the farm polygon
-                                layer.setStyle({
-                                    weight: 4,
-                                    color: '#ffeb3b', // Bright yellow outline
-                                    fillOpacity: 0.1
-                                });
-                                if (layer.bringToFront) {
-                                    layer.bringToFront();
-                                }
-
-                                // Fly to the farm
-                                if (layer.getBounds) {
-                                    map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
-                                } else if (layer.getLatLng) {
-                                    map.flyTo(layer.getLatLng(), 15, { duration: 1.5 });
-                                }
-                                
-                                // Prevent the map's click event from clearing the selection immediately
+                                layer.setStyle({ weight: 4, color: '#ffeb3b', fillOpacity: 0.1 });
+                                if (layer.bringToFront) layer.bringToFront();
+                                if (layer.getBounds) map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
                                 L.DomEvent.stopPropagation(e);
                             } else {
-                                // If clicking on a Talhão or Variedade, clear any active selections
-                                if (window.clearAllSelections) {
-                                    window.clearAllSelections();
-                                }
-                                // Abre painel de análise de satélite para o talhão clicado (PC)
-                                if (isTalhao && window.openWeedAnalysisPanel) {
-                                    window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
-                                }
-                                // ── CLIMA FARM: buscar dados climáticos ao clicar em talhão ──
+                                if (window.clearAllSelections) window.clearAllSelections();
+                                if (isTalhao && window.openWeedAnalysisPanel) window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
                                 if (isTalhao && window.climaFarmActive && window.climaFarmFetchData) {
                                     const center = layer.getBounds ? layer.getBounds().getCenter() : e.latlng;
                                     window.climaFarmFetchData(center.lat, center.lng, props);
@@ -732,9 +627,55 @@ onEachFeature: (feature, layer) => {
                         }
                     });
                 }
-            });
+            };
+            
+            const mapLayer = L.layerGroup();
+            mapLayer.resetStyle = function(l) {
+                if (this._realGeoJSON) this._realGeoJSON.resetStyle(l);
+            };
+            
+            if (isLinhasColheita) {
+                mapLayer._isLazy = true;
+                geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
+                mapLayer._lazyOptions = geoJsonOptions;
+                
+                mapLayer.on('add', function() {
+                    if (this._isLazy) {
+                        console.log('Lazy loading layer ' + layerName + ' via FlatGeobuf');
+                        const loadingEl = document.createElement('div');
+                        loadingEl.id = 'lazy-loading-indicator';
+                        loadingEl.innerHTML = 'Processando ' + layerName + '...';
+                        loadingEl.style = 'position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 9999; pointer-events: none;';
+                        document.body.appendChild(loadingEl);
 
-            's Fazenda or Talhao
+                        setTimeout(async () => {
+                            try {
+                                const response = await fetch('./linhas_colheita.fgb');
+                                const buffer = await response.arrayBuffer();
+                                const uint8 = new Uint8Array(buffer);
+                                
+                                const features = [];
+                                const iter = flatgeobuf.deserialize(uint8);
+                                for await (let feature of iter) {
+                                    features.push(feature);
+                                }
+                                
+                                this._realGeoJSON = L.geoJSON({ type: 'FeatureCollection', features: features }, this._lazyOptions);
+                                this.addLayer(this._realGeoJSON);
+                                this._isLazy = false;
+                            } catch (e) {
+                                console.error('Erro FGB', e);
+                            }
+                            const indicator = document.getElementById('lazy-loading-indicator');
+                            if (indicator) indicator.remove();
+                        }, 50);
+                    }
+                });
+            } else {
+                mapLayer._realGeoJSON = L.geoJSON(data, geoJsonOptions);
+                mapLayer.addLayer(mapLayer._realGeoJSON);
+            }
+            
             const isDefaultActive = isFazenda || isTalhao;
             if (isDefaultActive) {
                 mapLayer.addTo(map);

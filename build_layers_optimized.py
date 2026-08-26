@@ -111,7 +111,28 @@ def build():
     opt_tal_json_str = json.dumps(opt_tal_data, separators=(',', ':')) if opt_tal_data['features'] else 'null'
 
     opt_linhas_col_data = optimize_geojson_paths(linhas_colheita_paths, 'LINHAS DE COLHEITA')
-    opt_linhas_col_json_str = json.dumps(opt_linhas_col_data, separators=(',', ':')) if opt_linhas_col_data['features'] else 'null'
+    opt_linhas_col_json_str = "null"
+    
+    # NEW FGB CONVERSION
+    try:
+        import geopandas as gpd
+        import warnings
+        warnings.filterwarnings('ignore', 'GeoSeries.notna', UserWarning)
+        print("Converting LINHAS DE COLHEITA to FlatGeobuf...")
+        if opt_linhas_col_data['features']:
+            import tempfile
+            with tempfile.NamedTemporaryFile('w', delete=False, suffix='.json') as tmp:
+                json.dump(opt_linhas_col_data, tmp)
+                tmp_name = tmp.name
+            
+            gdf = gpd.read_file(tmp_name)
+            gdf = gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty]
+            gdf.to_file('linhas_colheita.fgb', driver='FlatGeobuf')
+            os.remove(tmp_name)
+            print("Successfully created linhas_colheita.fgb")
+    except Exception as e:
+        print(f"Error creating FGB: {e}")
+
         
     with open('layers_data.js', 'w', encoding='utf-8') as out:
         out.write('const GEOPORTAL_LAYERS = {\n')
