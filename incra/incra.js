@@ -303,20 +303,29 @@ async function fetchINCRAData(lon, lat) {
                     const xmlText = await response.text();
                     
                     // Parse GML to GeoJSON using Regex (cross-browser safe and robust for namespaces)
-                    const coordsMatch = xmlText.match(/<gml:coordinates>([\s\S]*?)<\/gml:coordinates>/);
-                    if (coordsMatch) {
-                        const coordsStr = coordsMatch[1];
+                    const coordsMatches = Array.from(xmlText.matchAll(/<gml:coordinates>([\s\S]*?)<\/gml:coordinates>/g));
+                    let coordsStr = null;
+                    for (const match of coordsMatches) {
+                        const pts = match[1].trim().split(/\s+/);
+                        // Bounding box only has 2 points. We want the actual polygon ring (which has > 2)
+                        if (pts.length > 2) {
+                            coordsStr = match[1];
+                            break; // Pega o primeiro anel válido
+                        }
+                    }
+
+                    if (coordsStr) {
                         let coordinates = [];
                         
-                        const rings = coordsStr.trim().split(" ");
+                        const rings = coordsStr.trim().split(/\s+/);
                         coordinates = [rings.map(pair => {
                             const [cLon, cLat] = pair.split(",");
                             return [parseFloat(cLon), parseFloat(cLat)];
                         })];
 
                         const properties = {};
-                        // Find all tags inside ms: (which are the feature properties)
-                        const propMatches = xmlText.matchAll(/<ms:([^>]+)>([\s\S]*?)<\/ms:\1>/g);
+                        // Find all tags inside ms: (which are the feature properties). Using ([^<]*) prevents matching parent tags.
+                        const propMatches = xmlText.matchAll(/<ms:([^>]+)>([^<]*)<\/ms:\1>/g);
                         for (const match of propMatches) {
                             if (match[1] !== 'msGeometry') {
                                 properties[match[1]] = match[2].trim();
