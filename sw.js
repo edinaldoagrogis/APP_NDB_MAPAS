@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v189';
+const CACHE_NAME = 'agrogis-v190';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -131,8 +131,8 @@ self.addEventListener('fetch', event => {
                 }
                 return response;
             }).catch(() => {
-                // Se offline, serve do cache
-                return caches.match(event.request);
+                // Se offline, serve do cache ignorando parametros (ex: ?v=6 do start_url ou reload)
+                return caches.match(event.request, { ignoreSearch: true });
             })
         );
         return;
