@@ -94,7 +94,12 @@
                 window.location.reload();
             }
         });
-        if (window.location.search.includes('reload=1')) {
+        if (window.location.search.includes('force_reload=true')) {
+            window.history.replaceState(null, '', window.location.pathname);
+            // Redireciona e força recarregamento limpando estado
+            window.location.href = window.location.pathname + '?v=' + new Date().getTime();
+        } else if (window.location.search.includes('v=')) {
+            // Remove o parâmetro v= da URL após o reload forçado para manter a barra limpa
             window.history.replaceState(null, '', window.location.pathname);
         }
     </script>
