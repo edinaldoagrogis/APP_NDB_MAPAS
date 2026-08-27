@@ -1622,29 +1622,36 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         let foundLayer = null;
         let foundGroup = null;
 
-        for (const layerName in loadedLayers) {
-            // Search all layers just in case names differ
-            const layerGroup = loadedLayers[layerName];
+        const checkLayer = (layer, layerGroup) => {
+            if (foundLayer) return;
 
-            layerGroup.eachLayer(layer => {
-                if (foundLayer) return; // Already found
-
-                const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : {};
-                const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
-                const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
-                let title = '';
-                if (rawName) {
-                    const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
-                    title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
-                }
+            if (layer.feature) {
+                const props = layer.feature.properties || {};
+                const getProp = (props, possibleNames) => {
+                    const keys = Object.keys(props);
+                    for (const name of possibleNames) {
+                        const upperName = name.toUpperCase();
+                        const foundKey = keys.find(k => k.toUpperCase() === upperName);
+                        if (foundKey) return props[foundKey];
+                    }
+                    return '';
+                };
                 
-                if (!title) {
-                    title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
+                const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'] || '';
+                const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'] || '';
+                
+                let title = titleRaw || '';
+                if (rawName && rawId) {
+                    const cleanIdStr = String(rawId).split(',')[0].split('.')[0].trim();
+                    if (cleanIdStr) {
+                        title = `${cleanIdStr} - ${rawName}`;
+                    }
                 }
                 
                 const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
                 
-                if (normalize(title).includes(normalize(query)) || normalize(rawName || '').includes(normalize(query))) {
+                if (normalize(title).includes(normalize(query)) || normalize(rawName).includes(normalize(query)) || normalize(titleRaw).includes(normalize(query))) {
                     foundLayer = layer;
                     foundGroup = layerGroup;
                     
@@ -1661,7 +1668,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         window.searchedLayersArr.push({ group: layerGroup, layer: layer });
                     }
                 }
-            });
+            } else if (layer.eachLayer) {
+                layer.eachLayer(child => checkLayer(child, layerGroup));
+            }
+        };
+
+        for (const layerName in loadedLayers) {
+            const layerGroup = loadedLayers[layerName];
+            if (layerGroup && layerGroup.eachLayer) {
+                layerGroup.eachLayer(child => checkLayer(child, layerGroup));
+            }
         }
         
         if (foundLayer) {
@@ -3274,24 +3290,31 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             let matchCount = 0;
             let foundLayer = null;
 
-            for (const layerName in window.loadedLayers) {
-                if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
-                
-                const layerGroup = window.loadedLayers[layerName];
-                layerGroup.eachLayer(layer => {
-                    const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : {};
-                    const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
-                    const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
-                    let title = '';
-                    if (rawName) {
-                        const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
-                    title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
+            const checkLayer = (layer) => {
+                if (layer.feature) {
+                    const props = layer.feature.properties || {};
+                    const getProp = (props, possibleNames) => {
+                        const keys = Object.keys(props);
+                        for (const name of possibleNames) {
+                            const upperName = name.toUpperCase();
+                            const foundKey = keys.find(k => k.toUpperCase() === upperName);
+                            if (foundKey) return props[foundKey];
+                        }
+                        return '';
+                    };
+                    
+                    const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
+                    const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'] || '';
+                    const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'] || '';
+                    
+                    let title = titleRaw || '';
+                    if (rawName && rawId) {
+                        const cleanIdStr = String(rawId).split(',')[0].split('.')[0].trim();
+                        if (cleanIdStr) title = `${cleanIdStr} - ${rawName}`;
                     }
-                    if (!title) {
-                        title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
-                    }
+                    
                     const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-                    if (normalize(title).includes(normalize(query)) || normalize(rawName || '').includes(normalize(query))) {
+                    if (normalize(title).includes(normalize(query)) || normalize(rawName).includes(normalize(query)) || normalize(titleRaw).includes(normalize(query))) {
                         matchCount++;
                         foundLayer = layer;
                         if (layer.getBounds) {
@@ -3300,7 +3323,18 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                             bounds.extend(layer.getLatLng());
                         }
                     }
-                });
+                } else if (layer.eachLayer) {
+                    layer.eachLayer(child => checkLayer(child));
+                }
+            };
+
+            for (const layerName in window.loadedLayers) {
+                if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
+                
+                const layerGroup = window.loadedLayers[layerName];
+                if (layerGroup && layerGroup.eachLayer) {
+                    layerGroup.eachLayer(child => checkLayer(child));
+                }
             }
             
             if (matchCount > 0 && bounds.isValid()) {
