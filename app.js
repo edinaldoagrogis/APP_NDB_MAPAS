@@ -552,20 +552,49 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         return '';
                     };
-                    const title = getProp(props, ['NOME_FAZ', 'FAZENDA', 'NOMEPROPRI', 'DESCFUNDOA', 'NOME', 'NAME', 'TALHAO', 'LOCAL']);
+                    const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
+                    const title = titleRaw || 'Elemento';
+                    
+                    if (isFazenda) {
+                        if (!window.labeledFazendas) window.labeledFazendas = new Set();
+                        if (!window.labeledFazendas.has(title)) {
+                            layer.bindTooltip(title, {
+                                permanent: true,
+                                direction: 'center',
+                                className: 'fazenda-transparent-label'
+                            });
+                            window.labeledFazendas.add(title);
+                        }
+
+                        // Populate datalist for search
+                        const dataList = document.getElementById('fazendas-list');
+                        if (dataList && title !== 'Elemento') {
+                            const option = document.createElement('option');
+                            option.value = title;
+                            dataList.appendChild(option);
+                        }
+                    }
+
                     if (isTalhao) {
-                        const cod = getProp(props, ['COD_TALHAO', 'TALHAO', 'COD_TALH']);
-                        const area = getProp(props, ['AREA', 'AREA_HA']);
-                        const varName = getProp(props, ['VARIEDADE', 'VAR', 'CULTIVAR']);
+                        const cod = getProp(props, ['COD_TALHAO', 'TALHAO', 'CODIGO', 'NOME', 'ID']);
+                        const areaVal = getProp(props, ['TALHAO_ARE', 'AREA_TOTAL', 'DL AREA', 'AREA', 'AREA_HA', 'HECTARES']);
+                        const area = parseFloat(areaVal || 0).toFixed(2);
+                        const varName = getProp(props, ['DL VARIEDADE', 'VARIEDADE', 'VAR', 'CULTURA']);
+                        
+                        const corteRaw = getProp(props, ['DL CORTE', 'CORTE', 'ESTAGIO', 'CICLO', 'CORTES']);
+                        const corte = corteRaw ? (String(corteRaw).toUpperCase().includes('C') ? corteRaw : corteRaw + 'C') : '';
+                        
                         if (cod) {
-                            const html = `<div class="tc" style="color: #ffffff; text-align: center; text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;">
-                                    <div class="tc-top" style="display: flex; justify-content: center; align-items: center; gap: 2px;">
-                                        <div class="tc-icon">🌿</div>
+                            const html = `
+                                <div class="talhao-complex-label" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                        ${corte ? `<div class="tc-corte" style="color: #ff0000; font-size: 8px; font-weight: 900; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">${corte}</div>` : ''}
                                         <div class="tc-cod" style="font-size: 9px; font-weight: 900;">${cod}</div>
                                     </div>
                                     <div class="tc-area" style="font-size: 8px; font-weight: bold; margin-top: 1px;">${area}</div>
                                     <div class="tc-var" style="font-size: 7.5px; font-weight: bold; opacity: 0.9;">${varName}</div>
-                                </div>`;
+                                </div>
+                            `;
                             layerLabels.TALHOES.push({ latlng: layer.getBounds().getCenter(), html: html, marker: null });
                         }
                     }
