@@ -39,8 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         isBackgroundCheck: true
                     })
                 }).then(async res => {
-                    const data = await res.json().catch(() => ({}));
-                    if (res.status === 403) {
+                    const contentType = res.headers.get('content-type');
+                    const isJson = contentType && contentType.includes('application/json');
+                    const data = isJson ? await res.json().catch(() => ({})) : {};
+                    
+                    if (res.status === 403 && isJson) {
                         if (data.error === 'CONCURRENCY_ERROR') {
                             alert('Atenção: Sua conta foi conectada em outro dispositivo. Esta sessão será encerrada.');
                         } else {
@@ -48,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         localStorage.removeItem('agrogis_auth_level');
                         window.location.reload();
-                    } else if (res.ok) {
+                    } else if (res.ok && isJson) {
                         
                         // Sync update flag
                         if (data.receiveUpdates) {
