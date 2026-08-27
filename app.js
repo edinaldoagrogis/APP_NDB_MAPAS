@@ -506,12 +506,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 
-                // Tratar linha selecionada foi movido para o evento de clique (setStyle direto)
-                
                 return {
                     color: isTalhao ? '#b0b0b0' : featureColor,
-                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 0.7 : 1.5)), // Ajustado para 0.7
-                    opacity: isFazenda ? 0 : 0.9,
+                    weight: isTalhao ? 0.8 : (isFazenda ? 0 : (isLinhasColheita ? 1.0 : 1.5)),
+                    opacity: isLinhasColheita ? 1.0 : (isFazenda ? 0 : 0.9),
                     fillColor: featureColor,
                     fillOpacity: isTalhao ? 0.85 : (isFazenda ? 0 : (isLinhasColheita ? 0 : 0.2))
                 };
@@ -528,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const geoJsonOptions = {
                 pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
-                smoothFactor: isLinhasColheita ? 1.5 : 0.5,
+                smoothFactor: isLinhasColheita ? 3.0 : 1.5,
                 style: styleFunc,
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
@@ -665,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (isLinhasColheita) {
                 mapLayer._isLazy = true;
-                geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
+                geoJsonOptions.renderer = L.canvas({ padding: 0.25 });
                 mapLayer._lazyOptions = geoJsonOptions;
                 
                 mapLayer.on('add', function() {
