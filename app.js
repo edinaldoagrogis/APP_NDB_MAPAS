@@ -1624,7 +1624,18 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
             layerGroup.eachLayer(layer => {
                 const props = layer.feature.properties || {};
-                const title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
+                const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
+                let title = '';
+                if (rawName) {
+                    const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
+                    title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
+                }
+                
+                // Fallback for other data structures
+                if (!title) {
+                    title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                }
                 
                 // If user selected an exact match from the datalist
                 if (title.toLowerCase() === query) {
@@ -2081,7 +2092,18 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             const layerGroup = loadedLayers[layerName];
             layerGroup.eachLayer(layer => {
                 const props = layer.feature.properties || {};
-                const title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
+                const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
+                let title = '';
+                if (rawName) {
+                    const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
+                    title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
+                }
+                
+                // Fallback for other data structures
+                if (!title) {
+                    title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                }
                 
                 if (title.toLowerCase() === query) {
                     let lat, lng;
@@ -3218,6 +3240,39 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     if (searchInput) {
         searchInput.addEventListener('focus', populateFazendaSearch);
         searchInput.addEventListener('click', populateFazendaSearch);
+        
+        // Add zoom logic when a farm is selected in the Weed tool search
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query || !window.loadedLayers) return;
+            
+            for (const layerName in window.loadedLayers) {
+                if (!layerName.toUpperCase().includes('FAZENDA')) continue;
+                
+                const layerGroup = window.loadedLayers[layerName];
+                layerGroup.eachLayer(layer => {
+                    const props = layer.feature.properties || {};
+                    const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
+                    const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
+                    let title = '';
+                    if (rawName) {
+                        const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
+                        title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
+                    }
+                    if (!title) {
+                        title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                    }
+                    
+                    if (title.toLowerCase() === query) {
+                        if (layer.getLatLng) {
+                            map.flyTo(layer.getLatLng(), 15, { duration: 1.5 });
+                        } else if (layer.getBounds) {
+                            map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
+                        }
+                    }
+                });
+            }
+        });
     }
     if (btnClose) {
         btnClose.addEventListener('click', () => { 
