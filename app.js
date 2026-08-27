@@ -357,23 +357,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Do not add offlineSatelliteLayer initially to avoid loading it online
-    const satelliteGroup = L.layerGroup([satelliteLayer, labelsLayer]).addTo(map);
+    // Add everything to satelliteGroup so offline images act as an automatic fallback underneath
+    const satelliteGroup = L.layerGroup([offlineSatelliteLayer, satelliteLayer, labelsLayer]).addTo(map);
 
     // 3. Basemap Selector Toggle Logic
     const satBtn = document.getElementById('basemap-sat');
     const osmBtn = document.getElementById('basemap-osm');
 
     function updateBasemapOfflineStatus() {
-        if (!navigator.onLine) {
-            // When OFFLINE: Add the 25 fallback images underneath the tiles
-            if (offlineSatelliteLayer && !satelliteGroup.hasLayer(offlineSatelliteLayer)) {
-                satelliteGroup.addLayer(offlineSatelliteLayer);
+        if (!navigator.onLine && offlineSatelliteLayer) {
+            if (map.hasLayer(satelliteGroup)) {
+                map.removeLayer(satelliteGroup);
+            }
+            if (!map.hasLayer(offlineSatelliteLayer)) {
+                offlineSatelliteLayer.addTo(map);
             }
         } else {
-            // When ONLINE: Remove the 25 fallback images to save RAM and speed up zoom
-            if (offlineSatelliteLayer && satelliteGroup.hasLayer(offlineSatelliteLayer)) {
-                satelliteGroup.removeLayer(offlineSatelliteLayer);
+            if (map.hasLayer(offlineSatelliteLayer)) {
+                map.removeLayer(offlineSatelliteLayer);
+            }
+            // Only add satelliteGroup back if the satellite button is active
+            if (satBtn.classList.contains('active') && !map.hasLayer(satelliteGroup)) {
+                satelliteGroup.addTo(map);
             }
         }
     }
@@ -387,9 +392,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     satBtn.addEventListener('click', () => {
-        if (!map.hasLayer(satelliteGroup)) {
-            if (map.hasLayer(osmLayer)) map.removeLayer(osmLayer);
-            satelliteGroup.addTo(map);
+        if (!map.hasLayer(satelliteGroup) && !map.hasLayer(offlineSatelliteLayer)) {
+            map.removeLayer(osmLayer);
+            if (navigator.onLine) {
+                satelliteGroup.addTo(map);
+            } else if (offlineSatelliteLayer) {
+                offlineSatelliteLayer.addTo(map);
+            }
             satBtn.classList.add('active');
             osmBtn.classList.remove('active');
         }
@@ -397,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     osmBtn.addEventListener('click', () => {
         if (!map.hasLayer(osmLayer)) {
-            if (map.hasLayer(satelliteGroup)) map.removeLayer(satelliteGroup);
+            map.removeLayer(satelliteGroup);
             osmLayer.addTo(map);
             osmBtn.classList.add('active');
             satBtn.classList.remove('active');
