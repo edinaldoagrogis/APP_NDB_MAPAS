@@ -1614,6 +1614,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     }
     searchInput.addEventListener('input', handleSearch);
     searchInput.addEventListener('change', handleSearch);
+    searchInput.addEventListener('keyup', handleSearch);
     function handleSearch(e) {
         const query = e.target.value.toLowerCase().trim();
         if (!query) return;
@@ -1629,7 +1630,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             const layerGroup = loadedLayers[layerName];
 
             layerGroup.eachLayer(layer => {
-                const props = layer.feature.properties || {};
+                const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : {};
                 const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
                 const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
                 let title = '';
@@ -2125,7 +2126,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             
             const layerGroup = loadedLayers[layerName];
             layerGroup.eachLayer(layer => {
-                const props = layer.feature.properties || {};
+                const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : {};
                 const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
                 const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
                 let title = '';
@@ -3280,6 +3281,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         // Add zoom logic when a farm is selected in the Weed tool search
     weedSearchInput.addEventListener('input', handleSearch);
     weedSearchInput.addEventListener('change', handleSearch);
+    weedSearchInput.addEventListener('keyup', handleSearch);
     function handleSearch(e) {
             const query = e.target.value.toLowerCase().trim();
             if (!query || !window.loadedLayers) return;
@@ -3293,7 +3295,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 
                 const layerGroup = window.loadedLayers[layerName];
                 layerGroup.eachLayer(layer => {
-                    const props = layer.feature.properties || {};
+                    const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : {};
                     const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
                     const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
                     let title = '';
