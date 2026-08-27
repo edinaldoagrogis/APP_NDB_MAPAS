@@ -897,8 +897,8 @@
                         }
                     });
 
-                    // Close panel when clicking outside map or in other empty areas
-                    document.addEventListener('click', function(e) {
+                    // Close panel when double clicking outside map or in other empty areas
+                    document.addEventListener('dblclick', function(e) {
                         const panelLayers = document.getElementById('floating-layers-panel');
                         const btnLayers = document.getElementById('floating-layers-btn');
                         if (panelLayers && panelLayers.style.display === 'block' && !panelLayers.contains(e.target) && !btnLayers.contains(e.target)) {
