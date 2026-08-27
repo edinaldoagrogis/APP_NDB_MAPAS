@@ -654,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (isLinhasColheita) {
                 mapLayer._isLazy = true;
-                geoJsonOptions.renderer = L.canvas({ padding: 0.25 });
+                geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
                 mapLayer._lazyOptions = geoJsonOptions;
                 
                 mapLayer.on('add', function() {
