@@ -1619,17 +1619,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const query = e.target.value.toLowerCase().trim();
         if (!query) return;
 
-        let bounds = L.latLngBounds();
-        let matchCount = 0;
         let foundLayer = null;
         let foundGroup = null;
 
         for (const layerName in loadedLayers) {
-            if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
-
+            // Search all layers just in case names differ
             const layerGroup = loadedLayers[layerName];
 
             layerGroup.eachLayer(layer => {
+                if (foundLayer) return; // Already found
+
                 const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : {};
                 const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
                 const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
@@ -1645,20 +1644,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 
                 const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
                 
-                if (normalize(title) === normalize(query)) {
-                    matchCount++;
+                if (normalize(title).includes(normalize(query)) || normalize(rawName || '').includes(normalize(query))) {
                     foundLayer = layer;
                     foundGroup = layerGroup;
-                    
-                    if (layer.getBounds && typeof layer.getBounds === 'function') {
-                        try {
-                            bounds.extend(layer.getBounds());
-                        } catch(e) { /* ignore */ }
-                    } else if (layer.getLatLng && typeof layer.getLatLng === 'function') {
-                        try {
-                            bounds.extend(layer.getLatLng());
-                        } catch(e) { /* ignore */ }
-                    }
                     
                     if (layer.setStyle && typeof layer.setStyle === 'function') {
                         layer.setStyle({
@@ -1676,7 +1664,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             });
         }
         
-        if (matchCount > 0) {
+        if (foundLayer) {
             if (window.searchedLayersArr) {
                 window.searchedLayersArr.forEach(item => {
                     if (item.layer !== foundLayer) {
@@ -1686,18 +1674,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }
             window.searchedLayersArr = [{ group: foundGroup, layer: foundLayer }];
             
-            if (bounds.isValid()) {
-                try {
-                    if (matchCount > 1 || !foundLayer.getLatLng) {
-                        map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
-                    } else {
-                        map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
-                    }
-                } catch(e) {
-                    alert("Erro no zoom: " + e.message);
+            try {
+                if (foundLayer.getBounds && typeof foundLayer.getBounds === 'function') {
+                    map.flyToBounds(foundLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
+                } else if (foundLayer.getLatLng && typeof foundLayer.getLatLng === 'function') {
+                    map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
                 }
-            } else {
-                alert("Limites inválidos para a fazenda encontrada.");
+            } catch(e) {
+                alert("Erro no zoom: " + e.message);
             }
             
             setTimeout(() => {
@@ -2142,7 +2126,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 
                 const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
                 
-                if (normalize(title) === normalize(query)) {
+                if (normalize(title).includes(normalize(query)) || normalize(rawName || '').includes(normalize(query))) {
                     let lat, lng;
                     if (typeof turf !== 'undefined') {
                         const centroid = turf.centroid(layer.feature);
@@ -3307,7 +3291,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                     }
                     const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-                    if (normalize(title) === normalize(query)) {
+                    if (normalize(title).includes(normalize(query)) || normalize(rawName || '').includes(normalize(query))) {
                         matchCount++;
                         foundLayer = layer;
                         if (layer.getBounds) {
