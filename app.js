@@ -2774,7 +2774,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     const toolWeedBtn  = document.getElementById('tool-weed-btn');
 
     // Elementos DOM — Aba Pesquisa
-    const searchInput      = document.getElementById('weed-search-input');
+    const weedSearchInput      = document.getElementById('weed-search-input');
     const searchDatalist   = document.getElementById('weed-fazendas-datalist');
     const btnSearchAnalyze = document.getElementById('btn-weed-search-analyze');
     const searchResultArea = document.getElementById('weed-search-result-area');
@@ -3125,14 +3125,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     // ── Análise pela pesquisa de fazenda ─────────────────────────────
     async function runSearchAnalysis() {
-        if (!searchInput || !searchInput.value.trim()) {
+        if (!weedSearchInput || !weedSearchInput.value.trim()) {
             alert('Digite o nome de uma fazenda para analisar.'); return;
         }
         if (!apiOnline) {
             if (searchApiOffline) searchApiOffline.style.display = 'block'; return;
         }
 
-        const nomeBusca = searchInput.value.trim();
+        const nomeBusca = weedSearchInput.value.trim();
         const features = getFazendaFeaturesByName(nomeBusca);
 
         if (features.length === 0) {
@@ -3273,13 +3273,13 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     // ── Listeners ─────────────────────────────────────────────────────
     if (btnAnalyze)      btnAnalyze.addEventListener('click', runAnalysis);
-    if (searchInput) {
-        searchInput.addEventListener('focus', populateFazendaSearch);
-        searchInput.addEventListener('click', populateFazendaSearch);
+    if (weedSearchInput) {
+        weedSearchInput.addEventListener('focus', populateFazendaSearch);
+        weedSearchInput.addEventListener('click', populateFazendaSearch);
         
         // Add zoom logic when a farm is selected in the Weed tool search
-    searchInput.addEventListener('input', handleSearch);
-    searchInput.addEventListener('change', handleSearch);
+    weedSearchInput.addEventListener('input', handleSearch);
+    weedSearchInput.addEventListener('change', handleSearch);
     function handleSearch(e) {
             const query = e.target.value.toLowerCase().trim();
             if (!query || !window.loadedLayers) return;
@@ -3338,11 +3338,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     if (btnKML)          btnKML.addEventListener('click', () => doExportKML(weedResultGeoJSON, selectedFazendaName));
     if (btnClear)        btnClear.addEventListener('click', () => { clearWeedLayer(); weedResultGeoJSON = null; resetPanel(); });
     if (btnSearchAnalyze) btnSearchAnalyze.addEventListener('click', runSearchAnalysis);
-    if (btnSearchGeoJSON) btnSearchGeoJSON.addEventListener('click', () => doExportGeoJSON(weedSearchResultGeoJSON, searchInput?.value));
-    if (btnSearchKML)     btnSearchKML.addEventListener('click', () => doExportKML(weedSearchResultGeoJSON, searchInput?.value));
+    if (btnSearchGeoJSON) btnSearchGeoJSON.addEventListener('click', () => doExportGeoJSON(weedSearchResultGeoJSON, weedSearchInput?.value));
+    if (btnSearchKML)     btnSearchKML.addEventListener('click', () => doExportKML(weedSearchResultGeoJSON, weedSearchInput?.value));
     if (btnSearchClear) {
         btnSearchClear.addEventListener('click', () => {
-            if (searchInput) searchInput.value = '';
+            if (weedSearchInput) weedSearchInput.value = '';
             if (searchResultArea) searchResultArea.style.display = 'none';
             weedSearchResultGeoJSON = null;
             clearWeedLayer();
