@@ -1650,7 +1650,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     if (layer.getBounds) {
                         bounds.extend(layer.getBounds());
                     } else if (layer.getLatLng) {
-                        bounds.extend([layer.getLatLng(), layer.getLatLng()]);
+                        bounds.extend(layer.getLatLng());
                     }
                     
                     if (layer.setStyle && typeof layer.setStyle === 'function') {
@@ -3295,7 +3295,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         if (layer.getBounds) {
                             bounds.extend(layer.getBounds());
                         } else if (layer.getLatLng) {
-                            bounds.extend([layer.getLatLng(), layer.getLatLng()]);
+                            bounds.extend(layer.getLatLng());
                         }
                     }
                 });
