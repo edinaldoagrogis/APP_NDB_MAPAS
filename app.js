@@ -1647,10 +1647,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     foundLayer = layer;
                     foundGroup = layerGroup;
                     
-                    if (layer.getBounds) {
-                        bounds.extend(layer.getBounds());
-                    } else if (layer.getLatLng) {
-                        bounds.extend(layer.getLatLng());
+                    if (layer.getBounds && typeof layer.getBounds === 'function') {
+                        try {
+                            bounds.extend(layer.getBounds());
+                        } catch(e) { /* ignore */ }
+                    } else if (layer.getLatLng && typeof layer.getLatLng === 'function') {
+                        try {
+                            bounds.extend(layer.getLatLng());
+                        } catch(e) { /* ignore */ }
                     }
                     
                     if (layer.setStyle && typeof layer.setStyle === 'function') {
@@ -1660,7 +1664,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                             fillOpacity: 0.1
                         });
                         if (layer.bringToFront) {
-                            layer.bringToFront();
+                            try { layer.bringToFront(); } catch(e){}
                         }
                         if (!window.searchedLayersArr) window.searchedLayersArr = [];
                         window.searchedLayersArr.push({ group: layerGroup, layer: layer });
@@ -1680,11 +1684,17 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             window.searchedLayersArr = [{ group: foundGroup, layer: foundLayer }];
             
             if (bounds.isValid()) {
-                if (matchCount > 1 || !foundLayer.getLatLng) {
-                    map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
-                } else {
-                    map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
+                try {
+                    if (matchCount > 1 || !foundLayer.getLatLng) {
+                        map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+                    } else {
+                        map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
+                    }
+                } catch(e) {
+                    alert("Erro no zoom: " + e.message);
                 }
+            } else {
+                alert("Limites inválidos para a fazenda encontrada.");
             }
             
             setTimeout(() => {
@@ -1692,6 +1702,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 searchInput.blur();
                 if(typeof isExpanded !== 'undefined') isExpanded = false;
             }, 500);
+        } else {
+            alert('Fazenda nao encontrada nas camadas: ' + query);
         }
     });
 
