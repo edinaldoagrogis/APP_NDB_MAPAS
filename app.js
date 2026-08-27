@@ -1633,14 +1633,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 let title = '';
                 if (rawName) {
                     const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
-                    title = cleanIdStr ? \\ - \\ : rawName;
+                    title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
                 }
                 
                 if (!title) {
                     title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                 }
                 
-                const normalize = (str) => String(str || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();
+                const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
                 
                 if (normalize(title) === normalize(query)) {
                     matchCount++;
@@ -3283,12 +3283,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     let title = '';
                     if (rawName) {
                         const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
-                        title = cleanIdStr ? \\ - \\ : rawName;
+                    title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
                     }
                     if (!title) {
                         title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                     }
-                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();
+                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
                     if (normalize(title) === normalize(query)) {
                         matchCount++;
                         foundLayer = layer;
