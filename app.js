@@ -1707,7 +1707,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         } else {
             alert('Fazenda nao encontrada nas camadas: ' + query);
         }
-    });
+    }
 
     // Handle map selection
     window.clearAllSelections = () => {
@@ -3324,7 +3324,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
                 }
             }
-        });
+        }
     }
     if (btnClose) {
         btnClose.addEventListener('click', () => { 
