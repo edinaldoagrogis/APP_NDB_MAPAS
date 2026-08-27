@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v193';
+const CACHE_NAME = 'agrogis-v194';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -48,12 +48,12 @@ self.addEventListener('install', event => {
 
                 await Promise.all(
                     coreAssets.map(url => fetch(url).then(r => { 
-                        if(r.ok) {
+                        if(r.ok || r.type === 'opaque') {
                             return cache.put(url, r); 
                         } else {
-                            throw new Error('Failed to fetch ' + url);
+                            console.warn('[ServiceWorker] Failed to fetch ' + url + ' status: ' + r.status);
                         }
-                    }))
+                    }).catch(e => console.warn('[ServiceWorker] Network error for ' + url, e)))
                 );
                 console.log('[ServiceWorker] Install complete');
             })
@@ -150,9 +150,16 @@ self.addEventListener('fetch', event => {
                 // Se offline ou Timeout (AbortError), serve do cache ignorando parametros
                 let cached = await caches.match(event.request, { ignoreSearch: true });
                 if (!cached && event.request.mode === 'navigate') {
-                    cached = await caches.match('./index.html') || await caches.match('./');
+                    cached = await caches.match('./index.html', { ignoreSearch: true }) || await caches.match('./', { ignoreSearch: true });
                 }
-                return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
+                
+                if (cached) return cached;
+                
+                if (event.request.mode === 'navigate') {
+                    return new Response('<html><head><meta charset="utf-8"><title>Offline</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="background:#1e1e1e;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;text-align:center;flex-direction:column;"><h2>Modo Offline</h2><p>O aplicativo est&aacute; sem conex&atilde;o e a p&aacute;gina inicial ainda n&atilde;o foi cacheada com sucesso.</p><p style="font-size: 12px; color: #888;">Por favor, conecte-se &agrave; internet e tente novamente.</p><button onclick="window.location.reload()" style="padding:10px 20px;border-radius:20px;border:none;background:#2ec4b6;color:white;font-weight:bold;margin-top:20px;">Tentar Novamente</button></body></html>', { status: 200, headers: {'Content-Type': 'text/html'} });
+                }
+                
+                return new Response('', { status: 503, statusText: 'Offline' });
             })
         );
         return;
