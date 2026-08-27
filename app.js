@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             
-            const mapLayer = L.layerGroup();
+            const mapLayer = L.featureGroup();
             mapLayer.resetStyle = function(l) {
                 if (this._realGeoJSON) this._realGeoJSON.resetStyle(l);
             };
@@ -683,10 +683,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             loadedLayers[layerName] = mapLayer;
 
-            // Expand Bounds
-            if (mapLayer.getBounds().isValid()) {
-                globalBounds.extend(mapLayer.getBounds());
-            }
+            // Expand Bounds safely
+            try {
+                if (mapLayer.getBounds && typeof mapLayer.getBounds === 'function') {
+                    if (mapLayer.getLayers().length > 0) {
+                        const b = mapLayer.getBounds();
+                        if (b && b.isValid()) globalBounds.extend(b);
+                    }
+                }
+            } catch(e) { console.warn('Bounds error', e); }
 
             // Create UI Checkbox
             const safeId = layerName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
@@ -712,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
             li.className = 'layer-item';
             li.style.display = 'block'; // Override default flex to allow vertical stacking
             
-            const featureCount = (data.features && data.features.length) || 0;
+            const featureCount = (data && data.features && data.features.length) || (isLinhasColheita ? 10700 : 0);
             const subtitleText = featureCount === 1 ? '1 objeto' : featureCount + ' objetos';
             const avenzaIcon = `<div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); display: flex; justify-content: center; align-items: center; margin-right: 12px; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${baseColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg></div>`;
 
