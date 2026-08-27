@@ -1612,7 +1612,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }, 200);
         });
     }
-    searchInput.addEventListener('input', (e) => {
+    searchInput.addEventListener('input', handleSearch);
+    searchInput.addEventListener('change', handleSearch);
+    function handleSearch(e) {
         const query = e.target.value.toLowerCase().trim();
         if (!query) return;
 
@@ -3276,7 +3278,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         searchInput.addEventListener('click', populateFazendaSearch);
         
         // Add zoom logic when a farm is selected in the Weed tool search
-        searchInput.addEventListener('input', (e) => {
+    searchInput.addEventListener('input', handleSearch);
+    searchInput.addEventListener('change', handleSearch);
+    function handleSearch(e) {
             const query = e.target.value.toLowerCase().trim();
             if (!query || !window.loadedLayers) return;
             
