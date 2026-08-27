@@ -1634,11 +1634,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 
                 // Fallback for other data structures
                 if (!title) {
-                    title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
-                }
-                
-                // If user selected an exact match from the datalist
-                if (title.toLowerCase() === query) {
+                        title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                    }
+                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+                    if (normalize(title) === normalize(query)) {
                     
                     // Clear previous search highlight
                     if (window.currentSearchedFarmLayer && window.currentSearchedFarmLayerGroup) {
@@ -2105,7 +2104,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                 }
                 
-                if (title.toLowerCase() === query) {
+                const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+                
+                if (normalize(title) === normalize(query)) {
                     let lat, lng;
                     if (typeof turf !== 'undefined') {
                         const centroid = turf.centroid(layer.feature);
@@ -3262,8 +3263,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     if (!title) {
                         title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                     }
-                    
-                    if (title.toLowerCase() === query) {
+                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+                    if (normalize(title) === normalize(query)) {
                         if (layer.getLatLng) {
                             map.flyTo(layer.getLatLng(), 15, { duration: 1.5 });
                         } else if (layer.getBounds) {
