@@ -1616,9 +1616,13 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const query = e.target.value.toLowerCase().trim();
         if (!query) return;
 
+        let bounds = L.latLngBounds();
+        let matchCount = 0;
+        let foundLayer = null;
+        let foundGroup = null;
+
         for (const layerName in loadedLayers) {
-            // Only search in FAZENDA layer
-            if (!layerName.toUpperCase().includes('FAZENDA')) continue;
+            if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
 
             const layerGroup = loadedLayers[layerName];
 
@@ -1629,48 +1633,65 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 let title = '';
                 if (rawName) {
                     const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
-                    title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
+                    title = cleanIdStr ? \\ - \\ : rawName;
                 }
                 
-                // Fallback for other data structures
                 if (!title) {
-                        title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
-                    }
-                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-                    if (normalize(title) === normalize(query)) {
+                    title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
+                }
+                
+                const normalize = (str) => String(str || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();
+                
+                if (normalize(title) === normalize(query)) {
+                    matchCount++;
+                    foundLayer = layer;
+                    foundGroup = layerGroup;
                     
-                    // Clear previous search highlight
-                    if (window.currentSearchedFarmLayer && window.currentSearchedFarmLayerGroup) {
-                        window.currentSearchedFarmLayerGroup.resetStyle(window.currentSearchedFarmLayer);
-                    }
-                    
-                    window.currentSearchedFarmLayer = layer;
-                    window.currentSearchedFarmLayerGroup = layerGroup;
-                    
-                    // Highlight the farm polygon
-                    layer.setStyle({
-                        weight: 4,
-                        color: '#ffeb3b', // Bright yellow outline
-                        fillOpacity: 0.1
-                    });
-                    if (layer.bringToFront) {
-                        layer.bringToFront();
-                    }
-
-                    // Fly to the farm
-                    if (layer.getLatLng) {
-                        map.flyTo(layer.getLatLng(), 15, { duration: 1.5 });
-                    } else if (layer.getBounds) {
-                        map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
+                    if (layer.getBounds) {
+                        bounds.extend(layer.getBounds());
+                    } else if (layer.getLatLng) {
+                        bounds.extend([layer.getLatLng(), layer.getLatLng()]);
                     }
                     
-                    // Clear search box after short delay for better UX
-                    setTimeout(() => {
-                        searchInput.value = '';
-                        searchInput.blur();
-                    }, 2000);
+                    if (layer.setStyle && typeof layer.setStyle === 'function') {
+                        layer.setStyle({
+                            weight: 4,
+                            color: '#ffeb3b',
+                            fillOpacity: 0.1
+                        });
+                        if (layer.bringToFront) {
+                            layer.bringToFront();
+                        }
+                        if (!window.searchedLayersArr) window.searchedLayersArr = [];
+                        window.searchedLayersArr.push({ group: layerGroup, layer: layer });
+                    }
                 }
             });
+        }
+        
+        if (matchCount > 0) {
+            if (window.searchedLayersArr) {
+                window.searchedLayersArr.forEach(item => {
+                    if (item.layer !== foundLayer) {
+                        try { item.group.resetStyle(item.layer); } catch(e){}
+                    }
+                });
+            }
+            window.searchedLayersArr = [{ group: foundGroup, layer: foundLayer }];
+            
+            if (bounds.isValid()) {
+                if (matchCount > 1 || !foundLayer.getLatLng) {
+                    map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+                } else {
+                    map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
+                }
+            }
+            
+            setTimeout(() => {
+                searchInput.value = '';
+                searchInput.blur();
+                if(typeof isExpanded !== 'undefined') isExpanded = false;
+            }, 500);
         }
     });
 
@@ -2086,7 +2107,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (!query) return;
 
         for (const layerName in loadedLayers) {
-            if (!layerName.toUpperCase().includes('FAZENDA')) continue;
+            if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
             
             const layerGroup = loadedLayers[layerName];
             layerGroup.eachLayer(layer => {
@@ -3247,8 +3268,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             const query = e.target.value.toLowerCase().trim();
             if (!query || !window.loadedLayers) return;
             
+            let bounds = L.latLngBounds();
+            let matchCount = 0;
+            let foundLayer = null;
+
             for (const layerName in window.loadedLayers) {
-                if (!layerName.toUpperCase().includes('FAZENDA')) continue;
+                if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
                 
                 const layerGroup = window.loadedLayers[layerName];
                 layerGroup.eachLayer(layer => {
@@ -3258,20 +3283,30 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     let title = '';
                     if (rawName) {
                         const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
-                        title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
+                        title = cleanIdStr ? \\ - \\ : rawName;
                     }
                     if (!title) {
                         title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                     }
-                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();
                     if (normalize(title) === normalize(query)) {
-                        if (layer.getLatLng) {
-                            map.flyTo(layer.getLatLng(), 15, { duration: 1.5 });
-                        } else if (layer.getBounds) {
-                            map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
+                        matchCount++;
+                        foundLayer = layer;
+                        if (layer.getBounds) {
+                            bounds.extend(layer.getBounds());
+                        } else if (layer.getLatLng) {
+                            bounds.extend([layer.getLatLng(), layer.getLatLng()]);
                         }
                     }
                 });
+            }
+            
+            if (matchCount > 0 && bounds.isValid()) {
+                if (matchCount > 1 || !foundLayer.getLatLng) {
+                    map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+                } else {
+                    map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
+                }
             }
         });
     }
