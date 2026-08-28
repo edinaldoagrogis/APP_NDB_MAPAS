@@ -22,7 +22,7 @@ jobs:
 
       - name: Install Capacitor
         run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/geolocation
 
       - name: Prepare Web Files
         run: |
@@ -40,6 +40,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '21'
+
+      - name: Inject GPS Permissions
+        run: |
+          cd android/app/src/main
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" />' AndroidManifest.xml
 
       - name: Build APK
         run: |
