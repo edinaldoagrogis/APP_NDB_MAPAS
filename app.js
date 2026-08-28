@@ -1630,30 +1630,25 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const val = searchInput.value;
         autocompleteList.innerHTML = '';
         
+        if (!val) {
+            autocompleteList.style.display = 'none';
+            return;
+        }
+        
         let count = 0;
         const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const queryNorm = normalize(val);
         
         if (!window.labeledFazendas) return;
         
-        // Convert to array and sort alphabetically for consistent display
         const sortedFazendas = Array.from(window.labeledFazendas).sort();
         
         sortedFazendas.forEach(item => {
             const itemNorm = normalize(item);
-            if ((!queryNorm || itemNorm.includes(queryNorm)) && count < 30) {
+            if (itemNorm.includes(queryNorm) && count < 10) {
                 count++;
                 const div = document.createElement('div');
-                
-                if (queryNorm) {
-                    const matchIndex = itemNorm.indexOf(queryNorm);
-                    const prefix = item.substring(0, matchIndex);
-                    const matchStr = item.substring(matchIndex, matchIndex + val.length);
-                    const suffix = item.substring(matchIndex + val.length);
-                    div.innerHTML = prefix + "<strong>" + matchStr + "</strong>" + suffix;
-                } else {
-                    div.innerHTML = item;
-                }
+                div.textContent = item; // Plain text like CAR tool
                 
                 div.addEventListener('click', function(e) {
                     searchInput.value = item;
@@ -1672,8 +1667,6 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     };
 
     searchInput.addEventListener('input', showAutocomplete);
-    searchInput.addEventListener('focus', showAutocomplete);
-    searchInput.addEventListener('click', showAutocomplete);
 
     document.addEventListener('click', function(e) {
         if (e.target !== searchInput && e.target !== autocompleteList) {
