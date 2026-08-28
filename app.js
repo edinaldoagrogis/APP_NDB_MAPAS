@@ -1,4 +1,4 @@
-﻿// NDB Holding AgrÃ­cola Geoportal JavaScript Core (Dynamic)
+// NDB Holding AgrÃ­cola Geoportal JavaScript Core (Dynamic)
 
 document.addEventListener('DOMContentLoaded', () => {
     const isTouchDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -553,6 +553,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                     const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
                     const title = titleRaw || 'Elemento';
+                    
+                    const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'] || '';
+                    const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'] || '';
+                    let fullTitle = title;
+                    if (rawName && rawId) {
+                        const cleanIdStr = String(rawId).split(',')[0].split('.')[0].trim();
+                        if (cleanIdStr) fullTitle = `${cleanIdStr} - ${rawName}`;
+                    }
+                    if (!window.allSearchableItems) window.allSearchableItems = new Set();
+                    if (fullTitle !== 'Elemento') window.allSearchableItems.add(fullTitle);
+                    if (titleRaw && titleRaw !== 'Elemento') window.allSearchableItems.add(String(titleRaw));
                     
                     if (isFazenda) {
                         if (!window.labeledFazendas) window.labeledFazendas = new Set();
@@ -1625,19 +1636,26 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         let count = 0;
         const queryUpper = val.toUpperCase();
-        window.labeledFazendas.forEach(fazenda => {
-            if (fazenda.toUpperCase().includes(queryUpper) && count < 10) {
+        const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const queryNorm = normalize(val);
+        
+        if (!window.allSearchableItems) return; // Prevent crash if layers not loaded
+        
+        window.allSearchableItems.forEach(item => {
+            const itemNorm = normalize(item);
+            if (itemNorm.includes(queryNorm) && count < 10) {
                 count++;
                 const div = document.createElement('div');
-                // Highlight matching part
-                const matchIndex = fazenda.toUpperCase().indexOf(queryUpper);
-                const prefix = fazenda.substring(0, matchIndex);
-                const matchStr = fazenda.substring(matchIndex, matchIndex + val.length);
-                const suffix = fazenda.substring(matchIndex + val.length);
+                
+                // Highlight matching part (case and accent insensitive display is tricky, so we just bold the matched substring length)
+                const matchIndex = itemNorm.indexOf(queryNorm);
+                const prefix = item.substring(0, matchIndex);
+                const matchStr = item.substring(matchIndex, matchIndex + val.length);
+                const suffix = item.substring(matchIndex + val.length);
                 
                 div.innerHTML = prefix + "<strong>" + matchStr + "</strong>" + suffix;
                 div.addEventListener('click', function(e) {
-                    searchInput.value = fazenda;
+                    searchInput.value = item;
                     autocompleteList.style.display = 'none';
                     handleSearch({ target: searchInput });
                 });
