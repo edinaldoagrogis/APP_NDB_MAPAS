@@ -1,4 +1,4 @@
-﻿/* NDB Holding AgrÃ­cola Geoportal Styles */
+/* NDB Holding AgrÃ­cola Geoportal Styles */
 
 :root {
     --bg-primary: #0a0f0d; /* Dark background */
@@ -1018,10 +1018,13 @@ body.disable-map-hover .leaflet-interactive {
         border-radius: 22px !important;
         background: rgba(10, 15, 13, 0.8) !important;
         transition: width 0.3s ease !important;
+    }
+    .search-container.floating:not(:focus-within) {
         overflow: hidden !important;
     }
     .search-container.floating:focus-within { 
         width: 220px !important; 
+        overflow: visible !important;
     }
     .search-container.floating #layer-search { 
         padding-left: 38px !important; 
