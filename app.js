@@ -1639,13 +1639,13 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const queryNorm = normalize(val);
         
-        if (!window.labeledFazendas) return;
+        if (!window.allSearchableItems) return;
         
-        const sortedFazendas = Array.from(window.labeledFazendas).sort();
+        const sortedItems = Array.from(window.allSearchableItems).sort();
         
-        sortedFazendas.forEach(item => {
+        sortedItems.forEach(item => {
             const itemNorm = normalize(item);
-            if (itemNorm.includes(queryNorm) && count < 10) {
+            if (itemNorm.includes(queryNorm) && count < 15) {
                 count++;
                 const div = document.createElement('div');
                 div.textContent = item; // Plain text like CAR tool
