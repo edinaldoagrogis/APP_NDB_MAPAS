@@ -35,6 +35,14 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Generate App Icons
+        run: |
+          npm install @capacitor/assets --save-dev
+          mkdir assets
+          cp app_icon_512.png assets/icon.png
+          cp app_icon_512.png assets/splash.png
+          npx @capacitor/assets generate --android
+
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
