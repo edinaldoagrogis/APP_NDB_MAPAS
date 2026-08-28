@@ -554,16 +554,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
                     const title = titleRaw || 'Elemento';
                     
-                    const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'] || '';
-                    const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'] || '';
-                    let fullTitle = title;
-                    if (rawName && rawId) {
-                        const cleanIdStr = String(rawId).split(',')[0].split('.')[0].trim();
-                        if (cleanIdStr) fullTitle = `${cleanIdStr} - ${rawName}`;
-                    }
                     if (!window.allSearchableItems) window.allSearchableItems = new Set();
-                    if (fullTitle !== 'Elemento') window.allSearchableItems.add(fullTitle);
-                    if (titleRaw && titleRaw !== 'Elemento') window.allSearchableItems.add(String(titleRaw));
+                    if (isTalhao && props.NOME_FAZ) {
+                        window.allSearchableItems.add(String(props.NOME_FAZ));
+                    }
                     
                     if (isFazenda) {
                         if (!window.labeledFazendas) window.labeledFazendas = new Set();
@@ -1688,36 +1682,22 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         let foundLayer = null;
         let foundGroup = null;
 
-        const checkLayer = (layer, layerGroup) => {
+        const checkLayer = (layer, layerGroup, layerName) => {
             if (foundLayer) return;
 
             if (layer.feature) {
+                // Only search in Talhões layers as requested
+                const isTalhao = layerName && layerName.toUpperCase().includes('TALHO');
+                if (!isTalhao) return;
+
                 const props = layer.feature.properties || {};
-                const getProp = (props, possibleNames) => {
-                    const keys = Object.keys(props);
-                    for (const name of possibleNames) {
-                        const upperName = name.toUpperCase();
-                        const foundKey = keys.find(k => k.toUpperCase() === upperName);
-                        if (foundKey) return props[foundKey];
-                    }
-                    return '';
-                };
+                const nomeFaz = props.NOME_FAZ;
                 
-                const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
-                const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'] || '';
-                const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'] || '';
-                
-                let title = titleRaw || '';
-                if (rawName && rawId) {
-                    const cleanIdStr = String(rawId).split(',')[0].split('.')[0].trim();
-                    if (cleanIdStr) {
-                        title = `${cleanIdStr} - ${rawName}`;
-                    }
-                }
+                if (!nomeFaz) return;
                 
                 const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
                 
-                if (normalize(title).includes(normalize(query)) || normalize(rawName).includes(normalize(query)) || normalize(titleRaw).includes(normalize(query))) {
+                if (normalize(nomeFaz).includes(normalize(query))) {
                     foundLayer = layer;
                     foundGroup = layerGroup;
                     
@@ -1735,14 +1715,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     }
                 }
             } else if (layer.eachLayer) {
-                layer.eachLayer(child => checkLayer(child, layerGroup));
+                layer.eachLayer(child => checkLayer(child, layerGroup, layerName));
             }
         };
 
         for (const layerName in loadedLayers) {
             const layerGroup = loadedLayers[layerName];
             if (layerGroup && layerGroup.eachLayer) {
-                layerGroup.eachLayer(child => checkLayer(child, layerGroup));
+                layerGroup.eachLayer(child => checkLayer(child, layerGroup, layerName));
             }
         }
         
