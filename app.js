@@ -1626,34 +1626,35 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     }
     const autocompleteList = document.getElementById('custom-autocomplete-list');
     
-    searchInput.addEventListener('input', function() {
-        const val = this.value;
+    const showAutocomplete = () => {
+        const val = searchInput.value;
         autocompleteList.innerHTML = '';
-        if (!val) {
-            autocompleteList.style.display = 'none';
-            return;
-        }
         
         let count = 0;
-        const queryUpper = val.toUpperCase();
         const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const queryNorm = normalize(val);
         
-        if (!window.allSearchableItems) return; // Prevent crash if layers not loaded
+        if (!window.labeledFazendas) return;
         
-        window.allSearchableItems.forEach(item => {
+        // Convert to array and sort alphabetically for consistent display
+        const sortedFazendas = Array.from(window.labeledFazendas).sort();
+        
+        sortedFazendas.forEach(item => {
             const itemNorm = normalize(item);
-            if (itemNorm.includes(queryNorm) && count < 10) {
+            if ((!queryNorm || itemNorm.includes(queryNorm)) && count < 30) {
                 count++;
                 const div = document.createElement('div');
                 
-                // Highlight matching part (case and accent insensitive display is tricky, so we just bold the matched substring length)
-                const matchIndex = itemNorm.indexOf(queryNorm);
-                const prefix = item.substring(0, matchIndex);
-                const matchStr = item.substring(matchIndex, matchIndex + val.length);
-                const suffix = item.substring(matchIndex + val.length);
+                if (queryNorm) {
+                    const matchIndex = itemNorm.indexOf(queryNorm);
+                    const prefix = item.substring(0, matchIndex);
+                    const matchStr = item.substring(matchIndex, matchIndex + val.length);
+                    const suffix = item.substring(matchIndex + val.length);
+                    div.innerHTML = prefix + "<strong>" + matchStr + "</strong>" + suffix;
+                } else {
+                    div.innerHTML = item;
+                }
                 
-                div.innerHTML = prefix + "<strong>" + matchStr + "</strong>" + suffix;
                 div.addEventListener('click', function(e) {
                     searchInput.value = item;
                     autocompleteList.style.display = 'none';
@@ -1668,7 +1669,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         } else {
             autocompleteList.style.display = 'none';
         }
-    });
+    };
+
+    searchInput.addEventListener('input', showAutocomplete);
+    searchInput.addEventListener('focus', showAutocomplete);
+    searchInput.addEventListener('click', showAutocomplete);
 
     document.addEventListener('click', function(e) {
         if (e.target !== searchInput && e.target !== autocompleteList) {
