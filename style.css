@@ -1503,3 +1503,33 @@ body.clima-farm-active #map .leaflet-interactive {
     -webkit-backface-visibility: hidden;
     -webkit-transform: translate3d(0,0,0);
 }
+
+/* Autocomplete Customizado Discreto */
+.autocomplete-items {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid rgba(46,196,182,0.3);
+  border-radius: 8px;
+  z-index: 9999;
+  background: rgba(17,20,24,0.95);
+  backdrop-filter: blur(10px);
+  max-height: 250px;
+  overflow-y: auto;
+  display: none;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.autocomplete-items div {
+  padding: 10px 15px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.autocomplete-items div:hover, .autocomplete-items div.autocomplete-active {
+  background-color: rgba(46,196,182,0.2);
+}
+.autocomplete-items div:last-child { border-bottom: none; }
+

@@ -1613,8 +1613,58 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }, 200);
         });
     }
+    const autocompleteList = document.getElementById('custom-autocomplete-list');
+    
+    searchInput.addEventListener('input', function() {
+        const val = this.value;
+        autocompleteList.innerHTML = '';
+        if (!val) {
+            autocompleteList.style.display = 'none';
+            return;
+        }
+        
+        let count = 0;
+        const queryUpper = val.toUpperCase();
+        window.labeledFazendas.forEach(fazenda => {
+            if (fazenda.toUpperCase().includes(queryUpper) && count < 10) {
+                count++;
+                const div = document.createElement('div');
+                // Highlight matching part
+                const matchIndex = fazenda.toUpperCase().indexOf(queryUpper);
+                const prefix = fazenda.substring(0, matchIndex);
+                const matchStr = fazenda.substring(matchIndex, matchIndex + val.length);
+                const suffix = fazenda.substring(matchIndex + val.length);
+                
+                div.innerHTML = prefix + "<strong>" + matchStr + "</strong>" + suffix;
+                div.addEventListener('click', function(e) {
+                    searchInput.value = fazenda;
+                    autocompleteList.style.display = 'none';
+                    handleSearch({ target: searchInput });
+                });
+                autocompleteList.appendChild(div);
+            }
+        });
+        
+        if (count > 0) {
+            autocompleteList.style.display = 'block';
+        } else {
+            autocompleteList.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target !== searchInput && e.target !== autocompleteList) {
+            autocompleteList.style.display = 'none';
+        }
+    });
+
     searchInput.addEventListener('change', handleSearch);
-    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSearch(e); });
+    searchInput.addEventListener('keydown', (e) => { 
+        if (e.key === 'Enter') {
+            autocompleteList.style.display = 'none';
+            handleSearch(e); 
+        }
+    });
     function handleSearch(e) {
         const query = e.target.value.toLowerCase().trim();
         if (!query) return;

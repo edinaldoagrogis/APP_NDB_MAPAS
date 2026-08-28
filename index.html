@@ -224,9 +224,10 @@
                 <!-- Gray Panel: Search + Basemap -->
                 <div class="top-right-controls" style="display: flex; flex-direction: column; gap: 8px;">
                     <!-- Search Box -->
-                    <div class="search-container floating" style="margin-bottom: 0;">
-                        <input type="text" id="layer-search" list="fazendas-list" placeholder="Localizar Fazenda...">
+                    <div class="search-container floating" style="margin-bottom: 0; position: relative;">
+                        <input type="text" id="layer-search" placeholder="Localizar Fazenda..." autocomplete="off">
                         <datalist id="fazendas-list"></datalist>
+                        <div id="custom-autocomplete-list" class="autocomplete-items"></div>
                         <span class="search-icon">🔍</span>
                     </div>
 
