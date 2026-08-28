@@ -639,13 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             L.popup({ autoPanPadding: [50, 50] }).setLatLng(e.latlng).setContent(createPopupContent(title, props)).openOn(map);
                             if (isFazenda) {
-                                if (window.currentSearchedFarmLayer && window.currentSearchedFarmLayerGroup) {
-                                    window.currentSearchedFarmLayerGroup.resetStyle(window.currentSearchedFarmLayer);
-                                }
-                                window.currentSearchedFarmLayer = layer;
-                                window.currentSearchedFarmLayerGroup = mapLayer;
-                                layer.setStyle({ weight: 4, color: '#ffeb3b', fillOpacity: 0.1 });
-                                if (layer.bringToFront) layer.bringToFront();
+                                // Yellow highlight removed as per user request
                                 if (layer.getBounds) map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
                                 L.DomEvent.stopPropagation(e);
                             } else {
@@ -1700,19 +1694,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 if (normalize(nomeFaz).includes(normalize(query))) {
                     foundLayer = layer;
                     foundGroup = layerGroup;
-                    
-                    if (layer.setStyle && typeof layer.setStyle === 'function') {
-                        layer.setStyle({
-                            weight: 4,
-                            color: '#ffeb3b',
-                            fillOpacity: 0.1
-                        });
-                        if (layer.bringToFront) {
-                            try { layer.bringToFront(); } catch(e){}
-                        }
-                        if (!window.searchedLayersArr) window.searchedLayersArr = [];
-                        window.searchedLayersArr.push({ group: layerGroup, layer: layer });
-                    }
+                    // Yellow highlight removed as per user request
                 }
             } else if (layer.eachLayer) {
                 layer.eachLayer(child => checkLayer(child, layerGroup, layerName));
@@ -1727,14 +1709,6 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
         
         if (foundLayer) {
-            if (window.searchedLayersArr) {
-                window.searchedLayersArr.forEach(item => {
-                    if (item.layer !== foundLayer) {
-                        try { item.group.resetStyle(item.layer); } catch(e){}
-                    }
-                });
-            }
-            window.searchedLayersArr = [{ group: foundGroup, layer: foundLayer }];
             
             try {
                 if (foundLayer.getBounds && typeof foundLayer.getBounds === 'function') {
