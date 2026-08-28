@@ -352,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 opacity: 1,
                 interactive: false,
                 pane: 'tilePane', // Put below online tiles
-                zIndex: 0
+                zIndex: 0,
+                className: 'offline-img-layer'
             }).addTo(offlineSatelliteLayer);
         });
     }

@@ -1494,3 +1494,12 @@ body.clima-farm-active #map .leaflet-interactive {
     .top-right-wrapper { transform: scale(0.75); }
     .leaflet-bottom.leaflet-right { transform: scale(0.75); margin-bottom: 10px !important; }
 }
+
+/* Aceleração de GPU para imagens offline (evita tela preta no zoom) */
+.offline-img-layer {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-transform: translate3d(0,0,0);
+}
