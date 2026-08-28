@@ -44,6 +44,14 @@ jobs:
       - name: Build APK
         run: |
           cd android
+          cat << 'EOF' >> app/build.gradle
+          configurations.all {
+              resolutionStrategy {
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+              }
+          }
+          EOF
           chmod +x ./gradlew
           ./gradlew assembleDebug
 
