@@ -1,4 +1,4 @@
-/* NDB Holding Agrícola Geoportal Styles */
+﻿/* NDB Holding AgrÃ­cola Geoportal Styles */
 
 :root {
     --bg-primary: #0a0f0d; /* Dark background */
@@ -764,7 +764,7 @@ body, html {
 }
 
 
-/* Custom Talhão Labels (Viewport Culled) */
+/* Custom TalhÃ£o Labels (Viewport Culled) */
 .custom-talhao-label-container {
     pointer-events: none;
     display: flex;
@@ -1141,10 +1141,10 @@ body.ui-hidden .topbar-light {
 }
 
 /* ======================================================================
-   CLIMA FARM — Painel Climático Agrícola
+   CLIMA FARM â€” Painel ClimÃ¡tico AgrÃ­cola
    ====================================================================== */
 
-/* ── Painel Principal (Rodapé Fixo) ─────────────────────────────────── */
+/* â”€â”€ Painel Principal (RodapÃ© Fixo) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #clima-farm-panel {
     position: fixed;
     bottom: 0;
@@ -1160,7 +1160,7 @@ body.ui-hidden .topbar-light {
     gap: 0;
     padding: 0;
     font-family: 'Inter', sans-serif;
-    /* Animação slide-up */
+    /* AnimaÃ§Ã£o slide-up */
     transform: translateY(100%);
     transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 -4px 32px rgba(56,189,248,0.12), 0 -2px 8px rgba(0,0,0,0.6);
@@ -1170,7 +1170,7 @@ body.ui-hidden .topbar-light {
     transform: translateY(0);
 }
 
-/* ── Header do painel ────────────────────────────────────────────────── */
+/* â”€â”€ Header do painel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cf-header {
     display: flex;
     align-items: center;
@@ -1247,7 +1247,7 @@ body.ui-hidden .topbar-light {
     color: rgba(255,255,255,0.35);
 }
 
-/* ── Linha de métricas ───────────────────────────────────────────────── */
+/* â”€â”€ Linha de mÃ©tricas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cf-metrics-row {
     display: flex;
     gap: 0;
@@ -1293,7 +1293,7 @@ body.ui-hidden .topbar-light {
     text-transform: uppercase;
 }
 
-/* ── Previsão 7 dias (scroll horizontal) ─────────────────────────────── */
+/* â”€â”€ PrevisÃ£o 7 dias (scroll horizontal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cf-forecast-row {
     display: flex;
     gap: 4px;
@@ -1353,7 +1353,7 @@ body.ui-hidden .topbar-light {
     gap: 2px;
 }
 
-/* ── Fonte dos dados ─────────────────────────────────────────────────── */
+/* â”€â”€ Fonte dos dados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cf-source-tag {
     font-size: 9px;
     color: rgba(255,255,255,0.2);
@@ -1362,7 +1362,7 @@ body.ui-hidden .topbar-light {
     letter-spacing: 0.3px;
 }
 
-/* ── Estado de espera ────────────────────────────────────────────────── */
+/* â”€â”€ Estado de espera â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cf-waiting-state {
     display: flex;
     align-items: center;
@@ -1404,7 +1404,7 @@ body.ui-hidden .topbar-light {
     line-height: 1.4;
 }
 
-/* ── Estado de loading ───────────────────────────────────────────────── */
+/* â”€â”€ Estado de loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cf-loading-state {
     display: flex;
     align-items: center;
@@ -1439,7 +1439,7 @@ body.ui-hidden .topbar-light {
     to { transform: rotate(360deg); }
 }
 
-/* ── Botão fechar ────────────────────────────────────────────────────── */
+/* â”€â”€ BotÃ£o fechar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cf-close-btn {
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.1);
@@ -1462,17 +1462,17 @@ body.ui-hidden .topbar-light {
     color: #f87171;
 }
 
-/* ── Botão controle Leaflet ──────────────────────────────────────────── */
+/* â”€â”€ BotÃ£o controle Leaflet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cf-btn-icon {
     transition: opacity 0.2s;
 }
 
-/* ── Cursor especial quando ativo ────────────────────────────────────── */
+/* â”€â”€ Cursor especial quando ativo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 body.clima-farm-active #map .leaflet-interactive {
     cursor: crosshair !important;
 }
 
-/* ── Mobile ajustes ──────────────────────────────────────────────────── */
+/* â”€â”€ Mobile ajustes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 600px) {
     .cf-forecast-row { padding: 6px 8px 4px; }
     .cf-metrics-row  { padding: 4px 8px; }
@@ -1495,14 +1495,7 @@ body.clima-farm-active #map .leaflet-interactive {
     .leaflet-bottom.leaflet-right { transform: scale(0.75); margin-bottom: 10px !important; }
 }
 
-/* Acelera��o de GPU para imagens offline (evita tela preta no zoom) */
-.offline-img-layer {
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    -webkit-transform: translate3d(0,0,0);
-}
+/* Aceleração de GPU removida pois causa travamentos em celulares com pouca VRAM */
 
 /* Autocomplete Customizado Discreto */
 .autocomplete-items {
@@ -1532,4 +1525,5 @@ body.clima-farm-active #map .leaflet-interactive {
   background-color: rgba(46,196,182,0.2);
 }
 .autocomplete-items div:last-child { border-bottom: none; }
+
 

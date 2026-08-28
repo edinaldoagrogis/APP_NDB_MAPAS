@@ -1,4 +1,4 @@
-// NDB Holding Agrícola Geoportal JavaScript Core (Dynamic)
+﻿// NDB Holding AgrÃ­cola Geoportal JavaScript Core (Dynamic)
 
 document.addEventListener('DOMContentLoaded', () => {
     const isTouchDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const map = L.map('map', {
         zoomControl: true,
         attributionControl: true,
-        preferCanvas: true, // Back on: 100x speed for polygons (GPS freeze fixed)
+        preferCanvas: true, zoomAnimation: false, // Disables zoom animation to prevent lag with huge offline images
         rotate: isTouchDevice,
         touchRotate: false // Disabled by default, toggled by compass
     }).setView([-17.8, -40.0], 7);
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.style.marginRight = '10px';
             container.style.backdropFilter = 'blur(12px)';
             container.id = 'btn-compass-control';
-            container.title = 'Habilitar/Desabilitar Rotação Livre';
+            container.title = 'Habilitar/Desabilitar RotaÃ§Ã£o Livre';
 
             const icon = L.DomUtil.create('div', '', container);
             icon.innerHTML = '<img src="icone_bussola.png" style="width: 28px; height: 28px; border-radius: 4px;">';
@@ -115,13 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // ── Clima Farm Control (Botão ABAIXO da bússola) ─────────────────
+    // â”€â”€ Clima Farm Control (BotÃ£o ABAIXO da bÃºssola) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const ClimaFarmControl = L.Control.extend({
         options: { position: 'bottomright' },
         onAdd: function(map) {
             const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
             container.id = 'btn-clima-farm-control';
-            container.title = 'Clima Farm — Dados Climáticos por Talhão';
+            container.title = 'Clima Farm â€” Dados ClimÃ¡ticos por TalhÃ£o';
             container.style.cssText = [
                 'background-color: var(--bg-secondary)',
                 'border: 1px solid rgba(255,255,255,0.1)',
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.style.alignItems = 'center';
             container.style.marginBottom = '10px';
             container.style.marginRight = '10px';
-            container.title = 'Minha Localização';
+            container.title = 'Minha LocalizaÃ§Ã£o';
 
             const icon = L.DomUtil.create('span', '', container);
             icon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>`;
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toggle labels based on zoom level and user preference
     const isMobile = window.innerWidth <= 768;
     const ZOOM_THRESHOLD = 13; // Fazendas (Appears closer)
-    const TALHOES_ZOOM_THRESHOLD = 13.5; // Talhões (Appears closer)
+    const TALHOES_ZOOM_THRESHOLD = 13.5; // TalhÃµes (Appears closer)
     const EQUIPES_ZOOM_THRESHOLD = isMobile ? 10 : 8; // Equipes
     
     // Dynamic Layer Engine Stores
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('map').classList.remove('show-labels');
         }
 
-        // Talhões Viewport logic
+        // TalhÃµes Viewport logic
         if (activeLabelGroups.TALHOES && layerLabels.TALHOES) {
             const toggleTalhoes = document.getElementById('toggle-labels-talhoes');
             // Allow checking if the talhoes toggle exists and is checked, otherwise default to true if it hasn't been rendered yet
@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const dynamicLayerList = document.getElementById('dynamic-layer-list');
 
-    // Extended palette for categorizing farms in Talhões
+    // Extended palette for categorizing farms in TalhÃµes
     const extendedPalette = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'];
     const farmColors = {};
     let farmColorIndex = 0;
@@ -488,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isTalhao = layerName.toUpperCase().includes('TALHO');
             const isLinhasColheita = layerName.toUpperCase().includes('LINHAS DE COLHEITA');
             
-            // EXCLUI CAMADA DE VARIEDADE E ROTAS (Ignora no carregamento dinâmico)
+            // EXCLUI CAMADA DE VARIEDADE E ROTAS (Ignora no carregamento dinÃ¢mico)
             if (layerName.toUpperCase().includes('VARIEDADE') || layerName.toUpperCase().includes('ROTAS')) {
                 continue;
             }
@@ -736,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <label class="custom-checkbox" style="font-size: 11px; margin-bottom: 8px; display: flex; align-items: center;">
                         <input type="checkbox" id="toggle-labels-${safeId}" ${labelCheckedAttrStr}>
                         <span class="checkmark" style="--layer-color: #f6ea7c; width: 14px; height: 14px; min-width: 14px;"></span>
-                        <span class="layer-name" style="margin-left: 8px; color: var(--text-main);">Exibir Rótulos</span>
+                        <span class="layer-name" style="margin-left: 8px; color: var(--text-main);">Exibir RÃ³tulos</span>
                     </label>
                 </div>
             `;
@@ -761,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <input type="checkbox" id="toggle-${safeId}" ${checkedAttr} data-layer="${layerName}">
                             <span class="checkmark" style="--layer-color: ${baseColor}"></span>
                         </label>
-                        <span class="submenu-arrow" style="font-size: 10px; color: rgba(255,255,255,0.3); font-weight: bold; width: 16px; text-align: center;">▼</span>
+                        <span class="submenu-arrow" style="font-size: 10px; color: rgba(255,255,255,0.3); font-weight: bold; width: 16px; text-align: center;">â–¼</span>
                     </div>
                 </div>
                 ${extraControls}
@@ -776,10 +776,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mainRow.addEventListener('click', () => {
                 if (submenu.style.display === 'none') {
                     submenu.style.display = 'block';
-                    arrow.innerHTML = '▲';
+                    arrow.innerHTML = 'â–²';
                 } else {
                     submenu.style.display = 'none';
-                    arrow.innerHTML = '▼';
+                    arrow.innerHTML = 'â–¼';
                 }
             });
 
@@ -855,9 +855,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }
 
-// --- CARREGAMENTO ASSÍNCRONO DOS DADOS ---
+// --- CARREGAMENTO ASSÃNCRONO DOS DADOS ---
 function loadLayersDataAsync() {
-    console.log("Iniciando carregamento assíncrono de layers_data na thread principal...");
+    console.log("Iniciando carregamento assÃ­ncrono de layers_data na thread principal...");
     
     const loadingEl = document.createElement('div');
     loadingEl.id = "background-loading-indicator";
@@ -954,15 +954,15 @@ loadLayersDataAsync();
             const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
             const message = encodeURIComponent(`Veja o ponto "${name}": ${gmapsUrl}`);
             const wappUrl = `https://api.whatsapp.com/send?text=${message}`;
-            whatsappHtml = `<a href="${wappUrl}" style="display: block; width: 100%; text-align: left; background: none; border: none; color: #25d366; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px; text-decoration: none;">📲 Compartilhar (WhatsApp)</a>`;
+            whatsappHtml = `<a href="${wappUrl}" style="display: block; width: 100%; text-align: left; background: none; border: none; color: #25d366; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px; text-decoration: none;">ðŸ“² Compartilhar (WhatsApp)</a>`;
         }
 
         const content = document.createElement('div');
         content.className = 'custom-context-menu';
         content.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 8px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; font-size: 13px;">${name}</div>
-            <button id="ctx-edit-btn" style="width: 100%; text-align: left; background: none; border: none; color: #2ec4b6; padding: 6px; cursor: pointer; font-size: 13px;">✏️ Editar Nome</button>
-            <button id="ctx-del-btn" style="width: 100%; text-align: left; background: none; border: none; color: #e71d36; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px;">🗑️ Excluir</button>
+            <button id="ctx-edit-btn" style="width: 100%; text-align: left; background: none; border: none; color: #2ec4b6; padding: 6px; cursor: pointer; font-size: 13px;">âœï¸ Editar Nome</button>
+            <button id="ctx-del-btn" style="width: 100%; text-align: left; background: none; border: none; color: #e71d36; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px;">ðŸ—‘ï¸ Excluir</button>
             ${whatsappHtml}
         `;
         
@@ -1028,7 +1028,7 @@ loadLayersDataAsync();
                             labelText += `<br><span style="font-size: 10px; color: #2ec4b6;">${feature.properties.AREA_HA} ha</span>`;
                         }
                         
-                        // Rotulagem Permanente (Sempre visível no mapa)
+                        // Rotulagem Permanente (Sempre visÃ­vel no mapa)
                         layer.bindTooltip(labelText, {
                             permanent: true,
                             direction: 'top',
@@ -1036,12 +1036,12 @@ loadLayersDataAsync();
                             className: 'custom-label-tooltip'
                         });
                         
-                        // Clique Simples (Mostra Nome, Área, e Botões de Ação)
+                        // Clique Simples (Mostra Nome, Ãrea, e BotÃµes de AÃ§Ã£o)
                         layer.on('click', (e) => {
                             let popupHtml = `<div style="font-weight: bold; font-size: 14px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">${featureName}</div>`;
                             
                             if (type === 'areas' && feature.properties.AREA_HA) {
-                                popupHtml += `<div style="margin-bottom: 12px; color: #2ec4b6;">Área: ${feature.properties.AREA_HA} ha</div>`;
+                                popupHtml += `<div style="margin-bottom: 12px; color: #2ec4b6;">Ãrea: ${feature.properties.AREA_HA} ha</div>`;
                             } else if (feature.properties.TIPO) {
                                 popupHtml += `<div style="margin-bottom: 12px; color: #a8b8b0;">Tipo: ${feature.properties.TIPO}</div>`;
                             }
@@ -1060,8 +1060,8 @@ loadLayersDataAsync();
                             
                             popupHtml += `
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <button id="inline-edit-btn" style="width: 100%; text-align: left; background: none; border: none; color: #2ec4b6; padding: 6px; cursor: pointer; font-size: 13px;">✏️ Editar Nome</button>
-                                    <button id="inline-del-btn" style="width: 100%; text-align: left; background: none; border: none; color: #e71d36; padding: 6px; cursor: pointer; font-size: 13px;">🗑️ Excluir</button>
+                                    <button id="inline-edit-btn" style="width: 100%; text-align: left; background: none; border: none; color: #2ec4b6; padding: 6px; cursor: pointer; font-size: 13px;">âœï¸ Editar Nome</button>
+                                    <button id="inline-del-btn" style="width: 100%; text-align: left; background: none; border: none; color: #e71d36; padding: 6px; cursor: pointer; font-size: 13px;">ðŸ—‘ï¸ Excluir</button>
                                     ${whatsappHtml}
                                 </div>
                             `;
@@ -1134,7 +1134,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
     }
 
-    // ── Análise Global (Todas as Fazendas) ───────────────────────────
+    // â”€â”€ AnÃ¡lise Global (Todas as Fazendas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let globalAnalysisResults = { type: 'FeatureCollection', features: [] };
     let isGlobalAnalysisRunning = false;
     let cancelGlobalAnalysisFlag = false;
@@ -1151,12 +1151,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             if (isGlobalAnalysisRunning) return;
             cancelGlobalAnalysisFlag = false;
             
-            // Coletar todos os IDs de fazendas únicas que estão carregadas no mapa
+            // Coletar todos os IDs de fazendas Ãºnicas que estÃ£o carregadas no mapa
             const seenFarms = new Set();
             const farmsList = [];
             
             if (!window.loadedLayers) {
-                alert("O mapa ainda não terminou de carregar os dados das fazendas. Tente novamente em instantes.");
+                alert("O mapa ainda nÃ£o terminou de carregar os dados das fazendas. Tente novamente em instantes.");
                 return;
             }
 
@@ -1201,9 +1201,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             const resultMsg = document.getElementById('weed-general-result-msg');
 
             if(btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
-            if(btnCancel) { btnCancel.style.display = 'flex'; btnCancel.innerText = '🛑 Cancelar'; }
+            if(btnCancel) { btnCancel.style.display = 'flex'; btnCancel.innerText = 'ðŸ›‘ Cancelar'; }
             if(icon) icon.innerHTML = '<div style="width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div>';
-            if(text) text.innerText = 'Análise em Andamento...';
+            if(text) text.innerText = 'AnÃ¡lise em Andamento...';
             if(statusArea) statusArea.style.display = 'block';
             if(resultArea) resultArea.style.display = 'none';
             if(logArea) logArea.innerHTML = '';
@@ -1225,7 +1225,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
             for (let i = 0; i < totalFarms; i++) {
                 if (cancelGlobalAnalysisFlag) {
-                    addLog('🛑 ANÁLISE CANCELADA PELO USUÁRIO', '#ff9f1c');
+                    addLog('ðŸ›‘ ANÃLISE CANCELADA PELO USUÃRIO', '#ff9f1c');
                     break;
                 }
                 
@@ -1241,7 +1241,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 // Obter features da fazenda
                 const features = getFazendaFeatures(farm.originalId);
                 if (features.length === 0) {
-                    addLog(`Ignorando ${farm.name}: Sem polígonos válidos.`, '#ff9f1c');
+                    addLog(`Ignorando ${farm.name}: Sem polÃ­gonos vÃ¡lidos.`, '#ff9f1c');
                     failCount++;
                     continue;
                 }
@@ -1255,7 +1255,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 };
 
                 try {
-                    addLog(`Iniciando detecção para ${farm.name}...`);
+                    addLog(`Iniciando detecÃ§Ã£o para ${farm.name}...`);
                     const response = await fetch(`${API_URL}/analyze`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1264,7 +1264,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
                     if (!response.ok) {
                         const errData = await response.json().catch(() => ({}));
-                        const detail = errData.detail || 'Erro na requisição';
+                        const detail = errData.detail || 'Erro na requisiÃ§Ã£o';
                         addLog(`Erro em ${farm.name}: ${detail}`, '#ff6666');
                         failCount++;
                     } else {
@@ -1297,7 +1297,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         }
                     }
                 } catch (error) {
-                    addLog(`Exceção em ${farm.name}: Servidor não respondeu.`, '#ff6666');
+                    addLog(`ExceÃ§Ã£o em ${farm.name}: Servidor nÃ£o respondeu.`, '#ff6666');
                     failCount++;
                 }
             }
@@ -1306,8 +1306,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             if(progressBar) progressBar.style.width = '100%';
             if(btn) { btn.disabled = false; btn.style.opacity = '1'; }
             if(btnCancel) { btnCancel.style.display = 'none'; }
-            if(icon) icon.innerHTML = '🌎';
-            if(text) text.innerText = 'Iniciar Análise Global';
+            if(icon) icon.innerHTML = 'ðŸŒŽ';
+            if(text) text.innerText = 'Iniciar AnÃ¡lise Global';
 
             // Renderizar no mapa se encontrou reboleiras
             if (globalAnalysisResults.features.length > 0) {
@@ -1333,7 +1333,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
         window.downloadGlobalGeoJSON = function() {
             if (!globalAnalysisResults || !globalAnalysisResults.features || globalAnalysisResults.features.length === 0) {
-                alert('Não há dados de infestação global para exportar.');
+                alert('NÃ£o hÃ¡ dados de infestaÃ§Ã£o global para exportar.');
                 return;
             }
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(globalAnalysisResults));
@@ -1367,14 +1367,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     <div class="layer-subtitle" style="font-size: 9px; color: rgba(255, 255, 255, 0.4); margin-top: 2px;">Meus desenhos e rotas</div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span class="submenu-arrow" style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: bold; width: 16px; text-align: center;">▼</span>
+                    <span class="submenu-arrow" style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: bold; width: 16px; text-align: center;">â–¼</span>
                 </div>
             </div>
             <div class="layer-submenu" style="display: none; margin-top: 10px; margin-left: 35px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; padding-bottom: 5px;">
                 ${createSubLayerToggle('pontos', 'Pontos Marcados', '#e71d36')}
-                ${createSubLayerToggle('areas', 'Áreas Desenhadas', '#2ec4b6')}
-                ${createSubLayerToggle('medicao_area', 'Medição (Área)', '#2196f3')}
-                ${createSubLayerToggle('medicao_distancia', 'Medição (Distância)', '#9c27b0')}
+                ${createSubLayerToggle('areas', 'Ãreas Desenhadas', '#2ec4b6')}
+                ${createSubLayerToggle('medicao_area', 'MediÃ§Ã£o (Ãrea)', '#2196f3')}
+                ${createSubLayerToggle('medicao_distancia', 'MediÃ§Ã£o (DistÃ¢ncia)', '#9c27b0')}
                 ${createSubLayerToggle('rotas', 'Rotas Gravadas', '#ff9f1c')}
             </div>
         `;
@@ -1395,10 +1395,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         mainRow.addEventListener('click', () => {
             if (submenu.style.display === 'none') {
                 submenu.style.display = 'block';
-                arrow.innerHTML = '▲';
+                arrow.innerHTML = 'â–²';
             } else {
                 submenu.style.display = 'none';
-                arrow.innerHTML = '▼';
+                arrow.innerHTML = 'â–¼';
             }
         });
         
@@ -1463,7 +1463,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
         
         if (!fc.features || fc.features.length === 0) {
-            listDiv.innerHTML = '<div style="font-style: italic; opacity: 0.5;">Nenhuma feição salva.</div>';
+            listDiv.innerHTML = '<div style="font-style: italic; opacity: 0.5;">Nenhuma feiÃ§Ã£o salva.</div>';
             return;
         }
             
@@ -1487,7 +1487,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             });
             
             bulkDiv.querySelector('.bulk-del-all').addEventListener('click', async () => {
-                if (!(await window.agrogisConfirm(`Deseja apagar TODAS as feições desta categoria?`))) return;
+                if (!(await window.agrogisConfirm(`Deseja apagar TODAS as feiÃ§Ãµes desta categoria?`))) return;
                 const ids = fc.features.map(f => f.properties.id);
                 deleteCustomFeatures(type, ids);
             });
@@ -1524,8 +1524,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     <span class="feature-name-span" style="flex-grow: 1; cursor: pointer; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: #a8b8b0;">${name}</span>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         ${btnWapp}
-                        <button class="btn-edit" style="background:none; border:none; color:#2ec4b6; cursor:pointer;" title="Editar Nome">✏️</button>
-                        <button class="btn-delete" style="background:none; border:none; color:#e71d36; cursor:pointer;" title="Excluir">🗑️</button>
+                        <button class="btn-edit" style="background:none; border:none; color:#2ec4b6; cursor:pointer;" title="Editar Nome">âœï¸</button>
+                        <button class="btn-delete" style="background:none; border:none; color:#e71d36; cursor:pointer;" title="Excluir">ðŸ—‘ï¸</button>
                     </div>
                 `;
                 
@@ -1581,8 +1581,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         `;
     }
 
-    // ── Remover Inicialização Antiga ──
-    // Foi movida para dentro do tryInitLayers() para rodar após carregar as fazendas.
+    // â”€â”€ Remover InicializaÃ§Ã£o Antiga â”€â”€
+    // Foi movida para dentro do tryInitLayers() para rodar apÃ³s carregar as fazendas.
 
     // Search functionality - Locate Fazenda
     const searchInput = document.getElementById('layer-search');
@@ -1891,11 +1891,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     document.getElementById('tool-measure-save').addEventListener('click', async () => {
         if (!measureActive || measurePoints.length < 2) {
-            alert('Por favor, faça uma medição no mapa antes de salvar.');
+            alert('Por favor, faÃ§a uma mediÃ§Ã£o no mapa antes de salvar.');
             return;
         }
         
-        const confirmSave = await window.agrogisConfirm('Deseja salvar esta medição nas Minhas Camadas?');
+        const confirmSave = await window.agrogisConfirm('Deseja salvar esta mediÃ§Ã£o nas Minhas Camadas?');
         if (!confirmSave) return;
         
         let type, feature, valueStr;
@@ -1923,7 +1923,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
         
         feature.properties.NOME = valueStr;
-        feature.properties.TIPO = 'Medição OCG';
+        feature.properties.TIPO = 'MediÃ§Ã£o OCG';
         
         saveCustomFeature(type, feature);
         
@@ -1934,7 +1934,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             cb.dispatchEvent(new Event('change'));
         }
         
-        alert('Medição salva com sucesso em Minhas Camadas!');
+        alert('MediÃ§Ã£o salva com sucesso em Minhas Camadas!');
         deactivateMeasure(); // Auto-close tool after saving
     });
 
@@ -2105,7 +2105,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     map.on('locationerror', (e) => {
         if (gpsActive) {
-            console.warn('Não foi possível acessar a localização do dispositivo: ' + e.message);
+            console.warn('NÃ£o foi possÃ­vel acessar a localizaÃ§Ã£o do dispositivo: ' + e.message);
         }
     });
 
@@ -2143,9 +2143,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 const latlng = window._agrogis_gpsMarker.getLatLng();
                 // Set origin mode to properly update state and text
                 window.routeSelectionMode = 'origin';
-                window.setRouteWaypoint('Minha Localização', latlng.lat, latlng.lng);
+                window.setRouteWaypoint('Minha LocalizaÃ§Ã£o', latlng.lat, latlng.lng);
             } else {
-                alert('Aguarde o GPS encontrar sua localização primeiro.');
+                alert('Aguarde o GPS encontrar sua localizaÃ§Ã£o primeiro.');
             }
         });
     }
@@ -2329,7 +2329,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         // Check if L.Routing is available (Leaflet Routing Machine)
         if (typeof L.Routing === 'undefined') {
-            alert('Erro: Sistema de rotas não está carregado.');
+            alert('Erro: Sistema de rotas nÃ£o estÃ¡ carregado.');
             return;
         }
 
@@ -2469,7 +2469,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         drawMode = 'area';
         btnDrawArea.style.boxShadow = '0 0 10px #2ec4b6';
         btnDrawPoint.style.boxShadow = 'none';
-        drawStatus.textContent = 'Clique no mapa para marcar os vértices (mín. 3)';
+        drawStatus.textContent = 'Clique no mapa para marcar os vÃ©rtices (mÃ­n. 3)';
         drawStatus.style.display = 'block';
         btnFinishArea.style.display = 'block';
         map.getContainer().style.cursor = 'crosshair';
@@ -2514,7 +2514,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     saveCustomFeature('pontos', feature);
                     
                     // Offer to share immediately
-                    if (await window.agrogisConfirm(`Ponto "${name}" salvo com sucesso!\n\nDeseja compartilhar a localização agora pelo WhatsApp?`)) {
+                    if (await window.agrogisConfirm(`Ponto "${name}" salvo com sucesso!\n\nDeseja compartilhar a localizaÃ§Ã£o agora pelo WhatsApp?`)) {
                         const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
                         const message = encodeURIComponent(`Veja o ponto "${name}": ${gmapsUrl}`);
                         window.location.href = `https://api.whatsapp.com/send?text=${message}`;
@@ -2534,8 +2534,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
             setTimeout(() => {
                 Swal.fire({
-                    title: 'Compartilhar localização?',
-                    text: 'Deseja compartilhar esta localização no WhatsApp?',
+                    title: 'Compartilhar localizaÃ§Ã£o?',
+                    text: 'Deseja compartilhar esta localizaÃ§Ã£o no WhatsApp?',
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#25d366',
@@ -2547,7 +2547,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 }).then((result) => {
                     if (result.isConfirmed) {
                         const gmapsUrl = `https://maps.google.com/?q=${latlng.lat},${latlng.lng}`;
-                        const message = encodeURIComponent(`Veja esta localização: ${gmapsUrl}`);
+                        const message = encodeURIComponent(`Veja esta localizaÃ§Ã£o: ${gmapsUrl}`);
                         window.location.href = `https://api.whatsapp.com/send?text=${message}`;
                     }
                     map.removeLayer(tempMarker);
@@ -2574,7 +2574,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     btnFinishArea.addEventListener('click', () => {
         if (currentPolygonPoints.length < 3) {
-            alert('Um polígono precisa de no mínimo 3 pontos!');
+            alert('Um polÃ­gono precisa de no mÃ­nimo 3 pontos!');
             return;
         }
         
@@ -2594,7 +2594,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     properties: { NOME: name, AREA_HA: areaHa, TIPO: 'Area' }
                 };
                 saveCustomFeature('areas', feature);
-                alert(`Área "${name}" (${areaHa} ha) salva!`);
+                alert(`Ãrea "${name}" (${areaHa} ha) salva!`);
             }
             resetDraw();
         });
@@ -2665,7 +2665,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (!isRecording) {
             // Start recording
             if (!navigator.geolocation) {
-                alert("Seu navegador/dispositivo não suporta gravação de GPS.");
+                alert("Seu navegador/dispositivo nÃ£o suporta gravaÃ§Ã£o de GPS.");
                 return;
             }
             
@@ -2731,7 +2731,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     btnSaveRecord.addEventListener('click', () => {
         if (recordPoints.length < 2) {
-            alert('A rota é muito curta para ser salva.');
+            alert('A rota Ã© muito curta para ser salva.');
             return;
         }
         // Pause first
@@ -2783,24 +2783,24 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
 });
 
-// ═══════════════════════════════════════════════════════════════════
-//  MÓDULO DE DETECÇÃO DE ERVAS DANINHAS — Satellite Weed Detection
-//  Integração com FastAPI backend via Microsoft Planetary Computer
-//  v2.0 — Análise por Fazenda + Pesquisa + Botão na Aba Ferramentas
-// ═══════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  MÃ“DULO DE DETECÃ‡ÃƒO DE ERVAS DANINHAS â€” Satellite Weed Detection
+//  IntegraÃ§Ã£o com FastAPI backend via Microsoft Planetary Computer
+//  v2.0 â€” AnÃ¡lise por Fazenda + Pesquisa + BotÃ£o na Aba Ferramentas
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 (function() {
     const API_URL = 'http://localhost:8000';
 
     // Estado
-    let selectedFazendaFeatures = [];  // Todos os talhões da fazenda selecionada
+    let selectedFazendaFeatures = [];  // Todos os talhÃµes da fazenda selecionada
     let selectedFazendaName = '';
     let weedResultGeoJSON = null;
     let weedSearchResultGeoJSON = null;
     let weedLayer = null;
     let apiOnline = false;
-    let weedToolActive = false;        // Ferramenta ativa via botão Ferramentas
+    let weedToolActive = false;        // Ferramenta ativa via botÃ£o Ferramentas
 
-    // Elementos DOM — Painel principal
+    // Elementos DOM â€” Painel principal
     const panel        = document.getElementById('weed-analysis-panel');
     const btnClose     = document.getElementById('weed-panel-close');
     const btnAnalyze   = document.getElementById('btn-weed-analyze');
@@ -2824,7 +2824,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     const toolDot      = document.getElementById('weed-tool-status-dot');
     const toolWeedBtn  = document.getElementById('tool-weed-btn');
 
-    // Elementos DOM — Aba Pesquisa
+    // Elementos DOM â€” Aba Pesquisa
     const weedSearchInput      = document.getElementById('weed-search-input');
     const searchDatalist   = document.getElementById('weed-fazendas-datalist');
     const btnSearchAnalyze = document.getElementById('btn-weed-search-analyze');
@@ -2838,7 +2838,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     const searchApiOffline = document.getElementById('weed-search-api-offline');
     const btnSearchClear   = document.getElementById('btn-weed-search-clear');
 
-    // ── Tab Switcher (acessível globalmente para o onclick no HTML) ──
+    // â”€â”€ Tab Switcher (acessÃ­vel globalmente para o onclick no HTML) â”€â”€
     window.weedSwitchTab = function(tab) {
         const mapContent    = document.getElementById('weed-tab-content-map');
         const searchContent = document.getElementById('weed-tab-content-search');
@@ -2879,7 +2879,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
     };
 
-    // ── Saúde da API ─────────────────────────────────────────────────
+    // â”€â”€ SaÃºde da API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function checkApiHealth() {
         fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(3000) })
             .then(r => r.ok ? r.json() : Promise.reject())
@@ -2903,14 +2903,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     setInterval(checkApiHealth, 10000);
     checkApiHealth();
 
-    // ── Botão na aba Ferramentas ──────────────────────────────────────
+    // â”€â”€ BotÃ£o na aba Ferramentas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (toolWeedBtn) {
         toolWeedBtn.addEventListener('click', () => {
             weedToolActive = !weedToolActive;
             if (weedToolActive) {
                 toolWeedBtn.style.background = 'rgba(255,0,0,0.2)';
                 toolWeedBtn.style.borderColor = '#ff1744';
-                toolWeedBtn.title = 'Ferramenta ativa — Clique em um talhão para analisar a fazenda';
+                toolWeedBtn.title = 'Ferramenta ativa â€” Clique em um talhÃ£o para analisar a fazenda';
                 // Abrir painel
                 if (panel) panel.style.display = 'block';
                 document.getElementById('floating-tools-panel').style.display = 'none';
@@ -2927,11 +2927,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             } else {
                 toolWeedBtn.style.background = 'rgba(255,0,0,0.08)';
                 toolWeedBtn.style.borderColor = 'rgba(255,0,0,0.3)';
-                toolWeedBtn.title = 'Identificar infestação de ervas daninhas por satélite';
+                toolWeedBtn.title = 'Identificar infestaÃ§Ã£o de ervas daninhas por satÃ©lite';
                 
-                // Desligar servidor via pywebview se houver botão para desligar, 
-                // mas espera, o botão de fechar painel é quem desativa a ferramenta geralmente,
-                // no entanto se clicar no ícone denovo também deve desligar.
+                // Desligar servidor via pywebview se houver botÃ£o para desligar, 
+                // mas espera, o botÃ£o de fechar painel Ã© quem desativa a ferramenta geralmente,
+                // no entanto se clicar no Ã­cone denovo tambÃ©m deve desligar.
                 if (window.pywebview && window.pywebview.api) {
                     window.pywebview.api.stop_server().then(res => console.log(res));
                 }
@@ -2939,11 +2939,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         });
     }
 
-    // ── Coletador de features da fazenda a partir do GeoJSON carregado ─
+    // â”€â”€ Coletador de features da fazenda a partir do GeoJSON carregado â”€
     function getFazendaFeatures(fazendaId) {
         const results = [];
         if (!window.loadedLayers) return results;
-        // Função para extrair apenas a parte inteira do ID (ex: "9902,0" -> "9902")
+        // FunÃ§Ã£o para extrair apenas a parte inteira do ID (ex: "9902,0" -> "9902")
         const cleanId = (id) => String(id || '').split(',')[0].split('.')[0].trim();
         const baseTargetId = cleanId(fazendaId);
         if (!baseTargetId) return results;
@@ -2957,7 +2957,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 if (!props) return;
                 const fid = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
                 if (fid && cleanId(fid) === baseTargetId) {
-                    // Evitar duplicatas se houver mais de uma camada com os mesmos talhões (ex: Variedades)
+                    // Evitar duplicatas se houver mais de uma camada com os mesmos talhÃµes (ex: Variedades)
                     const uniqueKey = props.TALHAO || props.COD_TALHAO || JSON.stringify(layer.feature.geometry.coordinates?.[0]?.[0] || Math.random());
                     if (!seenPolys.has(uniqueKey)) {
                         seenPolys.add(uniqueKey);
@@ -2989,7 +2989,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim().toLowerCase();
                 const combinedStr = cleanIdStr ? `${cleanIdStr} - ${nameStr}` : nameStr;
                 
-                // Tenta combinar nome, string combinada ou ser exatamente igual ao código
+                // Tenta combinar nome, string combinada ou ser exatamente igual ao cÃ³digo
                 if ((nameStr && (nameStr.includes(searchName) || searchName.includes(nameStr))) ||
                     (combinedStr && (combinedStr.includes(searchName) || searchName.includes(combinedStr))) ||
                     (cleanIdStr && cleanIdStr === searchName)) {
@@ -2998,14 +2998,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             });
         });
 
-        // Se encontrou o ID, retorna todos os talhões dessa fazenda pelo ID
+        // Se encontrou o ID, retorna todos os talhÃµes dessa fazenda pelo ID
         if (matchedId) {
             return getFazendaFeatures(matchedId);
         }
         return [];
     }
 
-    // ── Popula o datalist de pesquisa ────────────────────────────────
+    // â”€â”€ Popula o datalist de pesquisa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function populateFazendaSearch() {
         if (!searchDatalist) return;
         searchDatalist.innerHTML = '';
@@ -3035,19 +3035,19 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         });
     }
 
-    // ── Abre o painel ao clicar no talhão ────────────────────────────
+    // â”€â”€ Abre o painel ao clicar no talhÃ£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     window.openWeedAnalysisPanel = function(feature, props) {
         const codTal  = props.COD_TALHAO || props.TALHAO || '';
         const nomeFaz = props.NOME_FAZ || props['DL DESCFUNDOA'] || 'Fazenda';
         const fazId   = props.FAZENDA || props['DL FUNDOAGRIC'] || '';
 
-        // Quando clica no mapa, analisa APENAS o talhão clicado
+        // Quando clica no mapa, analisa APENAS o talhÃ£o clicado
         selectedFazendaFeatures = [feature];
         selectedFazendaName = nomeFaz;
 
         // Atualizar UI
-        if (talhaoName) talhaoName.textContent = `Talhão ${codTal} — ${nomeFaz}`;
-        if (talhaoInfo) talhaoInfo.textContent = `Fazenda ID: ${fazId} · Apenas este talhão`;
+        if (talhaoName) talhaoName.textContent = `TalhÃ£o ${codTal} â€” ${nomeFaz}`;
+        if (talhaoInfo) talhaoInfo.textContent = `Fazenda ID: ${fazId} Â· Apenas este talhÃ£o`;
         if (fazendaBadge) {
             fazendaBadge.style.display = 'inline-flex';
             if (fazCountEl) fazCountEl.textContent = '1';
@@ -3076,22 +3076,22 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (apiOffline) apiOffline.style.display = 'none';
         const icon = document.getElementById('weed-btn-icon');
         const text = document.getElementById('weed-btn-text');
-        if (icon) icon.textContent = '🔍';
-        if (text) text.textContent = 'Identificar Infestação na Fazenda';
+        if (icon) icon.textContent = 'ðŸ”';
+        if (text) text.textContent = 'Identificar InfestaÃ§Ã£o na Fazenda';
         ['step-search','step-download','step-ndvi','step-detect'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) { el.style.color = 'rgba(255,255,255,0.3)'; el.style.fontWeight = 'normal'; const ico = el.querySelector('.step-icon'); if(ico) ico.textContent = {'step-search':'⏳','step-download':'⬇️','step-ndvi':'📊','step-detect':'🔍'}[id] || '⏳'; }
+            if (el) { el.style.color = 'rgba(255,255,255,0.3)'; el.style.fontWeight = 'normal'; const ico = el.querySelector('.step-icon'); if(ico) ico.textContent = {'step-search':'â³','step-download':'â¬‡ï¸','step-ndvi':'ðŸ“Š','step-detect':'ðŸ”'}[id] || 'â³'; }
         });
     }
 
     function activateStep(id) { const el = document.getElementById(id); if(el){el.style.color='#ff9f1c';el.style.fontWeight='600';}}
-    function completeStep(id) { const el = document.getElementById(id); if(el){el.style.color='#2ec4b6'; const ic=el.querySelector('.step-icon'); if(ic) ic.textContent='✅';}}
+    function completeStep(id) { const el = document.getElementById(id); if(el){el.style.color='#2ec4b6'; const ic=el.querySelector('.step-icon'); if(ic) ic.textContent='âœ…';}}
 
-    // ── Cria GeoJSON union da fazenda ─────────────────────────────────
+    // â”€â”€ Cria GeoJSON union da fazenda â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function buildFazendaUnionGeoJSON(features) {
         // Retorna um GeoJSON GeometryCollection / Feature simples com bbox da fazenda
         if (features.length === 1) return features[0];
-        // Cria um Feature com GeometryCollection para enviar à API
+        // Cria um Feature com GeometryCollection para enviar Ã  API
         return {
             type: 'Feature',
             properties: features[0].properties || {},
@@ -3102,7 +3102,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         };
     }
 
-    // ── Análise pelo Mapa ─────────────────────────────────────────────
+    // â”€â”€ AnÃ¡lise pelo Mapa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function runAnalysis() {
         if (!selectedFazendaFeatures.length || !apiOnline) return;
         const firstProps = selectedFazendaFeatures[0].properties || {};
@@ -3111,8 +3111,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (resultArea) resultArea.style.display = 'none';
         if (btnAnalyze) {
             btnAnalyze.disabled = true;
-            document.getElementById('weed-btn-icon').textContent = '⏳';
-            document.getElementById('weed-btn-text').textContent = `Analisando ${selectedFazendaFeatures.length} talhão(ões)...`;
+            document.getElementById('weed-btn-icon').textContent = 'â³';
+            document.getElementById('weed-btn-text').textContent = `Analisando ${selectedFazendaFeatures.length} talhÃ£o(Ãµes)...`;
         }
 
         activateStep('step-search');
@@ -3140,7 +3140,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
             completeStep('step-search'); completeStep('step-download'); completeStep('step-ndvi'); completeStep('step-detect');
 
-            if (!response.ok) throw new Error((await response.json()).detail || 'Erro na análise');
+            if (!response.ok) throw new Error((await response.json()).detail || 'Erro na anÃ¡lise');
             const result = await response.json();
 
             if (resultArea) resultArea.style.display = 'block';
@@ -3152,8 +3152,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 if (resultStats) resultStats.style.display = 'block';
                 if (statHa)    statHa.textContent    = result.total_infested_ha;
                 if (statCount) statCount.textContent = result.reboleiras.length;
-                if (statDate)  statDate.textContent  = result.satellite_date || '—';
-                if (statCloud) statCloud.textContent = result.cloud_cover ? result.cloud_cover.toFixed(0) : '—';
+                if (statDate)  statDate.textContent  = result.satellite_date || 'â€”';
+                if (statCloud) statCloud.textContent = result.cloud_cover ? result.cloud_cover.toFixed(0) : 'â€”';
                 if (exportBtns) exportBtns.style.display = 'flex';
             } else {
                 weedResultGeoJSON = null;
@@ -3163,18 +3163,18 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         } catch(err) {
             clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
             if (resultArea) resultArea.style.display = 'block';
-            if (resultMsg) { resultMsg.textContent = `❌ ${err.message}`; resultMsg.style.borderLeftColor = '#ff9f1c'; }
+            if (resultMsg) { resultMsg.textContent = `âŒ ${err.message}`; resultMsg.style.borderLeftColor = '#ff9f1c'; }
         } finally {
             if (btnAnalyze) {
                 btnAnalyze.disabled = false;
-                document.getElementById('weed-btn-icon').textContent = '🔄';
+                document.getElementById('weed-btn-icon').textContent = 'ðŸ”„';
                 document.getElementById('weed-btn-text').textContent = 'Analisar Novamente';
                 updateAnalyzeButton();
             }
         }
     }
 
-    // ── Análise pela pesquisa de fazenda ─────────────────────────────
+    // â”€â”€ AnÃ¡lise pela pesquisa de fazenda â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function runSearchAnalysis() {
         if (!weedSearchInput || !weedSearchInput.value.trim()) {
             alert('Digite o nome de uma fazenda para analisar.'); return;
@@ -3188,16 +3188,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
         if (features.length === 0) {
             if (searchResultArea) searchResultArea.style.display = 'block';
-            if (searchResultMsg) searchResultMsg.textContent = `❌ Nenhum talhão encontrado para: "${nomeBusca}"`;
+            if (searchResultMsg) searchResultMsg.textContent = `âŒ Nenhum talhÃ£o encontrado para: "${nomeBusca}"`;
             return;
         }
 
         if (btnSearchAnalyze) {
             btnSearchAnalyze.disabled = true;
-            btnSearchAnalyze.textContent = `⏳ Analisando ${features.length} talhão(ões)...`;
+            btnSearchAnalyze.textContent = `â³ Analisando ${features.length} talhÃ£o(Ãµes)...`;
         }
         if (searchResultArea) searchResultArea.style.display = 'block';
-        if (searchResultMsg) searchResultMsg.textContent = `🛰️ Buscando imagens para "${nomeBusca}" (${features.length} talhões)...`;
+        if (searchResultMsg) searchResultMsg.textContent = `ðŸ›°ï¸ Buscando imagens para "${nomeBusca}" (${features.length} talhÃµes)...`;
         if (searchResultStats) searchResultStats.style.display = 'none';
 
         try {
@@ -3232,8 +3232,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 
                 const searchStatDate = document.getElementById('weed-search-stat-date');
                 const searchStatCloud = document.getElementById('weed-search-stat-cloud');
-                if (searchStatDate) searchStatDate.textContent = result.satellite_date || '—';
-                if (searchStatCloud) searchStatCloud.textContent = (result.cloud_cover !== undefined && result.cloud_cover !== null) ? Number(result.cloud_cover).toFixed(0) : '—';
+                if (searchStatDate) searchStatDate.textContent = result.satellite_date || 'â€”';
+                if (searchStatCloud) searchStatCloud.textContent = (result.cloud_cover !== undefined && result.cloud_cover !== null) ? Number(result.cloud_cover).toFixed(0) : 'â€”';
                 // Voar para a fazenda
                 if (weedLayer && weedLayer.getBounds().isValid()) {
                     window.map.flyToBounds(weedLayer.getBounds(), { padding: [80, 80], duration: 2 });
@@ -3243,16 +3243,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 if (searchResultStats) searchResultStats.style.display = 'none';
             }
         } catch(err) {
-            if (searchResultMsg) { searchResultMsg.textContent = `❌ ${err.message}`; }
+            if (searchResultMsg) { searchResultMsg.textContent = `âŒ ${err.message}`; }
         } finally {
             if (btnSearchAnalyze) {
                 btnSearchAnalyze.disabled = false;
-                btnSearchAnalyze.textContent = '🔍 Analisar Esta Fazenda';
+                btnSearchAnalyze.textContent = 'ðŸ” Analisar Esta Fazenda';
             }
         }
     }
 
-    // ── Renderizar e limpar camada ────────────────────────────────────
+    // â”€â”€ Renderizar e limpar camada â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function renderWeedLayer(geojsonCollection) {
         if (!window.map) return;
         clearWeedLayer();
@@ -3260,12 +3260,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             style: { color: '#D32F2F', weight: 2, fillColor: '#FF0000', fillOpacity: 0.75 },
             onEachFeature: (feature, layer) => {
                 const p = feature.properties || {};
-                const m2 = p.area_m2 ? p.area_m2.toLocaleString('pt-BR') : '—';
+                const m2 = p.area_m2 ? p.area_m2.toLocaleString('pt-BR') : 'â€”';
                 layer.bindPopup(`
                     <div style="font-family:'Inter',sans-serif; min-width:160px;">
-                        <div style="font-weight:700;color:#FF0000;margin-bottom:8px;font-size:13px;">🌿 Foco de Infestação</div>
-                        <div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:4px;"><span>Área:</span><strong>${m2} m²</strong></div>
-                        <div style="font-size:12px;display:flex;justify-content:space-between;"><span>Hectares:</span><strong>${p.area_ha || '—'} ha</strong></div>
+                        <div style="font-weight:700;color:#FF0000;margin-bottom:8px;font-size:13px;">ðŸŒ¿ Foco de InfestaÃ§Ã£o</div>
+                        <div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:4px;"><span>Ãrea:</span><strong>${m2} mÂ²</strong></div>
+                        <div style="font-size:12px;display:flex;justify-content:space-between;"><span>Hectares:</span><strong>${p.area_ha || 'â€”'} ha</strong></div>
                     </div>`, { className: 'weed-popup' });
             }
         }).addTo(window.map);
@@ -3286,7 +3286,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (weedLayer && window.map) { window.map.removeLayer(weedLayer); weedLayer = null; }
     }
 
-    // ── Exportadores ──────────────────────────────────────────────────
+    // â”€â”€ Exportadores â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function downloadBlob(content, filename, mime) {
         const blob = new Blob([content], { type: mime });
         const url = URL.createObjectURL(blob);
@@ -3306,7 +3306,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const placemarks = features.map((f, i) => {
             const area = f.properties.area_m2 || 0;
             const coordStr = geomToKML(f.geometry);
-            return `<Placemark><name>Foco ${i+1} (${area.toLocaleString('pt-BR')} m²)</name><Style><LineStyle><color>ff0000ff</color><width>2</width></LineStyle><PolyStyle><color>bf0000ff</color></PolyStyle></Style>${coordStr}</Placemark>`;
+            return `<Placemark><name>Foco ${i+1} (${area.toLocaleString('pt-BR')} mÂ²)</name><Style><LineStyle><color>ff0000ff</color><width>2</width></LineStyle><PolyStyle><color>bf0000ff</color></PolyStyle></Style>${coordStr}</Placemark>`;
         }).join('');
         const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Reboleiras ${prefix}</name>${placemarks}</Document></kml>`;
         downloadBlob(kml, `reboleiras_${(prefix||'').replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().slice(0,10)}.kml`, 'application/vnd.google-earth.kml+xml');
@@ -3322,7 +3322,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         return '';
     }
 
-    // ── Listeners ─────────────────────────────────────────────────────
+    // â”€â”€ Listeners â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (btnAnalyze)      btnAnalyze.addEventListener('click', runAnalysis);
     if (weedSearchInput) {
         weedSearchInput.addEventListener('focus', populateFazendaSearch);
