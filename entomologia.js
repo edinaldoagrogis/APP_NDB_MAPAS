@@ -258,7 +258,7 @@
         const btn = document.getElementById('tool-entomologia-btn');
         if (btn) btn.style.opacity = '0.5';
 
-        fetch('/api/login', {
+        fetch('https://app-ndb-mapas.vercel.app/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: currentUser, password: 'ndb_mapas' })
@@ -549,7 +549,7 @@
         try {
             const currentUser = localStorage.getItem('agrogis_current_user') || 'Desconhecido';
             
-            const res = await fetch('/api/syncEntomologia', {
+            const res = await fetch('https://app-ndb-mapas.vercel.app/api/syncEntomologia', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -370,7 +370,7 @@
             btnLoginAdmin.textContent = 'Verificando...';
             
             try {
-                const res = await fetch('/api/getUsers', {
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/getUsers', {
                     headers: { 'Authorization': `Bearer ${adminToken}` }
                 });
                 
@@ -392,7 +392,7 @@
             usersBody.innerHTML = '';
             
             try {
-                const res = await fetch('/api/getUsers', {
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/getUsers', {
                     headers: { 'Authorization': `Bearer ${adminToken}` }
                 });
                 
@@ -459,7 +459,7 @@
 
         window.toggleUser = async function(username, isActive) {
             try {
-                const res = await fetch('/api/toggleUser', {
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/toggleUser', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -487,7 +487,7 @@
 
         window.toggleUpdate = async function(username, receives) {
             try {
-                const res = await fetch('/api/toggleUpdate', {
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/toggleUpdate', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -510,7 +510,7 @@
 
         window.toggleEntomologia = async function(username, hasAccess) {
             try {
-                const res = await fetch('/api/toggleEntomologia', {
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/toggleEntomologia', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -533,7 +533,7 @@
         
         window.changeLevel = async function(username, levelValue) {
             try {
-                const res = await fetch('/api/changeLevel', {
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/changeLevel', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -566,7 +566,7 @@
             }
 
             try {
-                const res = await fetch('/api/bulkToggle', {
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/bulkToggle', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',

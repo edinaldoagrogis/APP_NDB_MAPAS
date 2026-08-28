@@ -371,7 +371,7 @@
 
             try {
                 // Pega dados da nuvem e limpa de lá
-                const res = await fetch('/api/getSyncEntomologia?clear=true');
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/getSyncEntomologia?clear=true');
                 if (!res.ok) throw new Error("Erro de comunicação com o servidor.");
 
                 const json = await res.json();

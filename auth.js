@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentUser) {
             // Wait 2 seconds so it doesn't delay the initial map rendering
             setTimeout(() => {
-                fetch('/api/login', {
+                fetch('https://app-ndb-mapas.vercel.app/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     // Using the standard password since it's hardcoded for all users anyway
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnLogin.textContent = 'Verificando...';
             btnLogin.disabled = true;
 
-            const res = await fetch('/api/login', {
+            const res = await fetch('https://app-ndb-mapas.vercel.app/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 

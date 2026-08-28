@@ -294,7 +294,7 @@ async function fetchINCRAData(lon, lat) {
                 const tol = 0.01;
                 const bbox = `${lon-tol},${lat-tol},${lon+tol},${lat+tol}`;
                 const rawUrl = `https://acervofundiario.incra.gov.br/i3geo/ogc.php?tema=${typeName}&service=WFS&version=1.0.0&request=GetFeature&maxfeatures=1&bbox=${bbox}`;
-                const wfsUrl = `/api/incraProxy?url=${encodeURIComponent(rawUrl)}`;
+                const wfsUrl = `https://app-ndb-mapas.vercel.app/api/incraProxy?url=${encodeURIComponent(rawUrl)}`;
                 
                 try {
                     const response = await fetch(wfsUrl);
