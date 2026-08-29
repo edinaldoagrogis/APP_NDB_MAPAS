@@ -314,9 +314,10 @@ async function fetchRealNDRE(bbox, dateStr, logFn) {
 
     const b05 = (stats05.b1 || stats05['1']).mean / 10000;
     const b07 = (stats07.b1 || stats07['1']).mean / 10000;
-    const ndre = (b07 - b05) / (b07 + b05);
+    const denominator = b07 + b05;
+    const ndre = denominator === 0 ? NaN : (b07 - b05) / denominator;
 
-    logFn('📊 B05 (RedEdge): ' + b05.toFixed(4) + ' | B07 (NIR): ' + b07.toFixed(4) + ' | NDRE: ' + ndre.toFixed(4));
+    logFn('📊 B05 (RedEdge): ' + b05.toFixed(4) + ' | B07 (NIR): ' + b07.toFixed(4) + ' | NDRE: ' + (isNaN(ndre) ? 'NaN' : ndre.toFixed(4)));
 
     return { ndre, sceneDate, sceneId: scene.id, cloudCover: cc };
 }
@@ -460,16 +461,32 @@ async function handleProcessAnalysis(e) {
         const d0 = new Date(d0Str), dt = new Date(dtStr);
         const daysElapsed = Math.round((dt - d0) / (1000 * 60 * 60 * 24));
 
-        // Para evitar dados falsos, se as DUAS falharem, mostramos erro ao invés de simular.
-        if (!ndreD0 && !ndreDt) {
-            alert('Não foi possível recuperar dados de satélite para esta área nas datas selecionadas. Tente ampliar o intervalo ou aguarde uma nova passagem do satélite sem nuvens.');
+        // Para evitar dados falsos, exigimos que as DUAS datas tenham leitura real.
+        if (!ndreD0 || !ndreDt || isNaN(ndreD0.ndre) || isNaN(ndreDt.ndre)) {
+            alert('Não foi possível recuperar dados de satélite limpos para as DUAS datas selecionadas (nuvens ou indisponibilidade). O cálculo de maturação requer leitura real em ambas as datas para ser preciso.');
             return;
         }
 
-        // Se uma delas faltar, tentamos derivar uma da outra para o cálculo,
-        // MAS sem usar números mágicos aleatórios falsos.
-        const ndreBaseVal = ndreD0 ? ndreD0.ndre : (ndreDt.ndre + 0.15); // Deriva para cima grosseiramente
-        const ndreAtualVal = ndreDt ? ndreDt.ndre : (ndreD0.ndre - 0.15); // Deriva para baixo grosseiramente
+        const ndreBaseVal = ndreD0.ndre;
+        const ndreAtualVal = ndreDt.ndre;
+
+        // Queda brusca do dossel (área colhida entre D0 e Dt ou nuvem densa no pixel)
+        if (ndreBaseVal > 0.20 && ndreAtualVal < 0.15) {
+            document.getElementById('status-badge').textContent = 'COLHIDA / ANOMALIA';
+            document.getElementById('status-badge').className = 'badge status-early';
+            document.getElementById('percentage-value').textContent = 'N/A';
+            document.getElementById('days-elapsed').textContent = daysElapsed + ' dias';
+            document.getElementById('ndre-base').textContent = ndreBaseVal.toFixed(4) + ' ✓';
+            document.getElementById('ndre-current').textContent = ndreAtualVal.toFixed(4) + ' ✓';
+            document.getElementById('ndre-delta').textContent = 'Queda brusca';
+            document.getElementById('days-remaining').textContent = 'Área sem dossel foliar';
+            document.getElementById('diagnostic-result').style.display = 'block';
+            document.getElementById('diagnostic-empty').style.display = 'none';
+
+            renderTalhaoOnMap(geojson, ndreDt);
+            renderChart(d0, 30, ndreBaseVal, ndreAtualVal, daysElapsed, ndreD0, ndreDt);
+            return;
+        }
 
         // Identificação real de solo exposto/preparo
         if (ndreBaseVal < 0.20 && ndreAtualVal < 0.20) {
