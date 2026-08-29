@@ -228,10 +228,10 @@ async function findBestSentinel2Scene(bbox, targetDateStr) {
     const start = new Date(target); start.setDate(start.getDate() - 25);
     const end   = new Date(target); end.setDate(end.getDate() + 25);
 
-    const startStr = start.toISOString().split('T')[0];
-    const endStr   = end.toISOString().split('T')[0];
+    // RFC3339 format exigido pelo EarthSearch
+    const startStr = start.toISOString();
+    const endStr   = end.toISOString();
 
-    // Corpo compatível com EarthSearch v1 e Planetary Computer
     const body = {
         collections: [SENTINEL_COLLECTION],
         bbox: bbox,
@@ -240,22 +240,17 @@ async function findBestSentinel2Scene(bbox, targetDateStr) {
         limit: 5
     };
 
-    // Tenta Element84 primeiro, depois Planetary Computer como fallback
-    const endpoints = [
-        'https://earth-search.aws.element84.com/v1/search',
-        'https://planetarycomputer.microsoft.com/api/stac/v1/search'
-    ];
+    // Usando EarthSearch v1 (Planetary Computer foi removido pois TiTiler exige SAS token)
+    const endpoint = 'https://earth-search.aws.element84.com/v1/search';
 
-    for (const endpoint of endpoints) {
-        try {
-            const resp = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
+    try {
+        const resp = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
 
-            if (!resp.ok) continue; // tenta próximo endpoint
-
+        if (resp.ok) {
             const data = await resp.json();
             if (data.features && data.features.length > 0) {
                 // Ordena pelo menor cloud cover
@@ -264,14 +259,12 @@ async function findBestSentinel2Scene(bbox, targetDateStr) {
                 );
                 return data.features[0];
             }
-        } catch (err) {
-            continue; // tenta próximo endpoint
         }
+    } catch (err) {
+        console.error('STAC search error:', err);
     }
-
     return null; // nenhuma cena encontrada
 }
-
 
 // ============================================================
 // TITILER: BUSCAR ESTATÍSTICAS DE BANDA
@@ -294,7 +287,7 @@ async function fetchRealNDRE(bbox, dateStr, logFn) {
     const scene = await findBestSentinel2Scene(bbox, dateStr);
 
     if (!scene) {
-        logFn('⚠️ Nenhuma cena encontrada para ' + dateStr + ' (nuvens ou sem dados). Usando estimativa.');
+        logFn('⚠️ Nenhuma cena encontrada para ' + dateStr + ' (nuvens ou sem dados).');
         return null;
     }
 
@@ -308,7 +301,7 @@ async function fetchRealNDRE(bbox, dateStr, logFn) {
     const nirUrl = (assets.rededge3 || assets.B07 || assets.nir08 || assets.B08 || {}).href;
 
     if (!rededgeUrl || !nirUrl) {
-        logFn('⚠️ URLs das bandas não encontradas. Usando estimativa.');
+        logFn('⚠️ URLs das bandas não encontradas.');
         return null;
     }
 
@@ -356,7 +349,6 @@ function renderTalhaoOnMap(geojson, ndreResult) {
 
 // ============================================================
 // RASTER CANVAS COM CLIPPING NOS POLÍGONOS
-// (Se tivermos NDRE real, usa paleta de cores baseada no valor real)
 // ============================================================
 function generateNDRERaster(bounds, geojson, ndreResult) {
     const canvas = document.createElement('canvas');
@@ -387,22 +379,18 @@ function generateNDRERaster(bounds, geojson, ndreResult) {
     ctx.closePath();
     ctx.clip('evenodd');
 
-    // Paleta de cores: escala de NDRE (0.0 -> vermelho, 0.3 -> amarelo, 0.5+ -> verde)
     const baseNDRE = ndreResult ? ndreResult.ndre : null;
 
     for (let x = 0; x < canvas.width; x += 3) {
         for (let y = 0; y < canvas.height; y += 3) {
             let v;
             if (baseNDRE !== null) {
-                // Variação espacial realista baseada no NDRE medido
                 const noise = (Math.random() - 0.5) * 0.12;
                 v = baseNDRE + noise;
             } else {
-                // Fallback simulado
-                const d = Math.sqrt(Math.pow(x-canvas.width/2, 2) + Math.pow(y-canvas.height/2, 2));
-                v = 0.35 - (d/(canvas.width/1.5))*0.2 + (Math.random()-0.5)*0.15;
+                v = -0.1; // Default to visually barren if no data
             }
-            // Escala de cor: NDRE < 0.1 = vermelho, 0.1-0.25 = laranja, 0.25-0.4 = amarelo, > 0.4 = verde
+            
             let color;
             if (v > 0.40) color = '#27ae60';
             else if (v > 0.30) color = '#2ecc71';
@@ -469,29 +457,49 @@ async function handleProcessAnalysis(e) {
             ndreDt = await fetchRealNDRE(bbox, dtStr, log);
         } catch(err) { log('⚠️ Erro ao buscar Dt: ' + err.message); }
 
-        // Calcula dias e variação
         const d0 = new Date(d0Str), dt = new Date(dtStr);
         const daysElapsed = Math.round((dt - d0) / (1000 * 60 * 60 * 24));
 
-        // Se tiver dados reais usa, senão simula com base no tempo
-        const ndreBaseVal = ndreD0 ? ndreD0.ndre : (0.42 + Math.random() * 0.08);
-        const ndreAtualVal = ndreDt ? ndreDt.ndre : Math.max(0.08, ndreBaseVal - 0.006 * daysElapsed + (Math.random()-0.5)*0.02);
+        // Para evitar dados falsos, se as DUAS falharem, mostramos erro ao invés de simular.
+        if (!ndreD0 && !ndreDt) {
+            alert('Não foi possível recuperar dados de satélite para esta área nas datas selecionadas. Tente ampliar o intervalo ou aguarde uma nova passagem do satélite sem nuvens.');
+            return;
+        }
+
+        // Se uma delas faltar, tentamos derivar uma da outra para o cálculo,
+        // MAS sem usar números mágicos aleatórios falsos.
+        const ndreBaseVal = ndreD0 ? ndreD0.ndre : (ndreDt.ndre + 0.15); // Deriva para cima grosseiramente
+        const ndreAtualVal = ndreDt ? ndreDt.ndre : (ndreD0.ndre - 0.15); // Deriva para baixo grosseiramente
+
+        // Identificação real de solo exposto/preparo
+        if (ndreBaseVal < 0.20 && ndreAtualVal < 0.20) {
+            // SOLO EXPOSTO DETECTADO
+            document.getElementById('status-badge').textContent = 'SOLO EXPOSTO';
+            document.getElementById('status-badge').className = 'badge status-early';
+            document.getElementById('percentage-value').textContent = '0%';
+            document.getElementById('days-elapsed').textContent = 'Área preparada';
+            document.getElementById('ndre-base').textContent = ndreBaseVal.toFixed(4) + (ndreD0 ? ' ✓' : ' ~');
+            document.getElementById('ndre-current').textContent = ndreAtualVal.toFixed(4) + (ndreDt ? ' ✓' : ' ~');
+            document.getElementById('ndre-delta').textContent = 'N/A';
+            document.getElementById('days-remaining').textContent = 'Sem Vegetação';
+            document.getElementById('diagnostic-result').style.display = 'block';
+            document.getElementById('diagnostic-empty').style.display = 'none';
+
+            renderTalhaoOnMap(geojson, ndreDt || ndreD0);
+            renderChart(d0, 30, ndreBaseVal, ndreAtualVal, daysElapsed, ndreD0, ndreDt);
+            return; // Encerra aqui se é solo exposto
+        }
 
         const deltaNDRE = ((ndreBaseVal - ndreAtualVal) / ndreBaseVal * 100);
         const isRipening = deltaNDRE > 0;
         const daysToOptimal = Math.round((ndreBaseVal - 0.12) / Math.max(0.001, (ndreBaseVal - ndreAtualVal) / Math.max(1, daysElapsed)));
         const daysRemaining = Math.max(0, daysToOptimal - daysElapsed);
-        const percentage = Math.min(100, Math.round((daysElapsed / Math.max(1, daysToOptimal)) * 100));
+        const percentage = Math.min(100, Math.max(0, Math.round((daysElapsed / Math.max(1, daysToOptimal)) * 100)));
 
         let status = 'Em Maturação';
         let badgeClass = 'status-maturing';
         if (percentage >= 85) { status = 'Pronto para Colheita'; badgeClass = 'status-ready'; }
         else if (percentage <= 20) { status = 'Início de Maturação'; badgeClass = 'status-early'; }
-
-        // Indicador de dados reais vs simulados
-        const dataSource = (ndreD0 || ndreDt) ? '🛰️ Dados Reais (Sentinel-2)' : '⚡ Estimativa (sem imagem disponível)';
-        log('');
-        log('✔ Análise concluída: ' + dataSource);
 
         // Atualiza UI
         document.getElementById('status-badge').textContent = status;
@@ -513,7 +521,7 @@ async function handleProcessAnalysis(e) {
 
     } catch (err) {
         console.error(err);
-        log('❌ Erro: ' + err.message);
+        alert('Falha ao processar área: ' + err.message);
     } finally {
         loadingEl.style.display = 'none';
         btnEl.disabled = false;
