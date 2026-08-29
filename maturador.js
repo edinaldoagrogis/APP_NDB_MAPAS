@@ -471,7 +471,7 @@ async function handleProcessAnalysis(e) {
         const ndreAtualVal = ndreDt.ndre;
 
         // Queda brusca do dossel (área colhida entre D0 e Dt ou nuvem densa no pixel)
-        if (ndreBaseVal > 0.20 && ndreAtualVal < 0.15) {
+        if (ndreBaseVal > 0.15 && ndreAtualVal < 0.08) {
             document.getElementById('status-badge').textContent = 'COLHIDA / ANOMALIA';
             document.getElementById('status-badge').className = 'badge status-early';
             document.getElementById('percentage-value').textContent = 'N/A';
@@ -489,7 +489,7 @@ async function handleProcessAnalysis(e) {
         }
 
         // Identificação real de solo exposto/preparo
-        if (ndreBaseVal < 0.20 && ndreAtualVal < 0.20) {
+        if (ndreBaseVal < 0.10 && ndreAtualVal < 0.10) {
             // SOLO EXPOSTO DETECTADO
             document.getElementById('status-badge').textContent = 'SOLO EXPOSTO';
             document.getElementById('status-badge').className = 'badge status-early';
