@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const map = L.map('map', {
         zoomControl: true,
         attributionControl: true,
-        preferCanvas: true, zoomAnimation: false, // Disables zoom animation to prevent lag with huge offline images
+        preferCanvas: true, zoomAnimation: true, // Enables smooth CSS zoom
         rotate: isTouchDevice,
         touchRotate: false // Disabled by default, toggled by compass
     }).setView([-17.8, -40.0], 7);
@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (this._realGeoJSON) this._realGeoJSON.resetStyle(l);
             };
             
-            if (isLinhasColheita) {
+            if (data === null) {
                 mapLayer._isLazy = true;
                 geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
                 mapLayer._lazyOptions = geoJsonOptions;
@@ -670,14 +670,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (this._isLazy) {
                         console.log('Lazy loading layer ' + layerName + ' via FlatGeobuf');
                         const loadingEl = document.createElement('div');
-                        loadingEl.id = 'lazy-loading-indicator';
-                        loadingEl.innerHTML = 'Processando ' + layerName + '...';
-                        loadingEl.style = 'position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 9999; pointer-events: none;';
+                        loadingEl.id = 'lazy-loading-indicator-' + layerName.replace(/\s/g, '');
+                        loadingEl.innerHTML = 'Carregando ' + layerName + '...';
+                        loadingEl.style = 'position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 9999; pointer-events: none;';
                         document.body.appendChild(loadingEl);
 
                         setTimeout(async () => {
                             try {
-                                const response = await fetch('./linhas_colheita.fgb');
+                                let fgbFile = './linhas_colheita.fgb';
+                                if (isTalhao) fgbFile = './talhoes.fgb';
+                                const response = await fetch(fgbFile);
                                 const buffer = await response.arrayBuffer();
                                 const uint8 = new Uint8Array(buffer);
                                 
@@ -693,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             } catch (e) {
                                 console.error('Erro FGB', e);
                             }
-                            const indicator = document.getElementById('lazy-loading-indicator');
+                            const indicator = document.getElementById('lazy-loading-indicator-' + layerName.replace(/\s/g, ''));
                             if (indicator) indicator.remove();
                         }, 50);
                     }
