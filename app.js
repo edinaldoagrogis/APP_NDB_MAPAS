@@ -1483,18 +1483,33 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             
             async function shareSelected(featuresToShare) {
                 if (!featuresToShare || featuresToShare.length === 0) return alert('Nenhuma feição encontrada.');
-                const placemarks = featuresToShare.map((f, i) => {
-                    const coordStr = geomToKML(f.geometry);
+                let textStr = '📍 *AgroGIS - Compartilhamento*\n\n';
+                
+                featuresToShare.forEach((f, i) => {
                     const name = f.properties.NOME || f.properties.name || f.properties.nome || `Feição ${i+1}`;
-                    return `<Placemark><name>${name}</name><Style><LineStyle><color>ff2ec4b6</color><width>3</width></LineStyle><PolyStyle><color>802ec4b6</color></PolyStyle></Style>${coordStr}</Placemark>`;
-                }).join('');
-                const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Compartilhamento</name>${placemarks}</Document></kml>`;
-                const filename = `AgroGIS_${type}_${new Date().toISOString().slice(0,10)}.kml`;
-                const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
-                const file = new File([blob], filename, { type: 'application/vnd.google-earth.kml+xml' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try { await navigator.share({ files: [file], title: 'Compartilhamento AgroGIS', text: 'Segue o arquivo KML exportado.' }); } catch (err) { console.log('Erro share:', err); downloadBlob(kml, filename, 'application/vnd.google-earth.kml+xml'); }
-                } else { downloadBlob(kml, filename, 'application/vnd.google-earth.kml+xml'); }
+                    let lat = 0, lng = 0;
+                    if (f.geometry.type === 'Point') {
+                        lat = f.geometry.coordinates[1];
+                        lng = f.geometry.coordinates[0];
+                    } else if (f.geometry.type === 'LineString' && f.geometry.coordinates.length > 0) {
+                        lat = f.geometry.coordinates[0][1];
+                        lng = f.geometry.coordinates[0][0];
+                    } else if (f.geometry.type === 'Polygon' && f.geometry.coordinates[0].length > 0) {
+                        lat = f.geometry.coordinates[0][0][1];
+                        lng = f.geometry.coordinates[0][0][0];
+                    }
+                    textStr += `*${name}*\n🗺️ https://maps.google.com/?q=${lat},${lng}\n\n`;
+                });
+                
+                if (navigator.share) {
+                    try { 
+                        await navigator.share({ title: 'Compartilhamento AgroGIS', text: textStr }); 
+                    } catch (err) { 
+                        window.open('https://wa.me/?text=' + encodeURIComponent(textStr), '_blank'); 
+                    }
+                } else { 
+                    window.open('https://wa.me/?text=' + encodeURIComponent(textStr), '_blank'); 
+                }
             }
 
             bulkDiv.querySelector('.bulk-share-sel').addEventListener('click', () => {
@@ -1786,10 +1801,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     let measureActive = false;
     let measureFinished = false;
     let measurePoints = [];
-    let measureLines = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10'}).addTo(map);
-    let measurePolygon = L.polygon([], {color: '#ff9f1c', weight: 3, fillColor: '#ffeb3b', fillOpacity: 0.6}).addTo(map);
+    let measureLines = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', pane: 'tooltipPane'}).addTo(map);
+    let measurePolygon = L.polygon([], {color: '#ff9f1c', weight: 3, fillColor: '#ffeb3b', fillOpacity: 0.6, pane: 'tooltipPane'}).addTo(map);
     let measureMarkers = L.layerGroup().addTo(map);
-    let tempLine = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', opacity: 0.8}).addTo(map);
+    let tempLine = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', opacity: 0.8, pane: 'tooltipPane'}).addTo(map);
     
     const btnMeasure = document.getElementById('tool-measure-btn');
     const resultPanel = document.getElementById('measure-result');
@@ -2129,9 +2144,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 const latlng = window._agrogis_gpsMarker.getLatLng();
                 // Set origin mode to properly update state and text
                 window.routeSelectionMode = 'origin';
-                window.setRouteWaypoint('Minha LocalizaÃ§Ã£o', latlng.lat, latlng.lng);
+                window.setRouteWaypoint('Minha Localização', latlng.lat, latlng.lng);
             } else {
-                alert('Aguarde o GPS encontrar sua localizaÃ§Ã£o primeiro.');
+                alert('Aguarde o GPS encontrar sua localização primeiro.');
             }
         });
     }
@@ -2366,16 +2381,40 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             ],
             routeWhileDragging: false,
             language: 'pt-BR',
-            show: false, // Hide the default itinerary text box to keep UI clean
+            show: false,
             showAlternatives: false,
-            altLineOptions: {
-                styles: [{opacity: 0, weight: 0}]
-            },
+            altLineOptions: { styles: [{opacity: 0, weight: 0}] },
             lineOptions: {
                 styles: [{color: '#e85d04', opacity: 0.8, weight: 6}],
                 missingRouteStyles: [{color: '#e85d04', opacity: 0.8, weight: 4, dashArray: '7,7'}]
             }
         }).addTo(map);
+
+        routingControl.on('routingerror', function(e) {
+            console.warn('Erro na rota online. Usando rota offline (linha reta).', e);
+            if (rotasNdbLayer) { map.removeLayer(rotasNdbLayer); }
+            rotasNdbLayer = L.polyline([
+                [routeOriginData.lat, routeOriginData.lng],
+                [routeDestData.lat, routeDestData.lng]
+            ], {color: '#e85d04', weight: 6, dashArray: '10, 10'}).addTo(map);
+            
+            map.fitBounds(rotasNdbLayer.getBounds(), { padding: [50, 50] });
+            
+            if (distText) {
+                const p1 = turf.point([routeOriginData.lng, routeOriginData.lat]);
+                const p2 = turf.point([routeDestData.lng, routeDestData.lat]);
+                const dist = turf.distance(p1, p2); // distance in km
+                if (dist > 1) {
+                    distText.textContent = dist.toFixed(2) + ' km (Reta)';
+                } else {
+                    distText.textContent = Math.round(dist * 1000) + ' m (Reta)';
+                }
+            }
+            
+            if (typeof window.toggleCompass === 'function') {
+                window.toggleCompass(true);
+            }
+        });
 
         routingControl.on('routesfound', function(e) {
             map.getContainer().classList.add('route-active');
