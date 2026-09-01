@@ -1360,14 +1360,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     <div class="layer-subtitle" style="font-size: 9px; color: rgba(255, 255, 255, 0.4); margin-top: 2px;">Meus desenhos e rotas</div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span class="submenu-arrow" style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: bold; width: 16px; text-align: center;">â–¼</span>
+                    <span class="submenu-arrow" style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: bold; width: 16px; text-align: center;">▼</span>
                 </div>
             </div>
             <div class="layer-submenu" style="display: none; margin-top: 10px; margin-left: 35px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; padding-bottom: 5px;">
                 ${createSubLayerToggle('pontos', 'Pontos Marcados', '#e71d36')}
-                ${createSubLayerToggle('areas', 'Ãreas Desenhadas', '#2ec4b6')}
-                ${createSubLayerToggle('medicao_area', 'MediÃ§Ã£o (Ãrea)', '#2196f3')}
-                ${createSubLayerToggle('medicao_distancia', 'MediÃ§Ã£o (DistÃ¢ncia)', '#9c27b0')}
+                ${createSubLayerToggle('areas', 'Áreas Desenhadas', '#2ec4b6')}
+                ${createSubLayerToggle('medicao_area', 'Medição (Área)', '#2196f3')}
+                ${createSubLayerToggle('medicao_distancia', 'Medição (Distância)', '#9c27b0')}
                 ${createSubLayerToggle('rotas', 'Rotas Gravadas', '#ff9f1c')}
             </div>
         `;
@@ -1388,10 +1388,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         mainRow.addEventListener('click', () => {
             if (submenu.style.display === 'none') {
                 submenu.style.display = 'block';
-                arrow.innerHTML = 'â–²';
+                arrow.innerHTML = '▲';
             } else {
                 submenu.style.display = 'none';
-                arrow.innerHTML = 'â–¼';
+                arrow.innerHTML = '▼';
             }
         });
         
@@ -1444,7 +1444,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     function renderCustomFeaturesList(type) {
         const listDiv = document.getElementById(`list-custom-${type}`);
-        if (!listDiv) return; // Might not exist if DOM not ready, but called later
+        if (!listDiv) return;
         
         listDiv.innerHTML = '';
         
@@ -1456,20 +1456,56 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
         
         if (!fc.features || fc.features.length === 0) {
-            listDiv.innerHTML = '<div style="font-style: italic; opacity: 0.5;">Nenhuma feiÃ§Ã£o salva.</div>';
+            listDiv.innerHTML = '<div style="font-style: italic; opacity: 0.5;">Nenhuma feição salva.</div>';
             return;
         }
             
             // Bulk Actions
             const bulkDiv = document.createElement('div');
-            bulkDiv.style.display = 'flex';
-            bulkDiv.style.gap = '8px';
-            bulkDiv.style.marginBottom = '8px';
+            bulkDiv.style.marginBottom = '12px';
             bulkDiv.innerHTML = `
-                <button class="bulk-del-sel" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Selecionados</button>
-                <button class="bulk-del-all" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Todas</button>
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                    <div style="display: flex; gap: 8px;">
+                        <button class="bulk-share-sel" style="flex: 1; padding: 6px; background: rgba(33, 150, 243, 0.2); border: 1px solid #2196f3; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartilhar Sel.
+                        </button>
+                        <button class="bulk-share-all" style="flex: 1; padding: 6px; background: rgba(46, 196, 182, 0.2); border: 1px solid #2ec4b6; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartilhar Todas
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="bulk-del-sel" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Selecionadas</button>
+                        <button class="bulk-del-all" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Todas</button>
+                    </div>
+                </div>
             `;
             listDiv.appendChild(bulkDiv);
+            
+            async function shareSelected(featuresToShare) {
+                if (!featuresToShare || featuresToShare.length === 0) return alert('Nenhuma feição encontrada.');
+                const placemarks = featuresToShare.map((f, i) => {
+                    const coordStr = geomToKML(f.geometry);
+                    const name = f.properties.NOME || f.properties.name || f.properties.nome || `Feição ${i+1}`;
+                    return `<Placemark><name>${name}</name><Style><LineStyle><color>ff2ec4b6</color><width>3</width></LineStyle><PolyStyle><color>802ec4b6</color></PolyStyle></Style>${coordStr}</Placemark>`;
+                }).join('');
+                const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Compartilhamento</name>${placemarks}</Document></kml>`;
+                const filename = `AgroGIS_${type}_${new Date().toISOString().slice(0,10)}.kml`;
+                const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
+                const file = new File([blob], filename, { type: 'application/vnd.google-earth.kml+xml' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try { await navigator.share({ files: [file], title: 'Compartilhamento AgroGIS', text: 'Segue o arquivo KML exportado.' }); } catch (err) { console.log('Erro share:', err); downloadBlob(kml, filename, 'application/vnd.google-earth.kml+xml'); }
+                } else { downloadBlob(kml, filename, 'application/vnd.google-earth.kml+xml'); }
+            }
+
+            bulkDiv.querySelector('.bulk-share-sel').addEventListener('click', () => {
+                const checkedIds = Array.from(listDiv.querySelectorAll('.feature-cb:checked')).map(cb => cb.dataset.id);
+                if (checkedIds.length === 0) return alert('Nenhum item selecionado para compartilhar.');
+                shareSelected(fc.features.filter(f => checkedIds.includes(f.properties.id)));
+            });
+
+            bulkDiv.querySelector('.bulk-share-all').addEventListener('click', () => {
+                shareSelected(fc.features);
+            });
             
             bulkDiv.querySelector('.bulk-del-sel').addEventListener('click', async () => {
                 const checked = listDiv.querySelectorAll('.feature-cb:checked');
@@ -1911,24 +1947,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     function renderMeasureMarkers() {
         measureMarkers.clearLayers();
-        measurePoints.forEach((latlng, index) => {
-            const marker = L.marker(latlng, {
-                icon: vertexIcon,
-                draggable: true
-            }).addTo(measureMarkers);
-
-            marker.on('drag', (e) => {
-                measurePoints[index] = e.target.getLatLng();
-                updateMeasureDisplay();
-            });
-
-            marker.on('click', (ev) => {
-                if (measurePoints.length > 2 && !measureFinished) {
-                    L.DomEvent.stopPropagation(ev);
-                    finishMeasurement();
-                }
-            });
-        });
+        // Os pontos amarelos foram removidos conforme solicitado.
+        // O usuário agora visualiza apenas a linha/polígono da medição.
     }
 
     function finishMeasurement() {
@@ -3324,6 +3344,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             return `<Polygon><outerBoundaryIs><LinearRing><coordinates>${ring}</coordinates></LinearRing></outerBoundaryIs></Polygon>`;
         } else if (geometry.type === 'MultiPolygon') {
             return `<MultiGeometry>${geometry.coordinates.map(poly=>{const r=poly[0].map(c=>`${c[0]},${c[1]},0`).join(' ');return `<Polygon><outerBoundaryIs><LinearRing><coordinates>${r}</coordinates></LinearRing></outerBoundaryIs></Polygon>`;}).join('')}</MultiGeometry>`;
+        } else if (geometry.type === 'LineString') {
+            const ring = geometry.coordinates.map(c=>`${c[0]},${c[1]},0`).join(' ');
+            return `<LineString><coordinates>${ring}</coordinates></LineString>`;
+        } else if (geometry.type === 'Point') {
+            return `<Point><coordinates>${geometry.coordinates[0]},${geometry.coordinates[1]},0</coordinates></Point>`;
         }
         return '';
     }
