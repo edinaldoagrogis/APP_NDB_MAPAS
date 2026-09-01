@@ -1565,8 +1565,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     <span class="feature-name-span" style="flex-grow: 1; cursor: pointer; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: #a8b8b0;">${name}</span>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         ${btnWapp}
-                        <button class="btn-edit" style="background:none; border:none; color:#2ec4b6; cursor:pointer;" title="Editar Nome">âœï¸</button>
-                        <button class="btn-delete" style="background:none; border:none; color:#e71d36; cursor:pointer;" title="Excluir">ðŸ—‘ï¸</button>
+                        <button class="btn-edit" style="background:none; border:none; color:#2ec4b6; cursor:pointer; font-size:14px;" title="Editar Nome">✏️</button>
+                        <button class="btn-delete" style="background:none; border:none; color:#e71d36; cursor:pointer; font-size:14px;" title="Excluir">🗑️</button>
                     </div>
                 `;
                 
@@ -2169,12 +2169,32 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const query = e.target.value.toLowerCase().trim();
         if (!query) return;
 
+        const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const queryNorm = normalize(query);
+
+        // First: search the centroid cache built from FlatGeobuf talhões
+        if (window.allRouteItems && window.allRouteItems.length > 0) {
+            for (const item of window.allRouteItems) {
+                if (normalize(item.title).includes(queryNorm)) {
+                    window.routeSelectionMode = mode;
+                    window.setRouteWaypoint(item.title, item.lat, item.lng);
+                    return;
+                }
+            }
+        }
+
+        // Fallback: iterate any non-FGB loaded layers (Fazendas etc)
         for (const layerName in loadedLayers) {
             if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
             
             const layerGroup = loadedLayers[layerName];
-            layerGroup.eachLayer(layer => {
-                const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : {};
+            // Support both direct layers and FGB-backed layers
+            const realGroup = (layerGroup._realGeoJSON) ? layerGroup._realGeoJSON : layerGroup;
+            if (!realGroup || typeof realGroup.eachLayer !== 'function') continue;
+
+            realGroup.eachLayer(layer => {
+                if (!layer.feature) return;
+                const props = layer.feature.properties || {};
                 const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'];
                 const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'];
                 let title = '';
@@ -2182,27 +2202,25 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     const cleanIdStr = String(rawId || '').split(',')[0].split('.')[0].trim();
                     title = cleanIdStr ? `${cleanIdStr} - ${rawName}` : rawName;
                 }
-                
-                // Fallback for other data structures
                 if (!title) {
                     title = props.nome || props.NOME || props.NAME || props.Name || props.talhao || props.TALHAO || props.id || props.designacao || '';
                 }
                 
-                const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-                
-                if (normalize(title).includes(normalize(query)) || normalize(rawName || '').includes(normalize(query))) {
+                if (normalize(title).includes(queryNorm)) {
                     let lat, lng;
-                    if (typeof turf !== 'undefined') {
-                        const centroid = turf.centroid(layer.feature);
-                        lat = centroid.geometry.coordinates[1];
-                        lng = centroid.geometry.coordinates[0];
-                    } else {
-                        const center = layer.getBounds().getCenter();
-                        lat = center.lat;
-                        lng = center.lng;
-                    }
-                    window.routeSelectionMode = mode;
-                    window.setRouteWaypoint(title, lat, lng);
+                    try {
+                        if (typeof turf !== 'undefined') {
+                            const centroid = turf.centroid(layer.feature);
+                            lat = centroid.geometry.coordinates[1];
+                            lng = centroid.geometry.coordinates[0];
+                        } else {
+                            const center = layer.getBounds().getCenter();
+                            lat = center.lat;
+                            lng = center.lng;
+                        }
+                        window.routeSelectionMode = mode;
+                        window.setRouteWaypoint(title, lat, lng);
+                    } catch(err) { console.warn('Route search center error', err); }
                 }
             });
         }
@@ -3373,22 +3391,67 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     // â”€â”€ Exportadores â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function downloadBlob(content, filename, mime) {
+        // Strategy 1: Try Blob URL (works in modern WebViews and browsers)
+        try {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 500);
+            return;
+        } catch(e1) { /* try next */ }
+
+        // Strategy 2: Try data URI (older WebViews)
         try {
             const blob = new Blob([content], { type: mime });
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const url = e.target.result;
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+            reader.onload = function(ev) {
+                try {
+                    const a = document.createElement('a');
+                    a.href = ev.target.result;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } catch(e2) {
+                    // Strategy 3: Open raw data URI in new tab/window
+                    window.open(ev.target.result, '_blank');
+                }
             };
             reader.readAsDataURL(blob);
-        } catch(err) {
-            alert('Não foi possível exportar o arquivo neste dispositivo.');
-        }
+            return;
+        } catch(e3) { /* try next */ }
+
+        // Strategy 4: Show copy-paste modal as last resort
+        showKmlCopyModal(content, filename);
+    }
+
+    function showKmlCopyModal(content, filename) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.innerHTML = `
+            <div style="background:#1a2420;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;max-width:400px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#fff;font-weight:700;font-size:14px;">📁 ${filename}</span>
+                    <button id="kml-modal-close" style="background:rgba(255,255,255,0.1);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;">✕</button>
+                </div>
+                <p style="color:#a8b8b0;font-size:12px;margin:0;">Copie o conteúdo abaixo e salve em um arquivo .kml no seu celular:</p>
+                <textarea id="kml-content-area" style="flex:1;background:#0d1a14;color:#2ec4b6;border:1px solid rgba(46,196,182,0.3);border-radius:8px;padding:10px;font-size:10px;font-family:monospace;min-height:200px;resize:none;">${content}</textarea>
+                <button id="kml-copy-btn" style="padding:12px;background:linear-gradient(135deg,#2ec4b6,#20998e);border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">📋 Copiar KML</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        document.getElementById('kml-modal-close').onclick = () => document.body.removeChild(overlay);
+        document.getElementById('kml-copy-btn').onclick = () => {
+            const ta = document.getElementById('kml-content-area');
+            ta.select();
+            try { document.execCommand('copy'); alert('KML copiado! Cole no app de sua escolha.'); }
+            catch(e) { alert('Selecione o texto manualmente e copie.'); }
+        };
     }
 
     function doExportGeoJSON(data, prefix) {
