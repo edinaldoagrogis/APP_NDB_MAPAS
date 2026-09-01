@@ -1487,26 +1487,26 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             listDiv.appendChild(bulkDiv);
             
             async function shareSelected(featuresToShare) {
-                if (!featuresToShare || featuresToShare.length === 0) return alert('Nenhuma feição encontrada.');
-                const placemarks = featuresToShare.map((f, i) => {
-                    const coordStr = geomToKML(f.geometry);
-                    const name = f.properties.NOME || f.properties.name || f.properties.nome || `Feição ${i+1}`;
-                    return `<Placemark><name>${name}</name><Style><LineStyle><color>ff2ec4b6</color><width>3</width></LineStyle><PolyStyle><color>802ec4b6</color></PolyStyle></Style>${coordStr}</Placemark>`;
-                }).join('');
-                const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Exportacao AgroGIS</name>${placemarks}</Document></kml>`;
-                const filename = `AgroGIS_${type}_${new Date().toISOString().slice(0,10)}.kml`;
+                if (!featuresToShare || featuresToShare.length === 0) {
+                    alert('Nenhuma feição encontrada.');
+                    return;
+                }
+                let placemarks = '';
+                for (let i = 0; i < featuresToShare.length; i++) {
+                    const f = featuresToShare[i];
+                    if (!f.geometry) continue;
+                    const name = (f.properties && (f.properties.NOME || f.properties.name || f.properties.nome)) || ('Feição ' + (i+1));
+                    const safeKml = geomToKML(f.geometry);
+                    placemarks += '<Placemark><name>' + name + '</name><Style><LineStyle><color>ff2ec4b6</color><width>3</width></LineStyle><PolyStyle><color>802ec4b6</color></PolyStyle></Style>' + safeKml + '</Placemark>';
+                }
+                const kml = '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Exportacao AgroGIS</name>' + placemarks + '</Document></kml>';
+                const filename = 'AgroGIS_' + type + '_' + new Date().toISOString().slice(0,10) + '.kml';
                 
-                try {
-                    const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
-                    const file = new File([blob], filename, { type: 'application/vnd.google-earth.kml+xml' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: 'Exportação AgroGIS' });
-                        return;
-                    }
-                } catch(e) { console.log('Share API falhou', e); }
+                // Show modal immediately (always works on APK)
+                showKmlCopyModal(kml, filename);
                 
-                // Fallback to downloadBlob
-                downloadBlob(kml, filename, 'application/vnd.google-earth.kml+xml');
+                // Also try silent background download
+                setTimeout(() => { try { downloadBlob(kml, filename, 'application/vnd.google-earth.kml+xml'); } catch(e) {} }, 300);
             }
 
             bulkDiv.querySelector('.bulk-share-sel').addEventListener('click', () => {
@@ -2272,6 +2272,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     setupRouteAutocomplete('route-search-origin', 'route-autocomplete-orig', 'origin');
     setupRouteAutocomplete('route-search-dest', 'route-autocomplete-dest', 'dest');
 
+    // General map click: select route waypoint when routeSelectionMode is active
+    // This works even when clicking empty areas (not on a talhão)
+    map.on('click', function(e) {
+        if (!window.routeSelectionMode) return;
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        const label = window.routeSelectionMode === 'origin' ? 'Origem' : 'Destino';
+        window.setRouteWaypoint(`${label} (${lat.toFixed(5)}, ${lng.toFixed(5)})`, lat, lng);
+    });
+
     if (routePanel) {
         // const routeDragHandle = document.getElementById('route-drag-handle');
         // const draggableRoute = new L.Draggable(routePanel, routeDragHandle);
@@ -2466,12 +2476,26 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 }
             }
             
-            // Fit map to route bounds to ensure visibility of the whole route
-            if (routes && routes[0] && routes[0].coordinates) {
-                map.fitBounds(L.latLngBounds(routes[0].coordinates), { padding: [50, 50] });
-            }
+            // Draw our own route line in tooltipPane to ensure it's ABOVE the talhões layer
+            if (rotasNdbLayer) map.removeLayer(rotasNdbLayer);
+            const coords = routes[0].coordinates;
+            rotasNdbLayer = L.polyline(coords, {
+                color: '#e85d04', weight: 7, opacity: 0.95, pane: 'tooltipPane'
+            }).addTo(map);
             
-            // Auto enable compass when route is calculated and shown on screen
+            // Hide the default routing control line (it's in overlayPane, below talhões)
+            try {
+                routingControl.getRouter && routingControl.getPlan && 
+                map.eachLayer(function(l) {
+                    if (l._routing_line || (l.options && l.options.className === 'leaflet-routing-line')) {
+                        l.setStyle({opacity: 0, weight: 0});
+                    }
+                });
+            } catch(ex) { /* ignore */ }
+            
+            // Fit map to route
+            map.fitBounds(rotasNdbLayer.getBounds(), { padding: [50, 50] });
+            
             if (typeof window.toggleCompass === 'function') {
                 window.toggleCompass(true);
             }
