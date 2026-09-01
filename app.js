@@ -1047,14 +1047,9 @@ loadLayersDataAsync();
                                 const wappUrl = `https://api.whatsapp.com/send?text=${message}`;
                                 whatsappHtml = `<button onclick="window.location.href='${wappUrl}'" style="width: 100%; display: flex; align-items: center; gap: 8px; background: none; border: none; color: #25d366; padding: 6px; cursor: pointer; font-size: 13px; margin-top: 4px;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></svg>
-                                    Compartilhar
-                                </button>`;
-                            }
-                            
-                            popupHtml += `
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <button id="inline-edit-btn" style="width: 100%; text-align: left; background: none; border: none; color: #2ec4b6; padding: 6px; cursor: pointer; font-size: 13px;">âœï¸ Editar Nome</button>
-                                    <button id="inline-del-btn" style="width: 100%; text-align: left; background: none; border: none; color: #e71d36; padding: 6px; cursor: pointer; font-size: 13px;">ðŸ—‘ï¸ Excluir</button>
+                                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <button id="inline-edit-btn" style="width: 100%; text-align: left; background: none; border: none; color: #2ec4b6; padding: 6px; cursor: pointer; font-size: 13px;">✏️ Editar Nome</button>
+                                    <button id="inline-del-btn" style="width: 100%; text-align: left; background: none; border: none; color: #e71d36; padding: 6px; cursor: pointer; font-size: 13px;">🗑️ Excluir</button>
                                     ${whatsappHtml}
                                 </div>
                             `;
@@ -1093,7 +1088,8 @@ loadLayersDataAsync();
                         fillColor: '#e71d36',
                         color: '#fff',
                         weight: 3,
-                        fillOpacity: 1
+                        fillOpacity: 1,
+                        pane: 'tooltipPane'
                     });
                 };
             } else if (type === 'areas') {
@@ -1101,24 +1097,28 @@ loadLayersDataAsync();
                     color: '#2ec4b6',
                     weight: 2,
                     fillColor: '#2ec4b6',
-                    fillOpacity: 0.4
+                    fillOpacity: 0.4,
+                    pane: 'tooltipPane'
                 };
             } else if (type === 'medicao_area') {
                 options.style = {
                     color: '#2196f3',
                     weight: 2,
                     fillColor: '#2196f3',
-                    fillOpacity: 0.4
+                    fillOpacity: 0.4,
+                    pane: 'tooltipPane'
                 };
             } else if (type === 'rotas') {
                 options.style = {
                     color: '#e85d04',
-                    weight: 4
+                    weight: 4,
+                    pane: 'tooltipPane'
                 };
             } else if (type === 'medicao_distancia') {
                 options.style = {
                     color: '#9c27b0',
-                    weight: 4
+                    weight: 4,
+                    pane: 'tooltipPane'
                 };
             }
             
@@ -1469,8 +1469,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         <button class="bulk-share-sel" style="flex: 1; padding: 6px; background: rgba(33, 150, 243, 0.2); border: 1px solid #2196f3; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartilhar Sel.
                         </button>
-                        <button class="bulk-share-all" style="flex: 1; padding: 6px; background: rgba(46, 196, 182, 0.2); border: 1px solid #2ec4b6; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartilhar Todas
+                                        <button class="bulk-share-all" style="flex: 1; padding: 6px; background: rgba(46, 196, 182, 0.2); border: 1px solid #2ec4b6; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Exportar Todas
                         </button>
                     </div>
                     <div style="display: flex; gap: 8px;">
@@ -1483,33 +1483,25 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             
             async function shareSelected(featuresToShare) {
                 if (!featuresToShare || featuresToShare.length === 0) return alert('Nenhuma feição encontrada.');
-                let textStr = '📍 *AgroGIS - Compartilhamento*\n\n';
-                
-                featuresToShare.forEach((f, i) => {
+                const placemarks = featuresToShare.map((f, i) => {
+                    const coordStr = geomToKML(f.geometry);
                     const name = f.properties.NOME || f.properties.name || f.properties.nome || `Feição ${i+1}`;
-                    let lat = 0, lng = 0;
-                    if (f.geometry.type === 'Point') {
-                        lat = f.geometry.coordinates[1];
-                        lng = f.geometry.coordinates[0];
-                    } else if (f.geometry.type === 'LineString' && f.geometry.coordinates.length > 0) {
-                        lat = f.geometry.coordinates[0][1];
-                        lng = f.geometry.coordinates[0][0];
-                    } else if (f.geometry.type === 'Polygon' && f.geometry.coordinates[0].length > 0) {
-                        lat = f.geometry.coordinates[0][0][1];
-                        lng = f.geometry.coordinates[0][0][0];
-                    }
-                    textStr += `*${name}*\n🗺️ https://maps.google.com/?q=${lat},${lng}\n\n`;
-                });
+                    return `<Placemark><name>${name}</name><Style><LineStyle><color>ff2ec4b6</color><width>3</width></LineStyle><PolyStyle><color>802ec4b6</color></PolyStyle></Style>${coordStr}</Placemark>`;
+                }).join('');
+                const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Exportacao AgroGIS</name>${placemarks}</Document></kml>`;
+                const filename = `AgroGIS_${type}_${new Date().toISOString().slice(0,10)}.kml`;
                 
-                if (navigator.share) {
-                    try { 
-                        await navigator.share({ title: 'Compartilhamento AgroGIS', text: textStr }); 
-                    } catch (err) { 
-                        window.open('https://wa.me/?text=' + encodeURIComponent(textStr), '_blank'); 
+                try {
+                    const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
+                    const file = new File([blob], filename, { type: 'application/vnd.google-earth.kml+xml' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: 'Exportação AgroGIS' });
+                        return;
                     }
-                } else { 
-                    window.open('https://wa.me/?text=' + encodeURIComponent(textStr), '_blank'); 
-                }
+                } catch(e) { console.log('Share API falhou', e); }
+                
+                // Fallback to downloadBlob
+                downloadBlob(kml, filename, 'application/vnd.google-earth.kml+xml');
             }
 
             bulkDiv.querySelector('.bulk-share-sel').addEventListener('click', () => {
@@ -2360,9 +2352,6 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         if (routeInfo) {
             routeInfo.style.display = 'flex';
-            if (distText) distText.textContent = 'Calculando...';
-        }
-
         if (routingControl) {
             map.removeControl(routingControl);
             routingControl = null;
@@ -2370,7 +2359,27 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         // Check if L.Routing is available (Leaflet Routing Machine)
         if (typeof L.Routing === 'undefined') {
-            alert('Erro: Sistema de rotas nÃ£o estÃ¡ carregado.');
+            alert('Erro: Sistema de rotas n\u00E3o est\u00E1 carregado.');
+            return;
+        }
+
+        if (!navigator.onLine) {
+            console.warn('App offline. Desenhando rota reta.');
+            if (rotasNdbLayer) { map.removeLayer(rotasNdbLayer); }
+            rotasNdbLayer = L.polyline([
+                [routeOriginData.lat, routeOriginData.lng],
+                [routeDestData.lat, routeDestData.lng]
+            ], {color: '#e85d04', weight: 6, dashArray: '10, 10'}).addTo(map);
+            
+            map.fitBounds(rotasNdbLayer.getBounds(), { padding: [50, 50] });
+            
+            if (distText) {
+                const p1 = turf.point([routeOriginData.lng, routeOriginData.lat]);
+                const p2 = turf.point([routeDestData.lng, routeDestData.lat]);
+                const dist = turf.distance(p1, p2); // distance in km
+                distText.textContent = dist > 1 ? dist.toFixed(2) + ' km (Reta)' : Math.round(dist * 1000) + ' m (Reta)';
+            }
+            if (typeof window.toggleCompass === 'function') window.toggleCompass(true);
             return;
         }
 
@@ -2379,6 +2388,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 L.latLng(routeOriginData.lat, routeOriginData.lng),
                 L.latLng(routeDestData.lat, routeDestData.lng)
             ],
+            router: L.Routing.osrmv1({
+                timeout: 3000,
+                profile: 'driving'
+            }),
             routeWhileDragging: false,
             language: 'pt-BR',
             show: false,
@@ -3353,10 +3366,22 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     // â”€â”€ Exportadores â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function downloadBlob(content, filename, mime) {
-        const blob = new Blob([content], { type: mime });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
+        try {
+            const blob = new Blob([content], { type: mime });
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const url = e.target.result;
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+            reader.readAsDataURL(blob);
+        } catch(err) {
+            alert('Não foi possível exportar o arquivo neste dispositivo.');
+        }
     }
 
     function doExportGeoJSON(data, prefix) {
