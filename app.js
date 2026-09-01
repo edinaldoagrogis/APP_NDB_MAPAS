@@ -569,14 +569,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                             window.labeledFazendas.add(title);
                         }
-
-                        // Populate datalist for search
-                        const dataList = document.getElementById('fazendas-list');
-                        if (dataList && title !== 'Elemento') {
-                            const option = document.createElement('option');
-                            option.value = title;
-                            dataList.appendChild(option);
-                        }
                     }
 
                     if (isTalhao) {
@@ -2047,6 +2039,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (!gpsMarker) {
             // Pulsating GPS marker
             gpsMarker = L.circleMarker(e.latlng, {
+                pane: 'markerPane',
                 radius: 8,
                 fillColor: '#2196F3',
                 color: '#fff',
@@ -2057,6 +2050,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }).addTo(map);
             
             gpsCircle = L.circle(e.latlng, radius, {
+                pane: 'markerPane',
                 color: '#2196F3',
                 fillColor: '#2196F3',
                 fillOpacity: 0.1,
@@ -2182,11 +2176,51 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
     }
 
-    const routeSearchOrig = document.getElementById('route-search-origin');
-    if (routeSearchOrig) routeSearchOrig.addEventListener('input', (e) => handleRouteSearch(e, 'origin'));
-    
-    const routeSearchDest = document.getElementById('route-search-dest');
-    if (routeSearchDest) routeSearchDest.addEventListener('input', (e) => handleRouteSearch(e, 'dest'));
+    function setupRouteAutocomplete(inputId, listId, mode) {
+        const input = document.getElementById(inputId);
+        const list = document.getElementById(listId);
+        if (!input || !list) return;
+        
+        input.addEventListener('input', () => {
+            const val = input.value;
+            list.innerHTML = '';
+            if (!val) {
+                list.style.display = 'none';
+                return;
+            }
+            
+            let count = 0;
+            const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            const queryNorm = normalize(val);
+            
+            if (!window.allSearchableItems) return;
+            const sortedItems = Array.from(window.allSearchableItems).sort();
+            
+            sortedItems.forEach(item => {
+                if (normalize(item).includes(queryNorm) && count < 15) {
+                    count++;
+                    const div = document.createElement('div');
+                    div.textContent = item;
+                    div.addEventListener('click', function(e) {
+                        input.value = item;
+                        list.style.display = 'none';
+                        handleRouteSearch({ target: input }, mode);
+                    });
+                    list.appendChild(div);
+                }
+            });
+            list.style.display = count > 0 ? 'block' : 'none';
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (e.target !== input && e.target !== list) {
+                list.style.display = 'none';
+            }
+        });
+    }
+
+    setupRouteAutocomplete('route-search-origin', 'route-autocomplete-orig', 'origin');
+    setupRouteAutocomplete('route-search-dest', 'route-autocomplete-dest', 'dest');
 
     if (routePanel) {
         // const routeDragHandle = document.getElementById('route-drag-handle');

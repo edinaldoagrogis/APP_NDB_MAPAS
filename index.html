@@ -226,7 +226,6 @@
                     <!-- Search Box -->
                     <div class="search-container floating" style="margin-bottom: 0; position: relative;">
                         <input type="text" id="layer-search" placeholder="Localizar Fazenda..." autocomplete="off">
-                        <datalist id="fazendas-list"></datalist>
                         <div id="custom-autocomplete-list" class="autocomplete-items"></div>
                         <span class="search-icon">🔍</span>
                     </div>
@@ -1014,9 +1013,10 @@
                 <div id="route-body" style="display: flex; flex-direction: column; gap: 8px;">
                     <div style="display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 10px;">
                         
-                        <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="display: flex; gap: 8px; align-items: center; position: relative;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2196f3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-                            <input type="text" id="route-search-origin" list="fazendas-list" placeholder="Buscar Origem..." style="flex: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px; font-size: 12px; outline: none;" autocomplete="off">
+                            <input type="text" id="route-search-origin" placeholder="Buscar Origem..." style="flex: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px; font-size: 12px; outline: none;" autocomplete="off">
+                            <div id="route-autocomplete-orig" class="autocomplete-items"></div>
                         </div>
                         
                         <button id="route-btn-myloc" style="width: 100%; padding: 8px; background: rgba(33,150,243,0.1); border: 1px solid rgba(33,150,243,0.3); color: #2196F3; border-radius: 8px; text-align: center; cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(33,150,243,0.2)'" onmouseout="this.style.background='rgba(33,150,243,0.1)'">
@@ -1024,9 +1024,10 @@
                             Usar Minha Localização Atual
                         </button>
                         
-                        <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                        <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px; position: relative;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e71d36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            <input type="text" id="route-search-dest" list="fazendas-list" placeholder="Buscar Destino..." style="flex: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px; font-size: 12px; outline: none;" autocomplete="off">
+                            <input type="text" id="route-search-dest" placeholder="Buscar Destino..." style="flex: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px; font-size: 12px; outline: none;" autocomplete="off">
+                            <div id="route-autocomplete-dest" class="autocomplete-items"></div>
                         </div>
                     </div>
 
