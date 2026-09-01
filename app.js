@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const map = L.map('map', {
         zoomControl: true,
         attributionControl: true,
-        preferCanvas: true, zoomAnimation: true, // Enables smooth CSS zoom
+        preferCanvas: true, zoomAnimation: false, // zoomAnimation causes canvas freeze on heavy layers
         rotate: isTouchDevice,
         touchRotate: false // Disabled by default, toggled by compass
     }).setView([-17.8, -40.0], 7);
@@ -16,6 +16,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Create a custom pane for harvest lines to always appear above other vector layers (zIndex > 400)
     map.createPane('harvestLinesPane');
     map.getPane('harvestLinesPane').style.zIndex = 450;
+
+    // Zoom performance: hide heavy vector layers during zoom, restore after
+    let _zoomEndTimer = null;
+    map.on('zoomstart', function() {
+        const overlayPane = map.getPane('overlayPane');
+        const harvestPane = map.getPane('harvestLinesPane');
+        if (overlayPane) overlayPane.style.opacity = '0';
+        if (harvestPane) harvestPane.style.opacity = '0';
+    });
+    map.on('zoomend', function() {
+        clearTimeout(_zoomEndTimer);
+        _zoomEndTimer = setTimeout(function() {
+            const overlayPane = map.getPane('overlayPane');
+            const harvestPane = map.getPane('harvestLinesPane');
+            if (overlayPane) overlayPane.style.opacity = '1';
+            if (harvestPane) harvestPane.style.opacity = '1';
+        }, 120);
+    });
     
     // Fix map rendering issues when returning from other tools (bfcache)
     window.addEventListener('pageshow', (e) => {
@@ -1464,76 +1482,33 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             listDiv.innerHTML = '<div style="font-style: italic; opacity: 0.5;">Nenhuma feição salva.</div>';
             return;
         }
-            
-            // Bulk Actions
-            const bulkDiv = document.createElement('div');
-            bulkDiv.style.marginBottom = '12px';
-            bulkDiv.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
-                    <div style="display: flex; gap: 8px;">
-                        <button class="bulk-share-sel" style="flex: 1; padding: 6px; background: rgba(33, 150, 243, 0.2); border: 1px solid #2196f3; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartilhar Sel.
-                        </button>
-                                        <button class="bulk-share-all" style="flex: 1; padding: 6px; background: rgba(46, 196, 182, 0.2); border: 1px solid #2ec4b6; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Exportar Todas
-                        </button>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="bulk-del-sel" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Selecionadas</button>
-                        <button class="bulk-del-all" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Todas</button>
-                    </div>
-                </div>
-            `;
-            listDiv.appendChild(bulkDiv);
-            
-            async function shareSelected(featuresToShare) {
-                if (!featuresToShare || featuresToShare.length === 0) {
-                    alert('Nenhuma feição encontrada.');
-                    return;
-                }
-                let placemarks = '';
-                for (let i = 0; i < featuresToShare.length; i++) {
-                    const f = featuresToShare[i];
-                    if (!f.geometry) continue;
-                    const name = (f.properties && (f.properties.NOME || f.properties.name || f.properties.nome)) || ('Feição ' + (i+1));
-                    const safeKml = geomToKML(f.geometry);
-                    placemarks += '<Placemark><name>' + name + '</name><Style><LineStyle><color>ff2ec4b6</color><width>3</width></LineStyle><PolyStyle><color>802ec4b6</color></PolyStyle></Style>' + safeKml + '</Placemark>';
-                }
-                const kml = '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Exportacao AgroGIS</name>' + placemarks + '</Document></kml>';
-                const filename = 'AgroGIS_' + type + '_' + new Date().toISOString().slice(0,10) + '.kml';
-                
-                // Show modal immediately (always works on APK)
-                showKmlCopyModal(kml, filename);
-                
-                // Also try silent background download
-                setTimeout(() => { try { downloadBlob(kml, filename, 'application/vnd.google-earth.kml+xml'); } catch(e) {} }, 300);
-            }
-
-            bulkDiv.querySelector('.bulk-share-sel').addEventListener('click', () => {
-                const checkedIds = Array.from(listDiv.querySelectorAll('.feature-cb:checked')).map(cb => cb.dataset.id);
-                if (checkedIds.length === 0) return alert('Nenhum item selecionado para compartilhar.');
-                shareSelected(fc.features.filter(f => checkedIds.includes(f.properties.id)));
-            });
-
-            bulkDiv.querySelector('.bulk-share-all').addEventListener('click', () => {
-                shareSelected(fc.features);
-            });
-            
-            bulkDiv.querySelector('.bulk-del-sel').addEventListener('click', async () => {
-                const checked = listDiv.querySelectorAll('.feature-cb:checked');
-                if (checked.length === 0) return alert('Nenhum item selecionado.');
-                if (!(await window.agrogisConfirm(`Deseja apagar ${checked.length} item(ns) selecionado(s)?`))) return;
-                const ids = Array.from(checked).map(cb => cb.dataset.id);
-                deleteCustomFeatures(type, ids);
-            });
-            
-            bulkDiv.querySelector('.bulk-del-all').addEventListener('click', async () => {
-                if (!(await window.agrogisConfirm(`Deseja apagar TODAS as feiÃ§Ãµes desta categoria?`))) return;
-                const ids = fc.features.map(f => f.properties.id);
-                deleteCustomFeatures(type, ids);
-            });
-            
-            fc.features.forEach(f => {
+        
+        // Bulk Actions - only delete buttons
+        const bulkDiv = document.createElement('div');
+        bulkDiv.style.marginBottom = '12px';
+        bulkDiv.innerHTML = `
+            <div style="display: flex; gap: 8px; width: 100%;">
+                <button class="bulk-del-sel" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Selecionadas</button>
+                <button class="bulk-del-all" style="flex: 1; padding: 6px; background: rgba(231, 29, 54, 0.2); border: 1px solid #e71d36; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px;">Apagar Todas</button>
+            </div>
+        `;
+        listDiv.appendChild(bulkDiv);
+        
+        bulkDiv.querySelector('.bulk-del-sel').addEventListener('click', async () => {
+            const checked = listDiv.querySelectorAll('.feature-cb:checked');
+            if (checked.length === 0) return alert('Nenhum item selecionado.');
+            if (!(await window.agrogisConfirm(`Deseja apagar ${checked.length} item(ns) selecionado(s)?`))) return;
+            const ids = Array.from(checked).map(cb => cb.dataset.id);
+            deleteCustomFeatures(type, ids);
+        });
+        
+        bulkDiv.querySelector('.bulk-del-all').addEventListener('click', async () => {
+            if (!(await window.agrogisConfirm(`Deseja apagar TODAS as feições desta categoria?`))) return;
+            const ids = fc.features.map(f => f.properties.id);
+            deleteCustomFeatures(type, ids);
+        });
+        
+        fc.features.forEach(f => {
                 const name = f.properties.NOME || 'Sem Nome';
                 const id = f.properties.id;
                 
