@@ -700,6 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             // 1. Modo seleção de rota
                             if (window.routeSelectionMode) {
+                                layer.closePopup();
                                 const lat = layer.getBounds ? layer.getBounds().getCenter().lat : e.latlng.lat;
                                 const lng = layer.getBounds ? layer.getBounds().getCenter().lng : e.latlng.lng;
                                 window.setRouteWaypoint(title, lat, lng);
@@ -708,10 +709,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
 
                             // 2. Medição ativa — não faz nada
-                            if (window.measureActive) return;
+                            if (window.measureActive) {
+                                layer.closePopup();
+                                return;
+                            }
 
                             // 3. Linha de colheita — selecionar a linha
                             if (isLinhasColheita) {
+                                layer.closePopup();
                                 if (window.selectedHarvestLayer && mapLayer.hasLayer(window.selectedHarvestLayer)) {
                                     mapLayer.resetStyle(window.selectedHarvestLayer);
                                 }
@@ -734,6 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             // 4. Clima Farm ativo + talhão clicado → busca clima SEM abrir popup
                             if (isTalhao && window.climaFarmActive && window.climaFarmFetchData) {
+                                layer.closePopup();
                                 const center = layer.getBounds ? layer.getBounds().getCenter() : e.latlng;
                                 window.climaFarmFetchData(center.lat, center.lng, props);
                                 if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
@@ -742,23 +748,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             // 5. Análise de ervas daninhas
                             if (isTalhao && window.openWeedAnalysisPanel && window.weedToolActive) {
+                                layer.closePopup();
                                 if (window.clearAllSelections) window.clearAllSelections();
                                 window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
                                 if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
                                 return;
                             }
 
-                            // 6. Comportamento padrão: popup de informações
-                            L.popup({ autoPanPadding: [50, 50] }).setLatLng(e.latlng).setContent(createPopupContent(title, props)).openOn(map);
                             if (isFazenda) {
                                 if (layer.getBounds) map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
                             }
-                            // Fundamental impedir propagação para o mapa, senão o popup fecha na mesma hora
-                            if (e.originalEvent) {
-                                L.DomEvent.stop(e.originalEvent);
-                            }
+                            
+                            // Let Leaflet's native bindPopup handle the rest
                         }
                     });
+
+                    // 6. Comportamento padrão: bindPopup (Resolve todos os problemas de clique e fechamento)
+                    layer.bindPopup(createPopupContent(title, props), { autoPanPadding: [50, 50] });
                 }
             };
             
