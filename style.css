@@ -765,8 +765,8 @@ body, html {
 
 
 /* Custom TalhÃ£o Labels (Viewport Culled) */
+/* Custom Talhão Labels (Viewport Culled) */
 .custom-talhao-label-container {
-    pointer-events: none;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1530,3 +1530,6 @@ body.clima-farm-active #map .leaflet-interactive {
 .autocomplete-items div:last-child { border-bottom: none; }
 
 
+
+.custom-talhao-label-tooltip { background: transparent; border: none; box-shadow: none; pointer-events: none; padding: 0; } 
+.custom-talhao-label-tooltip::before { display: none; }

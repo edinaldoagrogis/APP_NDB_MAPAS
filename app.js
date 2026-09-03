@@ -284,24 +284,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function createTalhaoMarker(item) {
-        const marker = L.marker(item.latlng, {
-            icon: L.divIcon({
-                className: 'custom-talhao-label-container',
-                html: item.html,
-                iconSize: [60, 40],
-                iconAnchor: [30, 20]
-            }),
-            interactive: true // Interactive so we can catch the click on WebView
-        });
+        const tooltip = L.tooltip({
+            permanent: true,
+            direction: 'center',
+            className: 'custom-talhao-label-tooltip',
+            interactive: false // Tooltips naturally pass clicks and drags to the map
+        }).setLatLng(item.latlng).setContent(item.html);
         
-        // Forward click to the underlying polygon
-        marker.on('click', (e) => {
-            if (item.layer) {
-                item.layer.fire('click', e);
-            }
-        });
-        
-        return marker;
+        return tooltip;
     }
 
     function _getGridItemsInBounds(bounds) {
@@ -803,11 +793,17 @@ document.addEventListener('DOMContentLoaded', () => {
                             geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
                             mapLayer._realGeoJSON = L.geoJSON(geojsonData, geoJsonOptions);
                             mapLayer.addLayer(mapLayer._realGeoJSON);
+                            
+                            // Adiciona ao mapa APENAS APÓS estar totalmente populado para evitar o bug do Canvas hit-test
+                            if (isFazenda || isTalhao) {
+                                mapLayer.addTo(map);
+                            }
+                            
+                            if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
                         })
-                        .catch(e => console.error('[Talhões] Erro ao carregar GeoJSON', e))
-                        .finally(() => {
-                            const indicator = document.getElementById('lazy-loading-indicator-' + layerName.replace(/\s/g, ''));
-                            if (indicator) indicator.remove();
+                        .catch(err => {
+                            console.error('Erro ao carregar ' + layerName + ' via GeoJSON:', err);
+                            if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
                         });
                 } else {
                     // LINHAS DE COLHEITA: FlatGeobuf + Canvas (Não precisam ser clicáveis com precisão)
@@ -815,7 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
                     mapLayer._lazyOptions = geoJsonOptions;
                     
-                    mapLayer.on('add', function() {
+                    mapLayer.on('add', async function() {
                         if (this._isLazy) {
                             console.log('Lazy loading layer ' + layerName + ' via FlatGeobuf');
                             const loadingEl = document.createElement('div');
@@ -824,27 +820,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             loadingEl.style = 'position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 9999; pointer-events: none;';
                             document.body.appendChild(loadingEl);
 
-                            setTimeout(async () => {
-                                try {
-                                    const response = await fetch('./linhas_colheita.fgb');
-                                    const buffer = await response.arrayBuffer();
-                                    const uint8 = new Uint8Array(buffer);
-                                    
-                                    const features = [];
-                                    const iter = flatgeobuf.deserialize(uint8);
-                                    for await (let feature of iter) {
-                                        features.push(feature);
-                                    }
-                                    
-                                    this._realGeoJSON = L.geoJSON({ type: 'FeatureCollection', features: features }, this._lazyOptions);
-                                    this.addLayer(this._realGeoJSON);
-                                    this._isLazy = false;
-                                } catch (e) {
-                                    console.error('Erro FGB', e);
+                            this._isLazy = false;
+                            this._realGeoJSON = L.geoJSON(null, this._lazyOptions);
+                            this.addLayer(this._realGeoJSON);
+                            
+                            try {
+                                let fgbFile = './linhas_colheita.fgb';
+                                const response = await fetch(fgbFile);
+                                const buffer = await response.arrayBuffer();
+                                for await (let feature of flatgeobuf.deserialize(buffer)) {
+                                    this._realGeoJSON.addData(feature);
                                 }
-                                const indicator = document.getElementById('lazy-loading-indicator-' + layerName.replace(/\s/g, ''));
-                                if (indicator) indicator.remove();
-                            }, 50);
+                                if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+                            } catch (err) {
+                                console.error('Erro lazy load:', err);
+                                if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+                            }
                         }
                     });
                 }
@@ -854,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const isDefaultActive = isFazenda || isTalhao;
-            if (isDefaultActive) {
+            if (isDefaultActive && !isTalhao) {
                 mapLayer.addTo(map);
             }
             
