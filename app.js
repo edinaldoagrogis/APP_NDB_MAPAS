@@ -1820,8 +1820,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (window.selectedTalhaoLayer) {
             // Find the layer group that contains it to reset its style
             Object.values(loadedLayers).forEach(group => {
-                if (group.hasLayer && group.hasLayer(window.selectedTalhaoLayer) && group.resetStyle) {
-                    group.resetStyle(window.selectedTalhaoLayer);
+                if (group.hasLayer) {
+                    const hasDirect = group.hasLayer(window.selectedTalhaoLayer);
+                    const hasNested = group._realGeoJSON && group._realGeoJSON.hasLayer && group._realGeoJSON.hasLayer(window.selectedTalhaoLayer);
+                    if ((hasDirect || hasNested) && group.resetStyle) {
+                        group.resetStyle(window.selectedTalhaoLayer);
+                    }
                 }
             });
             window.selectedTalhaoLayer = null;
@@ -1829,8 +1833,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         if (window.selectedHarvestLayer && window.loadedLayers) {
             const harvestLayer = window.loadedLayers['LINHAS DE COLHEITA'];
-            if (harvestLayer && harvestLayer.hasLayer(window.selectedHarvestLayer)) {
-                harvestLayer.resetStyle(window.selectedHarvestLayer);
+            if (harvestLayer) {
+                const hasDirect = harvestLayer.hasLayer && harvestLayer.hasLayer(window.selectedHarvestLayer);
+                const hasNested = harvestLayer._realGeoJSON && harvestLayer._realGeoJSON.hasLayer && harvestLayer._realGeoJSON.hasLayer(window.selectedHarvestLayer);
+                if ((hasDirect || hasNested) && harvestLayer.resetStyle) {
+                    harvestLayer.resetStyle(window.selectedHarvestLayer);
+                }
             }
             window.selectedHarvestLayer = null;
         }
@@ -1959,12 +1967,13 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }
             
             // 3. Clima Farm (Ignora popup, abre painel)
-            if (foundIsTalhao && window.openClimaPanel && window.climaToolActive) {
+            if (foundIsTalhao && window.climaFarmActive && window.climaFarmFetchData) {
                 window.selectedTalhaoLayer = foundLayer;
                 foundLayer.setStyle({ color: '#ffeb3b', weight: 3.5, opacity: 1, fillOpacity: 0.5 });
                 if (foundLayer.bringToFront) foundLayer.bringToFront();
                 
-                window.openClimaPanel({ type: 'Feature', geometry: foundLayer.feature.geometry, properties: foundProps }, foundProps);
+                const center = foundLayer.getBounds ? foundLayer.getBounds().getCenter() : latlng;
+                window.climaFarmFetchData(center.lat, center.lng, foundProps);
                 return;
             }
             
@@ -3225,6 +3234,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     if (toolWeedBtn) {
         toolWeedBtn.addEventListener('click', () => {
             weedToolActive = !weedToolActive;
+            window.weedToolActive = weedToolActive;
             if (weedToolActive) {
                 toolWeedBtn.style.background = 'rgba(255,0,0,0.2)';
                 toolWeedBtn.style.borderColor = '#ff1744';
