@@ -3871,19 +3871,22 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
         if (minAnalyzerBtn) {
             minAnalyzerBtn.addEventListener('click', () => {
+                isMaximized = false;
+                analyzerPanel.style.height = 'auto';
+                analyzerContent.style.maxHeight = '35vh';
                 analyzerContent.style.display = analyzerContent.style.display === 'none' ? 'flex' : 'none';
-                if (analyzerContent.style.display === 'none') {
-                    analyzerPanel.style.height = 'auto';
-                }
             });
         }
 
         if (maxAnalyzerBtn) {
             maxAnalyzerBtn.addEventListener('click', () => {
                 isMaximized = !isMaximized;
+                analyzerContent.style.display = 'flex'; // Ensure it's visible when maximizing
                 if (isMaximized) {
-                    analyzerContent.style.maxHeight = '75vh';
+                    analyzerPanel.style.height = '85vh';
+                    analyzerContent.style.maxHeight = 'calc(85vh - 70px)';
                 } else {
+                    analyzerPanel.style.height = 'auto';
                     analyzerContent.style.maxHeight = '35vh';
                 }
             });
@@ -3892,6 +3895,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         window.populateAnalyzer = (props, title) => {
             analyzerPlaceholder.style.display = 'none';
             analyzerData.style.display = 'flex';
+            analyzerContent.style.display = 'flex'; // Ensure panel is expanded when a talhão is clicked
             
             const getProp = (keys) => {
                 const k = Object.keys(props);
