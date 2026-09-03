@@ -700,13 +700,29 @@ document.addEventListener('DOMContentLoaded', () => {
                                 features.push(feature);
                             }
                             
+                            const fc = { type: "FeatureCollection", features: features };
                             geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
-                            mapLayer._realGeoJSON = L.geoJSON(features, geoJsonOptions);
+                            mapLayer._realGeoJSON = L.geoJSON(fc, geoJsonOptions);
                             mapLayer.addLayer(mapLayer._realGeoJSON);
                             
                             if (isFazenda || isTalhao) {
                                 mapLayer.addTo(map);
                             }
+                            
+                            // Update the UI count
+                            setTimeout(() => {
+                                const ul = document.getElementById('layers-list');
+                                if (ul) {
+                                    const items = ul.querySelectorAll('.layer-item');
+                                    items.forEach(item => {
+                                        const nameDiv = item.querySelector('.layer-name');
+                                        if (nameDiv && nameDiv.innerText.toUpperCase() === 'TALHOES') {
+                                            const subtitle = item.querySelector('.layer-subtitle');
+                                            if (subtitle) subtitle.innerText = features.length + ' objetos';
+                                        }
+                                    });
+                                }
+                            }, 500);
                             
                             if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
                         } catch(err) {
