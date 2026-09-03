@@ -3242,6 +3242,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 // Abrir painel
                 if (panel) panel.style.display = 'block';
                 document.getElementById('floating-tools-panel').style.display = 'none';
+                document.querySelectorAll('.leaflet-right, .leaflet-left').forEach(el => el.style.display = 'none');
                 
                 // Ligar servidor via pywebview
                 if (window.pywebview && window.pywebview.api) {
@@ -3253,18 +3254,27 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 setTimeout(checkApiHealth, 3000);
                 setTimeout(checkApiHealth, 6000);
             } else {
-                toolWeedBtn.style.background = 'rgba(255,0,0,0.08)';
-                toolWeedBtn.style.borderColor = 'rgba(255,0,0,0.3)';
-                toolWeedBtn.title = 'Identificar infestaÃ§Ã£o de ervas daninhas por satÃ©lite';
-                
-                // Desligar servidor via pywebview se houver botÃ£o para desligar, 
-                // mas espera, o botÃ£o de fechar painel Ã© quem desativa a ferramenta geralmente,
-                // no entanto se clicar no Ã­cone denovo tambÃ©m deve desligar.
-                if (window.pywebview && window.pywebview.api) {
-                    window.pywebview.api.stop_server().then(res => console.log(res));
-                }
+                deactivateWeedTool();
             }
         });
+    }
+
+    function deactivateWeedTool() {
+        weedToolActive = false;
+        window.weedToolActive = false;
+        if (toolWeedBtn) {
+            toolWeedBtn.style.background = 'rgba(255,0,0,0.08)';
+            toolWeedBtn.style.borderColor = 'rgba(255,0,0,0.3)';
+            toolWeedBtn.title = 'Identificar infestaÃ§Ã£o de ervas daninhas por satÃ©lite';
+        }
+        if (panel) panel.style.display = 'none';
+        
+        document.querySelectorAll('.leaflet-right, .leaflet-left').forEach(el => el.style.display = '');
+        if (window.clearAllSelections) window.clearAllSelections();
+        
+        if (window.pywebview && window.pywebview.api) {
+            window.pywebview.api.stop_server().then(res => console.log(res));
+        }
     }
 
     // â”€â”€ Coletador de features da fazenda a partir do GeoJSON carregado â”€
@@ -3786,12 +3796,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
     }
     if (btnClose) {
-        btnClose.addEventListener('click', () => { 
-            if (panel) panel.style.display = 'none';
-            if (window.pywebview && window.pywebview.api) {
-                window.pywebview.api.stop_server().then(res => console.log(res));
-            }
-        });
+        btnClose.addEventListener('click', deactivateWeedTool);
     }
     if (btnGeoJSON)      btnGeoJSON.addEventListener('click', () => doExportGeoJSON(weedResultGeoJSON, selectedFazendaName));
     if (btnKML)          btnKML.addEventListener('click', () => doExportKML(weedResultGeoJSON, selectedFazendaName));

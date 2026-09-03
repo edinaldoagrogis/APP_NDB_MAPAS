@@ -264,11 +264,14 @@
         document.getElementById('cf-close-btn').addEventListener('click', deactivate);
     }
 
-    // ─── Ativar ferramenta ────────────────────────────────────────────
+    // ─── Ativar ferramenta ────────────────────────────────────────────    // 🚀 Ativar ferramenta 🚀
     function activate() {
         isActive = true;
         window.climaFarmActive = true;
         document.body.classList.add('clima-farm-active');
+
+        // Hide side controls
+        document.querySelectorAll('.leaflet-right, .leaflet-left').forEach(el => el.style.display = 'none');
 
         const btn = document.getElementById('btn-clima-farm-control');
         if (btn) {
@@ -276,17 +279,23 @@
             btn.style.boxShadow = '0 0 14px rgba(56,189,248,0.4)';
             btn.style.background = 'rgba(56,189,248,0.2)';
             const icon = btn.querySelector('.cf-btn-icon');
-            if (icon) icon.style.opacity = '1';
+            if (icon) icon.style.fill = '#38bdf8';
         }
 
         showWaitingState();
     }
 
-    // ─── Desativar ferramenta ─────────────────────────────────────────
+    // 🚀 Desativar ferramenta 🚀
     function deactivate() {
         isActive = false;
         window.climaFarmActive = false;
         document.body.classList.remove('clima-farm-active');
+
+        // Show side controls
+        document.querySelectorAll('.leaflet-right, .leaflet-left').forEach(el => el.style.display = '');
+
+        // Clear selection
+        if (window.clearAllSelections) window.clearAllSelections();
 
         if (currentRequest) {
             currentRequest.abort();
