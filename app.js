@@ -3893,15 +3893,61 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             analyzerPlaceholder.style.display = 'none';
             analyzerData.style.display = 'flex';
             
-            let html = `<div style="font-weight: bold; color: #fff; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px;">${title}</div>`;
+            const getProp = (keys) => {
+                const k = Object.keys(props);
+                for (const name of keys) {
+                    const found = k.find(x => x.toUpperCase() === name.toUpperCase());
+                    if (found) return { key: found, val: props[found] };
+                }
+                return null;
+            };
+
+            const nomeFazObj = getProp(['NOME_FAZ', 'FAZENDA', 'NOMEPROPRI']);
+            const areaFazObj = getProp(['AREA_FAZ', 'AREA_TOTAL', 'AREA_TOTAL_FAZ', 'HECTARES_FAZ']);
+            const codTalObj = getProp(['COD_TALHAO', 'TALHAO', 'CODIGO', 'ID']);
+            const areaTalObj = getProp(['TALHAO_ARE', 'AREA', 'AREA_HA', 'DL AREA']);
+            const corteObj = getProp(['DL CORTE', 'CORTE', 'ESTAGIO', 'CICLO', 'CORTES']);
+            const varObj = getProp(['DL VARIEDADE', 'VARIEDADE', 'VAR', 'CULTURA']);
+            
+            const nomeFaz = nomeFazObj ? nomeFazObj.val : title;
+            const areaFaz = areaFazObj ? areaFazObj.val : '';
+            
+            let html = `<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 12px;">
+                            <div style="font-weight: bold; color: #fff; font-size: 15px; text-transform: uppercase;">${nomeFaz}</div>
+                            ${areaFaz ? `<div style="font-size: 12px; color: #2ec4b6; font-weight: bold; background: rgba(46, 196, 182, 0.1); padding: 4px 8px; border-radius: 4px;">ÁREA TOTAL: ${areaFaz}</div>` : ''}
+                        </div>`;
             
             const skipKeys = ['style', 'stroke', 'fill', 'opacity', 'fill-opacity'];
-            
+            if (nomeFazObj) skipKeys.push(nomeFazObj.key.toLowerCase());
+            if (areaFazObj) skipKeys.push(areaFazObj.key.toLowerCase());
+            if (codTalObj) skipKeys.push(codTalObj.key.toLowerCase());
+            if (areaTalObj) skipKeys.push(areaTalObj.key.toLowerCase());
+            if (corteObj) skipKeys.push(corteObj.key.toLowerCase());
+            if (varObj) skipKeys.push(varObj.key.toLowerCase());
+
             html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+            
+            const drawCard = (label, val, highlight = false) => {
+                if (val === undefined || val === null) val = '-';
+                const bg = highlight ? 'rgba(46, 196, 182, 0.1)' : 'rgba(255,255,255,0.05)';
+                const color = highlight ? '#2ec4b6' : '#fff';
+                return `
+                    <div style="background: ${bg}; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size: 10px; color: #a8b8b0; margin-bottom: 4px; text-transform: uppercase;">${label}</div>
+                        <div style="font-size: 14px; color: ${color}; word-break: break-all; font-weight: bold;">${val}</div>
+                    </div>
+                `;
+            };
+
+            if (codTalObj) html += drawCard(codTalObj.key, codTalObj.val, true);
+            if (areaTalObj) html += drawCard(areaTalObj.key, areaTalObj.val, true);
+            if (corteObj) html += drawCard(corteObj.key, corteObj.val, true);
+            if (varObj) html += drawCard(varObj.key, varObj.val, true);
+            
             for (let key in props) {
                 if (skipKeys.includes(key.toLowerCase())) continue;
                 html += `
-                    <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.02);">
                         <div style="font-size: 10px; color: #a8b8b0; margin-bottom: 2px;">${key}</div>
                         <div style="font-size: 12px; color: #fff; word-break: break-all;">${props[key]}</div>
                     </div>
