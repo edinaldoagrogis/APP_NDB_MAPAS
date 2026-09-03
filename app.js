@@ -691,6 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (!isFazenda) {
                                 const l = e.target;
                                 if (isLinhasColheita && window.selectedHarvestLayer === l) return;
+                                if (isTalhao && window.selectedTalhaoLayer === l) return;
                                 mapLayer.resetStyle(l);
                             }
                         },
@@ -764,44 +765,66 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             if (data === null) {
-                mapLayer._isLazy = true;
-                geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
-                mapLayer._lazyOptions = geoJsonOptions;
-                
-                mapLayer.on('add', function() {
-                    if (this._isLazy) {
-                        console.log('Lazy loading layer ' + layerName + ' via FlatGeobuf');
-                        const loadingEl = document.createElement('div');
-                        loadingEl.id = 'lazy-loading-indicator-' + layerName.replace(/\s/g, '');
-                        loadingEl.innerHTML = 'Carregando ' + layerName + '...';
-                        loadingEl.style = 'position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 9999; pointer-events: none;';
-                        document.body.appendChild(loadingEl);
+                if (isTalhao) {
+                    // TALHÕES: GeoJSON resolve o bug de hit-test do Canvas do Leaflet
+                    const loadingEl = document.createElement('div');
+                    loadingEl.id = 'lazy-loading-indicator-' + layerName.replace(/\s/g, '');
+                    loadingEl.innerHTML = 'Carregando ' + layerName + '...';
+                    loadingEl.style = 'position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 9999; pointer-events: none;';
+                    document.body.appendChild(loadingEl);
 
-                        setTimeout(async () => {
-                            try {
-                                let fgbFile = './linhas_colheita.fgb';
-                                if (isTalhao) fgbFile = './talhoes.fgb';
-                                const response = await fetch(fgbFile);
-                                const buffer = await response.arrayBuffer();
-                                const uint8 = new Uint8Array(buffer);
-                                
-                                const features = [];
-                                const iter = flatgeobuf.deserialize(uint8);
-                                for await (let feature of iter) {
-                                    features.push(feature);
-                                }
-                                
-                                this._realGeoJSON = L.geoJSON({ type: 'FeatureCollection', features: features }, this._lazyOptions);
-                                this.addLayer(this._realGeoJSON);
-                                this._isLazy = false;
-                            } catch (e) {
-                                console.error('Erro FGB', e);
-                            }
+                    fetch('./talhoes.geojson')
+                        .then(r => r.json())
+                        .then(geojsonData => {
+                            // SVG renderer instead of canvas to guarantee perfect click interaction
+                            geoJsonOptions.renderer = L.svg({ padding: 0.5 });
+                            mapLayer._realGeoJSON = L.geoJSON(geojsonData, geoJsonOptions);
+                            mapLayer.addLayer(mapLayer._realGeoJSON);
+                        })
+                        .catch(e => console.error('[Talhões] Erro ao carregar GeoJSON', e))
+                        .finally(() => {
                             const indicator = document.getElementById('lazy-loading-indicator-' + layerName.replace(/\s/g, ''));
                             if (indicator) indicator.remove();
-                        }, 50);
-                    }
-                });
+                        });
+                } else {
+                    // LINHAS DE COLHEITA: FlatGeobuf + Canvas (Não precisam ser clicáveis com precisão)
+                    mapLayer._isLazy = true;
+                    geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
+                    mapLayer._lazyOptions = geoJsonOptions;
+                    
+                    mapLayer.on('add', function() {
+                        if (this._isLazy) {
+                            console.log('Lazy loading layer ' + layerName + ' via FlatGeobuf');
+                            const loadingEl = document.createElement('div');
+                            loadingEl.id = 'lazy-loading-indicator-' + layerName.replace(/\s/g, '');
+                            loadingEl.innerHTML = 'Carregando ' + layerName + '...';
+                            loadingEl.style = 'position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 9999; pointer-events: none;';
+                            document.body.appendChild(loadingEl);
+
+                            setTimeout(async () => {
+                                try {
+                                    const response = await fetch('./linhas_colheita.fgb');
+                                    const buffer = await response.arrayBuffer();
+                                    const uint8 = new Uint8Array(buffer);
+                                    
+                                    const features = [];
+                                    const iter = flatgeobuf.deserialize(uint8);
+                                    for await (let feature of iter) {
+                                        features.push(feature);
+                                    }
+                                    
+                                    this._realGeoJSON = L.geoJSON({ type: 'FeatureCollection', features: features }, this._lazyOptions);
+                                    this.addLayer(this._realGeoJSON);
+                                    this._isLazy = false;
+                                } catch (e) {
+                                    console.error('Erro FGB', e);
+                                }
+                                const indicator = document.getElementById('lazy-loading-indicator-' + layerName.replace(/\s/g, ''));
+                                if (indicator) indicator.remove();
+                            }, 50);
+                        }
+                    });
+                }
             } else {
                 mapLayer._realGeoJSON = L.geoJSON(data, geoJsonOptions);
                 mapLayer.addLayer(mapLayer._realGeoJSON);
