@@ -684,33 +684,36 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data === null) {
                 if (isTalhao) {
-                    // TALHÕES: GeoJSON resolve o bug de hit-test do Canvas do Leaflet
+                    // TALHÕES: FlatGeobuf (Carregando para a memória primeiro para evitar bug do Canvas no hit-test)
                     const loadingEl = document.createElement('div');
                     loadingEl.id = 'lazy-loading-indicator-' + layerName.replace(/\s/g, '');
                     loadingEl.innerHTML = 'Carregando ' + layerName + '...';
                     loadingEl.style = 'position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 9999; pointer-events: none;';
                     document.body.appendChild(loadingEl);
 
-                    fetch('./talhoes.geojson')
-                        .then(r => r.json())
-                        .then(geojsonData => {
-                            // Utiliza o Canvas (como no primeiro APK) pois agora carregamos o GeoJSON inteiro de uma vez,
-                            // o que evita o bug do hit-test do Canvas que ocorria ao carregar o FGB pedaço por pedaço.
+                    (async () => {
+                        try {
+                            const response = await fetch('./talhoes.fgb');
+                            const buffer = await response.arrayBuffer();
+                            const features = [];
+                            for await (let feature of flatgeobuf.deserialize(buffer)) {
+                                features.push(feature);
+                            }
+                            
                             geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
-                            mapLayer._realGeoJSON = L.geoJSON(geojsonData, geoJsonOptions);
+                            mapLayer._realGeoJSON = L.geoJSON(features, geoJsonOptions);
                             mapLayer.addLayer(mapLayer._realGeoJSON);
                             
-                            // Adiciona ao mapa APENAS APÓS estar totalmente populado para evitar o bug do Canvas hit-test
                             if (isFazenda || isTalhao) {
                                 mapLayer.addTo(map);
                             }
                             
                             if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
-                        })
-                        .catch(err => {
-                            console.error('Erro ao carregar ' + layerName + ' via GeoJSON:', err);
+                        } catch(err) {
+                            console.error('Erro ao carregar ' + layerName + ' via FGB:', err);
                             if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
-                        });
+                        }
+                    })();
                 } else {
                     // LINHAS DE COLHEITA: FlatGeobuf + Canvas (Não precisam ser clicáveis com precisão)
                     mapLayer._isLazy = true;
