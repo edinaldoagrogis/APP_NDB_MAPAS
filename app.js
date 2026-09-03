@@ -3908,6 +3908,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
             const nomeFazObj = getProp(['NOME_FAZ', 'FAZENDA', 'NOMEPROPRI']);
             const areaFazObj = getProp(['AREA_FAZ', 'AREA_TOTAL', 'AREA_TOTAL_FAZ', 'HECTARES_FAZ']);
+            const codFazObj = getProp(['COD_FAZ', 'COD_FAZENDA', 'ID_FAZENDA', 'COD_FAZEN']);
             const codTalObj = getProp(['COD_TALHAO', 'TALHAO', 'CODIGO', 'ID']);
             const areaTalObj = getProp(['TALHAO_ARE', 'AREA', 'AREA_HA', 'DL AREA']);
             const corteObj = getProp(['DL CORTE', 'CORTE', 'ESTAGIO', 'CICLO', 'CORTES']);
@@ -3924,6 +3925,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             const skipKeys = ['style', 'stroke', 'fill', 'opacity', 'fill-opacity'];
             if (nomeFazObj) skipKeys.push(nomeFazObj.key.toLowerCase());
             if (areaFazObj) skipKeys.push(areaFazObj.key.toLowerCase());
+            if (codFazObj) skipKeys.push(codFazObj.key.toLowerCase());
             if (codTalObj) skipKeys.push(codTalObj.key.toLowerCase());
             if (areaTalObj) skipKeys.push(areaTalObj.key.toLowerCase());
             if (corteObj) skipKeys.push(corteObj.key.toLowerCase());
@@ -3943,6 +3945,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 `;
             };
 
+            if (codFazObj) html += drawCard(codFazObj.key, codFazObj.val, true);
             if (codTalObj) html += drawCard(codTalObj.key, codTalObj.val, true);
             if (areaTalObj) html += drawCard(areaTalObj.key, areaTalObj.val, true);
             if (corteObj) html += drawCard(corteObj.key, corteObj.val, true);
