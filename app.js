@@ -266,6 +266,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeLabelGroups = { TALHOES: L.layerGroup().addTo(map) };
     const layerStyles = {}; // Store generated styles
 
+    // ─── Spatial Grid Index para labels de talhões ──────────────────────
+    // Divide o espaço em células de 0.1° × 0.1° para lookup O(1) por viewport
+    const GRID_CELL_SIZE = 0.1; // graus
+    const _talhaoGrid = {}; // { "lat_lng": [items] }
+
+    function _gridKey(lat, lng) {
+        const gLat = Math.floor(lat / GRID_CELL_SIZE);
+        const gLng = Math.floor(lng / GRID_CELL_SIZE);
+        return `${gLat}_${gLng}`;
+    }
+
+    function _addToGrid(item) {
+        const key = _gridKey(item.latlng.lat, item.latlng.lng);
+        if (!_talhaoGrid[key]) _talhaoGrid[key] = [];
+        _talhaoGrid[key].push(item);
+    }
+
+    function _getGridItemsInBounds(bounds) {
+        const minLat = Math.floor(bounds.getSouth() / GRID_CELL_SIZE);
+        const maxLat = Math.floor(bounds.getNorth() / GRID_CELL_SIZE);
+        const minLng = Math.floor(bounds.getWest() / GRID_CELL_SIZE);
+        const maxLng = Math.floor(bounds.getEast() / GRID_CELL_SIZE);
+        const result = [];
+        for (let gLat = minLat; gLat <= maxLat; gLat++) {
+            for (let gLng = minLng; gLng <= maxLng; gLng++) {
+                const key = `${gLat}_${gLng}`;
+                if (_talhaoGrid[key]) result.push(..._talhaoGrid[key]);
+            }
+        }
+        return result;
+    }
+    // ────────────────────────────────────────────────────────────────────
+
     function updateLabelVisibility() {
         if (!map) return;
         const currentZoom = map.getZoom();
@@ -286,39 +319,53 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('map').classList.remove('show-labels');
         }
 
-        // TalhÃµes Viewport logic
-        if (activeLabelGroups.TALHOES && layerLabels.TALHOES) {
+        // Talhões Viewport logic — usa grid espacial para O(k) onde k = talhões visíveis
+        if (activeLabelGroups.TALHOES) {
             const toggleTalhoes = document.getElementById('toggle-labels-talhoes');
-            // Allow checking if the talhoes toggle exists and is checked, otherwise default to true if it hasn't been rendered yet
             const talhoesEnabled = toggleTalhoes ? toggleTalhoes.checked : true;
             const zoom = map.getZoom();
             
             if (talhoesEnabled && zoom >= TALHOES_ZOOM_THRESHOLD) {
-                const bounds = map.getBounds().pad(0.1); // smaller pad for faster checks
-                for (const item of layerLabels.TALHOES) {
-                    const isVisible = bounds.contains(item.latlng);
-                    const hasLayer = item.marker && activeLabelGroups.TALHOES.hasLayer(item.marker);
-                    
-                    if (isVisible) {
-                        if (!item.marker) {
-                            // Lazy instantiate marker only when it first enters viewport
-                            item.marker = L.marker(item.latlng, {
-                                icon: L.divIcon({
-                                    className: 'custom-talhao-label-container',
-                                    html: item.html,
-                                    iconSize: [60, 40],
-                                    iconAnchor: [30, 20]
-                                }),
-                                interactive: false
-                            });
+                const bounds = map.getBounds().pad(0.15);
+                const candidates = _getGridItemsInBounds(bounds);
+                const toAdd = [];
+                const toRemove = [];
+
+                // Marca itens visíveis para adicionar
+                const visibleSet = new Set();
+                for (const item of candidates) {
+                    if (bounds.contains(item.latlng)) {
+                        visibleSet.add(item);
+                        const hasLayer = item.marker && activeLabelGroups.TALHOES.hasLayer(item.marker);
+                        if (!hasLayer) {
+                            if (!item.marker) {
+                                item.marker = L.marker(item.latlng, {
+                                    icon: L.divIcon({
+                                        className: 'custom-talhao-label-container',
+                                        html: item.html,
+                                        iconSize: [60, 40],
+                                        iconAnchor: [30, 20]
+                                    }),
+                                    interactive: false
+                                });
+                            }
+                            toAdd.push(item.marker);
                         }
-                        if (!hasLayer) activeLabelGroups.TALHOES.addLayer(item.marker);
-                    } else if (!isVisible && hasLayer) {
-                        activeLabelGroups.TALHOES.removeLayer(item.marker);
                     }
                 }
+
+                // Remove apenas markers que saíram da tela
+                activeLabelGroups.TALHOES.getLayers().forEach(marker => {
+                    const item = layerLabels.TALHOES.find(i => i.marker === marker);
+                    if (item && !visibleSet.has(item)) {
+                        toRemove.push(marker);
+                    }
+                });
+
+                // Batch DOM — fora do loop
+                toAdd.forEach(m => activeLabelGroups.TALHOES.addLayer(m));
+                toRemove.forEach(m => activeLabelGroups.TALHOES.removeLayer(m));
             } else {
-                // Only clear if we zoom out or disable
                 if (activeLabelGroups.TALHOES.getLayers().length > 0) {
                     activeLabelGroups.TALHOES.clearLayers();
                 }
@@ -326,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Debounce function to optimize heavy viewport operations
+    // Debounce: 200ms — aguarda o mapa parar antes de recalcular labels
     function debounce(func, wait) {
         let timeout;
         return function(...args) {
@@ -335,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
-    const debouncedUpdateLabelVisibility = debounce(updateLabelVisibility, 50);
+    const debouncedUpdateLabelVisibility = debounce(updateLabelVisibility, 200);
 
     map.on('zoomend', debouncedUpdateLabelVisibility);
     map.on('moveend', debouncedUpdateLabelVisibility);
@@ -545,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const geoJsonOptions = {
                 pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
-                smoothFactor: isLinhasColheita ? 3.0 : 1.5,
+                smoothFactor: isLinhasColheita ? 3.0 : (isTalhao ? 2.5 : 1.5),
                 style: styleFunc,
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
@@ -609,7 +656,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div class="tc-var" style="font-size: 7.5px; font-weight: bold; opacity: 0.9;">${varName}</div>
                                 </div>
                             `;
-                            layerLabels.TALHOES.push({ latlng: layer.getBounds().getCenter(), html: html, marker: null });
+                            const labelItem = { latlng: layer.getBounds().getCenter(), html: html, marker: null };
+                            layerLabels.TALHOES.push(labelItem);
+                            _addToGrid(labelItem); // Registra na grade espacial
                         }
                     }
                     layer.on({

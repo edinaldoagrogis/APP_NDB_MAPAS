@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v181';
+const CACHE_NAME = 'agrogis-v182';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -165,13 +165,46 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Cache-First Strategy para todo o resto (app.js, index.html, etc) - Extrema velocidade na inicialização
+    // ─── Cache de Tiles de Mapa (Fase 2 — Offline Avançado) ───────────────
+    // Tiles ArcGIS, OSM e CartoDB são salvos conforme o usuário navega.
+    // Da próxima vez offline, os tiles visitados carregam do cache.
+    const TILE_CACHE = 'agrogis-tiles-v1';
+    const isTileRequest = (
+        url.hostname.includes('arcgisonline.com') ||
+        url.hostname.includes('tile.openstreetmap.org') ||
+        url.hostname.includes('basemaps.cartocdn.com')
+    );
+
+    if (isTileRequest) {
+        event.respondWith(
+            caches.open(TILE_CACHE).then(async tileCache => {
+                const cached = await tileCache.match(event.request);
+                if (cached) return cached;
+                try {
+                    const response = await fetch(event.request);
+                    if (response && (response.status === 200 || response.type === 'opaque')) {
+                        tileCache.put(event.request, response.clone());
+                    }
+                    return response;
+                } catch {
+                    // Offline e tile não cacheado — retorna pixel transparente 1×1
+                    return new Response(
+                        new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,1,0,0,0,1,0,8,6,0,0,0,92,114,168,110,0,0,0,11,73,68,65,84,120,156,98,0,0,0,0,2,0,0,0,5,0,1,13,10,45,180,0,0,0,0,73,69,78,68,174,66,96,130]).buffer,
+                        { status: 200, headers: { 'Content-Type': 'image/png' } }
+                    );
+                }
+            })
+        );
+        return;
+    }
+    // ──────────────────────────────────────────────────────────────────────
+
+    // Cache-First Strategy para todo o resto - Extrema velocidade na inicialização
     event.respondWith(
         caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
             if (cachedResponse) {
-                return cachedResponse; // Retorna imediatamente do celular, zero tela de splash demorada
+                return cachedResponse;
             }
-            // Se não estiver no cache, tenta a rede
             return fetch(event.request).then(response => {
                 if (response && (response.status === 200 || response.type === 'opaque')) {
                     const responseToCache = response.clone();
