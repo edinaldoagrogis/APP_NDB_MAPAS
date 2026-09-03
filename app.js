@@ -695,21 +695,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         try {
                             const response = await fetch('./talhoes.fgb');
                             const buffer = await response.arrayBuffer();
-                            const features = [];
-                            for await (let feature of flatgeobuf.deserialize(buffer)) {
-                                features.push(feature);
+                            
+                            geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
+                            mapLayer._realGeoJSON = L.geoJSON(null, geoJsonOptions);
+                            
+                            let count = 0;
+                            // new Uint8Array is safer for older browsers with flatgeobuf
+                            for await (let feature of flatgeobuf.deserialize(new Uint8Array(buffer))) {
+                                mapLayer._realGeoJSON.addData(feature);
+                                count++;
                             }
                             
-                            const fc = { type: "FeatureCollection", features: features };
-                            geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
-                            mapLayer._realGeoJSON = L.geoJSON(fc, geoJsonOptions);
                             mapLayer.addLayer(mapLayer._realGeoJSON);
                             
                             if (isFazenda || isTalhao) {
                                 mapLayer.addTo(map);
                             }
                             
-                            // Update the UI count
+                            // Update the UI count safely
                             setTimeout(() => {
                                 const ul = document.getElementById('layers-list');
                                 if (ul) {
@@ -718,11 +721,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                         const nameDiv = item.querySelector('.layer-name');
                                         if (nameDiv && nameDiv.innerText.toUpperCase() === 'TALHOES') {
                                             const subtitle = item.querySelector('.layer-subtitle');
-                                            if (subtitle) subtitle.innerText = features.length + ' objetos';
+                                            if (subtitle) subtitle.innerText = count + ' objetos';
                                         }
                                     });
                                 }
-                            }, 500);
+                            }, 200);
                             
                             if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
                         } catch(err) {
@@ -753,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 let fgbFile = './linhas_colheita.fgb';
                                 const response = await fetch(fgbFile);
                                 const buffer = await response.arrayBuffer();
-                                for await (let feature of flatgeobuf.deserialize(buffer)) {
+                                for await (let feature of flatgeobuf.deserialize(new Uint8Array(buffer))) {
                                     this._realGeoJSON.addData(feature);
                                 }
                                 if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
