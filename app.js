@@ -698,76 +698,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 mapLayer.resetStyle(l);
                             }
                         },
-                        click: (e) => {
-                            const l = e.target;
-
-                            // 1. Modo seleção de rota
-                            if (window.routeSelectionMode) {
-                                layer.closePopup();
-                                const lat = layer.getBounds ? layer.getBounds().getCenter().lat : e.latlng.lat;
-                                const lng = layer.getBounds ? layer.getBounds().getCenter().lng : e.latlng.lng;
-                                window.setRouteWaypoint(title, lat, lng);
-                                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
-                                return;
-                            }
-
-                            // 2. Medição ativa — não faz nada
-                            if (window.measureActive) {
-                                layer.closePopup();
-                                return;
-                            }
-
-                            // 3. Linha de colheita — selecionar a linha
-                            if (isLinhasColheita) {
-                                layer.closePopup();
-                                if (window.selectedHarvestLayer && mapLayer.hasLayer(window.selectedHarvestLayer)) {
-                                    mapLayer.resetStyle(window.selectedHarvestLayer);
-                                }
-                                window.selectedHarvestLayer = l;
-                                l.setStyle({ color: '#ffffff', weight: 2.0, opacity: 1, fillOpacity: 0 });
-                                l.bringToFront();
-                                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
-                                return;
-                            }
-
-                            // Feedback visual de seleção para Talhões
-                            if (isTalhao) {
-                                if (window.selectedTalhaoLayer && mapLayer.hasLayer(window.selectedTalhaoLayer)) {
-                                    mapLayer.resetStyle(window.selectedTalhaoLayer);
-                                }
-                                window.selectedTalhaoLayer = l;
-                                l.setStyle({ color: '#ffeb3b', weight: 3.5, opacity: 1, fillOpacity: 0.5 });
-                                l.bringToFront();
-                            }
-
-                            // 4. Clima Farm ativo + talhão clicado → busca clima SEM abrir popup
-                            if (isTalhao && window.climaFarmActive && window.climaFarmFetchData) {
-                                layer.closePopup();
-                                const center = layer.getBounds ? layer.getBounds().getCenter() : e.latlng;
-                                window.climaFarmFetchData(center.lat, center.lng, props);
-                                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
-                                return;
-                            }
-
-                            // 5. Análise de ervas daninhas
-                            if (isTalhao && window.openWeedAnalysisPanel && window.weedToolActive) {
-                                layer.closePopup();
-                                if (window.clearAllSelections) window.clearAllSelections();
-                                window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
-                                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
-                                return;
-                            }
-
-                            if (isFazenda) {
-                                if (layer.getBounds) map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
-                            }
-                            
-                            // Let Leaflet's native bindPopup handle the rest
-                        }
                     });
-
-                    // 6. Comportamento padrão: bindPopup (Resolve todos os problemas de clique e fechamento)
-                    layer.bindPopup(createPopupContent(title, props), { autoPanPadding: [50, 50] });
+                    // Removed individual bindPopup and click handler to bypass Leaflet Canvas touch interception bugs.
+                    // A global map.on('click') spatial intersection handler now manages all interactions centrally.
                 }
             };
             
@@ -1903,8 +1836,160 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
     };
 
-    // Clear selection on map click
-    map.on('click', window.clearAllSelections);
+    // Global Spatial Click Handler (Bypasses all Leaflet path click bugs)
+    map.on('click', (e) => {
+        // Ignora medição e desenho, pois eles têm seus próprios listeners complexos
+        if (window.measureActive || window.drawActive) return;
+        
+        // Em modo rota, não limpa a seleção
+        if (!window.routeSelectionMode) {
+            window.clearAllSelections();
+        }
+
+        if (!window.loadedLayers) return;
+
+        const latlng = e.latlng;
+        const pt = turf.point([latlng.lng, latlng.lat]);
+        let foundLayer = null;
+        let foundIsTalhao = false;
+        let foundIsFazenda = false;
+        let foundIsLinhasColheita = false;
+        let foundTitle = '';
+        let foundProps = null;
+        let actualLayerNameFound = '';
+        
+        // Vamos procurar primeiro em Linhas, depois Talhões, depois Fazendas
+        const searchOrder = ['LINHAS DE COLHEITA', 'TALHOES', 'FAZENDAS', 'FAZENDA']; 
+        
+        for (const layerName of searchOrder) {
+            if (foundLayer) break;
+            
+            let actualLayerName = Object.keys(window.loadedLayers).find(k => k.toUpperCase().includes(layerName));
+            if (!actualLayerName) continue;
+            
+            const group = window.loadedLayers[actualLayerName];
+            if (!group || !map.hasLayer(group)) continue; // Só procura se a camada estiver ativada e visível
+            
+            group.eachLayer(layer => {
+                if (foundLayer) return;
+                
+                // Trata grupos aninhados (L.geoJSON)
+                if (layer.eachLayer) {
+                    layer.eachLayer(subLayer => checkLayerIntersection(subLayer, actualLayerName));
+                } else {
+                    checkLayerIntersection(layer, actualLayerName);
+                }
+            });
+        }
+        
+        function checkLayerIntersection(layer, layerName) {
+            if (foundLayer) return;
+            if (!layer.feature || !layer.feature.geometry) return;
+            
+            // Pré-filtro ultra rápido: bounding box
+            if (layer.getBounds && !layer.getBounds().contains(latlng)) return;
+            
+            try {
+                let inside = false;
+                const geomType = layer.feature.geometry.type;
+                
+                if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
+                    inside = turf.booleanPointInPolygon(pt, layer.feature);
+                } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
+                    // Tolerância de ~5 metros para clicar na linha
+                    const dist = turf.pointToLineDistance(pt, layer.feature, {units: 'meters'});
+                    if (dist < 5) inside = true;
+                } else if (geomType === 'Point') {
+                    const dist = turf.distance(pt, layer.feature, {units: 'meters'});
+                    if (dist < 50) inside = true;
+                }
+                
+                if (inside) {
+                    foundLayer = layer;
+                    actualLayerNameFound = layerName;
+                    foundIsTalhao = layerName.toUpperCase().includes('TALHO');
+                    foundIsFazenda = layerName.toUpperCase().includes('FAZENDA');
+                    foundIsLinhasColheita = layerName.toUpperCase().includes('LINHAS DE COLHEITA');
+                    foundProps = layer.feature.properties || {};
+                    
+                    const getProp = (props, possibleNames) => {
+                        const keys = Object.keys(props);
+                        for (const name of possibleNames) {
+                            const upperName = name.toUpperCase();
+                            const foundKey = keys.find(k => k.toUpperCase() === upperName);
+                            if (foundKey) return props[foundKey];
+                        }
+                        return '';
+                    };
+                    const titleRaw = getProp(foundProps, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
+                    foundTitle = titleRaw || 'Elemento';
+                }
+            } catch (err) {}
+        }
+        
+        if (foundLayer) {
+            
+            // 0. Modo seleção de rota (aproveita o título do polígono)
+            if (window.routeSelectionMode) {
+                const center = foundLayer.getBounds ? foundLayer.getBounds().getCenter() : latlng;
+                window.setRouteWaypoint(foundTitle, center.lat, center.lng);
+                // Se Leaflet já ia processar o clique nativo do mapa no listener genérico, 
+                // não precisamos nos preocupar, pois ele já vai ser disparado. 
+                // Mas para evitar sobreposição, podemos cancelar o modo de rota agora:
+                return;
+            }
+            
+            // 1. Linhas de Colheita
+            if (foundIsLinhasColheita) {
+                window.selectedHarvestLayer = foundLayer;
+                foundLayer.setStyle({ color: '#ffffff', weight: 2.0, opacity: 1, fillOpacity: 0 });
+                if (foundLayer.bringToFront) foundLayer.bringToFront();
+                
+                L.popup({ autoPanPadding: [50, 50] })
+                 .setLatLng(latlng)
+                 .setContent(createPopupContent(foundTitle, foundProps))
+                 .openOn(map);
+                return;
+            }
+            
+            // 2. Análise de ervas daninhas (Ignora popup, abre painel)
+            if (foundIsTalhao && window.openWeedAnalysisPanel && window.weedToolActive) {
+                window.openWeedAnalysisPanel({ type: 'Feature', geometry: foundLayer.feature.geometry, properties: foundProps }, foundProps);
+                return;
+            }
+            
+            // 3. Clima Farm (Ignora popup, abre painel)
+            if (foundIsTalhao && window.openClimaPanel && window.climaToolActive) {
+                window.selectedTalhaoLayer = foundLayer;
+                foundLayer.setStyle({ color: '#ffeb3b', weight: 3.5, opacity: 1, fillOpacity: 0.5 });
+                if (foundLayer.bringToFront) foundLayer.bringToFront();
+                
+                window.openClimaPanel({ type: 'Feature', geometry: foundLayer.feature.geometry, properties: foundProps }, foundProps);
+                return;
+            }
+            
+            // 4. Comportamento Padrão: Seleciona e Mostra Popup
+            if (foundIsTalhao) {
+                window.selectedTalhaoLayer = foundLayer;
+                foundLayer.setStyle({ color: '#ffeb3b', weight: 3.5, opacity: 1, fillOpacity: 0.5 });
+                if (foundLayer.bringToFront) foundLayer.bringToFront();
+            } else if (foundIsFazenda) {
+                if (foundLayer.getBounds) map.flyToBounds(foundLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
+            }
+            
+            L.popup({ autoPanPadding: [50, 50] })
+             .setLatLng(latlng)
+             .setContent(createPopupContent(foundTitle, foundProps))
+             .openOn(map);
+             
+        } else {
+            // Clicou no vazio, não interceptou nenhum polígono
+            if (window.routeSelectionMode) {
+                const label = window.routeSelectionMode === 'origin' ? 'Origem' : 'Destino';
+                window.setRouteWaypoint(`${label} (${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)})`, latlng.lat, latlng.lng);
+            }
+        }
+    });
 
 
 
@@ -2386,15 +2471,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     setupRouteAutocomplete('route-search-origin', 'route-autocomplete-orig', 'origin');
     setupRouteAutocomplete('route-search-dest', 'route-autocomplete-dest', 'dest');
 
-    // General map click: select route waypoint when routeSelectionMode is active
-    // This works even when clicking empty areas (not on a talhão)
-    map.on('click', function(e) {
-        if (!window.routeSelectionMode) return;
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-        const label = window.routeSelectionMode === 'origin' ? 'Origem' : 'Destino';
-        window.setRouteWaypoint(`${label} (${lat.toFixed(5)}, ${lng.toFixed(5)})`, lat, lng);
-    });
+    // General map click for route waypoint has been merged into the global spatial click handler.
 
     if (routePanel) {
         // const routeDragHandle = document.getElementById('route-drag-handle');
