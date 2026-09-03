@@ -450,41 +450,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const satBtn = document.getElementById('basemap-sat');
     const osmBtn = document.getElementById('basemap-osm');
 
-    function updateBasemapOfflineStatus() {
-        if (!navigator.onLine && offlineSatelliteLayer) {
-            if (map.hasLayer(satelliteGroup)) {
-                map.removeLayer(satelliteGroup);
-            }
-            if (!map.hasLayer(offlineSatelliteLayer)) {
-                offlineSatelliteLayer.addTo(map);
-            }
-        } else {
-            if (map.hasLayer(offlineSatelliteLayer)) {
-                map.removeLayer(offlineSatelliteLayer);
-            }
-            // Only add satelliteGroup back if the satellite button is active
-            if (satBtn.classList.contains('active') && !map.hasLayer(satelliteGroup)) {
-                satelliteGroup.addTo(map);
-            }
-        }
-    }
-
-    window.addEventListener('online', updateBasemapOfflineStatus);
-    window.addEventListener('offline', updateBasemapOfflineStatus);
-    
-    // Initial check
-    if (!navigator.onLine) {
-        updateBasemapOfflineStatus();
-    }
+    // Removido o updateBasemapOfflineStatus para permitir que o Service Worker gerencie o cache dos tiles,
+    // garantindo que o BASEMAP WEB continue funcionando offline com as imagens em cache.
+    // O offlineSatelliteLayer já está no satelliteGroup como camada de fundo de fallback automático.
 
     satBtn.addEventListener('click', () => {
-        if (!map.hasLayer(satelliteGroup) && !map.hasLayer(offlineSatelliteLayer)) {
+        if (!map.hasLayer(satelliteGroup)) {
             map.removeLayer(osmLayer);
-            if (navigator.onLine) {
-                satelliteGroup.addTo(map);
-            } else if (offlineSatelliteLayer) {
-                offlineSatelliteLayer.addTo(map);
-            }
+            satelliteGroup.addTo(map);
             satBtn.classList.add('active');
             osmBtn.classList.remove('active');
         }

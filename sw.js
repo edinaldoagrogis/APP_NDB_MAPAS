@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v194';
+const CACHE_NAME = 'agrogis-v195';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -118,6 +118,34 @@ self.addEventListener('fetch', event => {
     // Bypass cache for API calls, admin page, and SICAR GeoServer
     if (url.pathname.startsWith('/api/') || url.pathname.includes('admin.html') || url.hostname === 'geoserver.car.gov.br') {
         event.respondWith(fetch(event.request));
+        return;
+    }
+
+    // 🚀 Network-First Strategy para ClimaFarm e Rota Automática (Funcionar Offline) 🚀
+    // Garante que consultas exatas fiquem no cache e sejam usadas se a internet cair.
+    const isToolAPI = (
+        url.hostname.includes('api.open-meteo.com') ||
+        url.hostname.includes('router.project-osrm.org')
+    );
+
+    if (isToolAPI) {
+        event.respondWith(
+            fetch(event.request).then(response => {
+                if (response && response.status === 200) {
+                    const responseToCache = response.clone();
+                    caches.open('agrogis-tools-v1').then(cache => {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
+                return response;
+            }).catch(async () => {
+                // Se estiver offline, retorna APENAS se houver a consulta exata (sem ignoreSearch)
+                // Evita que a rota A seja mostrada quando o usuário pede a rota B offline.
+                const cached = await caches.match(event.request);
+                if (cached) return cached;
+                return new Response('{"error": "offline"}', { status: 503, headers: { 'Content-Type': 'application/json' } });
+            })
+        );
         return;
     }
 
