@@ -703,7 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const lat = layer.getBounds ? layer.getBounds().getCenter().lat : e.latlng.lat;
                                 const lng = layer.getBounds ? layer.getBounds().getCenter().lng : e.latlng.lng;
                                 window.setRouteWaypoint(title, lat, lng);
-                                L.DomEvent.stopPropagation(e);
+                                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
                                 return;
                             }
 
@@ -718,7 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 window.selectedHarvestLayer = l;
                                 l.setStyle({ color: '#ffffff', weight: 2.0, opacity: 1, fillOpacity: 0 });
                                 l.bringToFront();
-                                L.DomEvent.stopPropagation(e);
+                                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
                                 return;
                             }
 
@@ -736,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (isTalhao && window.climaFarmActive && window.climaFarmFetchData) {
                                 const center = layer.getBounds ? layer.getBounds().getCenter() : e.latlng;
                                 window.climaFarmFetchData(center.lat, center.lng, props);
-                                L.DomEvent.stopPropagation(e);
+                                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
                                 return;
                             }
 
@@ -744,7 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (isTalhao && window.openWeedAnalysisPanel && window.weedToolActive) {
                                 if (window.clearAllSelections) window.clearAllSelections();
                                 window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
-                                L.DomEvent.stopPropagation(e);
+                                if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
                                 return;
                             }
 
@@ -753,12 +753,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (isFazenda) {
                                 if (layer.getBounds) map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
                             }
-                            
                             // Fundamental impedir propagação para o mapa, senão o popup fecha na mesma hora
                             if (e.originalEvent) {
-                                L.DomEvent.stopPropagation(e.originalEvent);
-                            } else {
-                                L.DomEvent.stopPropagation(e);
+                                L.DomEvent.stop(e.originalEvent);
                             }
                         }
                     });
