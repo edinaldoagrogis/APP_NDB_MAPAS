@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const geoJsonOptions = {
                 pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
-                smoothFactor: isLinhasColheita ? 1.5 : (isTalhao ? 0.5 : 1.0),
+                smoothFactor: isLinhasColheita ? 1.5 : (isTalhao ? 1.0 : 1.0),
                 style: styleFunc,
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
