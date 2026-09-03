@@ -630,6 +630,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         click: (e) => {
                             const l = e.target;
+
+                            // 1. Modo seleção de rota
                             if (window.routeSelectionMode) {
                                 const lat = layer.getBounds ? layer.getBounds().getCenter().lat : e.latlng.lat;
                                 const lng = layer.getBounds ? layer.getBounds().getCenter().lng : e.latlng.lng;
@@ -637,7 +639,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 L.DomEvent.stopPropagation(e);
                                 return;
                             }
+
+                            // 2. Medição ativa — não faz nada
                             if (window.measureActive) return;
+
+                            // 3. Linha de colheita — selecionar a linha
                             if (isLinhasColheita) {
                                 if (window.selectedHarvestLayer && mapLayer.hasLayer(window.selectedHarvestLayer)) {
                                     mapLayer.resetStyle(window.selectedHarvestLayer);
@@ -646,20 +652,27 @@ document.addEventListener('DOMContentLoaded', () => {
                                 l.setStyle({ color: '#ffffff', weight: 2.0, opacity: 1, fillOpacity: 0 });
                                 l.bringToFront();
                                 L.DomEvent.stopPropagation(e);
+                                return;
                             }
+
+                            // 4. Clima Farm ativo + talhão clicado → busca clima SEM abrir popup
+                            if (isTalhao && window.climaFarmActive && window.climaFarmFetchData) {
+                                const center = layer.getBounds ? layer.getBounds().getCenter() : e.latlng;
+                                window.climaFarmFetchData(center.lat, center.lng, props);
+                                L.DomEvent.stopPropagation(e);
+                                return;
+                            }
+
+                            // 5. Análise de ervas daninhas
+                            if (isTalhao && window.openWeedAnalysisPanel) {
+                                if (window.clearAllSelections) window.clearAllSelections();
+                                window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
+                            }
+
+                            // 6. Comportamento padrão: popup de informações
                             L.popup({ autoPanPadding: [50, 50] }).setLatLng(e.latlng).setContent(createPopupContent(title, props)).openOn(map);
                             if (isFazenda) {
-                                // Yellow highlight removed as per user request
                                 if (layer.getBounds) map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
-                                L.DomEvent.stopPropagation(e);
-                            } else {
-                                if (window.clearAllSelections) window.clearAllSelections();
-                                if (isTalhao && window.openWeedAnalysisPanel) window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
-                                if (isTalhao && window.climaFarmActive && window.climaFarmFetchData) {
-                                    const center = layer.getBounds ? layer.getBounds().getCenter() : e.latlng;
-                                    window.climaFarmFetchData(center.lat, center.lng, props);
-                                    L.DomEvent.stopPropagation(e);
-                                }
                             }
                         }
                     });
