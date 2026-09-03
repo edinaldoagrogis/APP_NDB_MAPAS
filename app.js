@@ -282,6 +282,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!_talhaoGrid[key]) _talhaoGrid[key] = [];
         _talhaoGrid[key].push(item);
     }
+    
+    function createTalhaoMarker(item) {
+        const marker = L.marker(item.latlng, {
+            icon: L.divIcon({
+                className: 'custom-talhao-label-container',
+                html: item.html,
+                iconSize: [60, 40],
+                iconAnchor: [30, 20]
+            }),
+            interactive: true // Interactive so we can catch the click on WebView
+        });
+        
+        // Forward click to the underlying polygon
+        marker.on('click', (e) => {
+            if (item.layer) {
+                item.layer.fire('click', e);
+            }
+        });
+        
+        return marker;
+    }
 
     function _getGridItemsInBounds(bounds) {
         const minLat = Math.floor(bounds.getSouth() / GRID_CELL_SIZE);
@@ -356,15 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const hasLayer = item.marker && activeLabelGroups.TALHOES.hasLayer(item.marker);
                         if (!hasLayer) {
                             if (!item.marker) {
-                                item.marker = L.marker(item.latlng, {
-                                    icon: L.divIcon({
-                                        className: 'custom-talhao-label-container',
-                                        html: item.html,
-                                        iconSize: [60, 40],
-                                        iconAnchor: [30, 20]
-                                    }),
-                                    interactive: false
-                                });
+                                item.marker = createTalhaoMarker(item);
                             }
                             toAdd.push(item.marker);
                         }
@@ -673,7 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div class="tc-var" style="font-size: 7.5px; font-weight: bold; opacity: 0.9;">${varName}</div>
                                 </div>
                             `;
-                            const labelItem = { latlng: layer.getBounds().getCenter(), html: html, marker: null };
+                            const labelItem = { latlng: layer.getBounds().getCenter(), html: html, marker: null, layer: layer };
                             layerLabels.TALHOES.push(labelItem);
                             _addToGrid(labelItem); // Registra na grade espacial
                         }
@@ -785,8 +798,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetch('./talhoes.geojson')
                         .then(r => r.json())
                         .then(geojsonData => {
-                            // SVG renderer instead of canvas to guarantee perfect click interaction
-                            geoJsonOptions.renderer = L.svg({ padding: 0.5 });
+                            // Utiliza o Canvas (como no primeiro APK) pois agora carregamos o GeoJSON inteiro de uma vez,
+                            // o que evita o bug do hit-test do Canvas que ocorria ao carregar o FGB pedaço por pedaço.
+                            geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
                             mapLayer._realGeoJSON = L.geoJSON(geojsonData, geoJsonOptions);
                             mapLayer.addLayer(mapLayer._realGeoJSON);
                         })
