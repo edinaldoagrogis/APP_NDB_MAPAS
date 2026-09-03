@@ -704,6 +704,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                 return;
                             }
 
+                            // Feedback visual de seleção para Talhões
+                            if (isTalhao) {
+                                if (window.selectedTalhaoLayer && mapLayer.hasLayer(window.selectedTalhaoLayer)) {
+                                    mapLayer.resetStyle(window.selectedTalhaoLayer);
+                                }
+                                window.selectedTalhaoLayer = l;
+                                l.setStyle({ color: '#ffeb3b', weight: 3.5, opacity: 1, fillOpacity: 0.5 });
+                                l.bringToFront();
+                            }
+
                             // 4. Clima Farm ativo + talhão clicado → busca clima SEM abrir popup
                             if (isTalhao && window.climaFarmActive && window.climaFarmFetchData) {
                                 const center = layer.getBounds ? layer.getBounds().getCenter() : e.latlng;
@@ -723,6 +733,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (isFazenda) {
                                 if (layer.getBounds) map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.5 });
                             }
+                            
+                            // Fundamental impedir propagação para o mapa, senão o popup fecha na mesma hora
+                            L.DomEvent.stopPropagation(e);
                         }
                     });
                 }
@@ -1815,6 +1828,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             window.currentSearchedFarmLayerGroup.resetStyle(window.currentSearchedFarmLayer);
             window.currentSearchedFarmLayer = null;
             window.currentSearchedFarmLayerGroup = null;
+        }
+        
+        if (window.selectedTalhaoLayer) {
+            // Find the layer group that contains it to reset its style
+            Object.values(loadedLayers).forEach(group => {
+                if (group.hasLayer && group.hasLayer(window.selectedTalhaoLayer) && group.resetStyle) {
+                    group.resetStyle(window.selectedTalhaoLayer);
+                }
+            });
+            window.selectedTalhaoLayer = null;
         }
         
         if (window.selectedHarvestLayer && window.loadedLayers) {
