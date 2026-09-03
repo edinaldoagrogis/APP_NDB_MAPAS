@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v195';
+const CACHE_NAME = 'agrogis-v196';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -73,11 +73,11 @@ self.addEventListener('activate', event => {
                         const match = name.match(/agrogis-v(\d+)/);
                         if (!match) return false;
                         const version = parseInt(match[1]);
-                        // Deleta apenas caches com mais de 3 versões atrás
-                        return version < currentVersion - 3;
+                        // Deletar TODOS os caches antigos para garantir que respostas corrompidas de API sumam
+                        return version < currentVersion;
                     })
                     .map(oldCache => {
-                        console.log('[ServiceWorker] Removendo cache muito antigo:', oldCache);
+                        console.log('[ServiceWorker] Removendo cache antigo:', oldCache);
                         return caches.delete(oldCache);
                     })
             );
@@ -139,9 +139,10 @@ self.addEventListener('fetch', event => {
                 }
                 return response;
             }).catch(async () => {
-                // Se estiver offline, retorna APENAS se houver a consulta exata (sem ignoreSearch)
+                // Se estiver offline, retorna APENAS se houver a consulta exata (sem ignoreSearch) no cache correto
                 // Evita que a rota A seja mostrada quando o usuário pede a rota B offline.
-                const cached = await caches.match(event.request);
+                const cache = await caches.open('agrogis-tools-v1');
+                const cached = await cache.match(event.request);
                 if (cached) return cached;
                 return new Response('{"error": "offline"}', { status: 503, headers: { 'Content-Type': 'application/json' } });
             })
