@@ -319,6 +319,23 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('map').classList.remove('show-labels');
         }
 
+        // ─── MinZoom para Polígonos de Talhões (Otimização Extrema) ───
+        // Só renderiza os milhares de polígonos a partir do zoom 12
+        if (loadedLayers && loadedLayers['TALHOES']) {
+            const talhoesLayer = loadedLayers['TALHOES'];
+            const checkbox = document.querySelector('input[type="checkbox"][data-layer="TALHOES"]');
+            const isToggledOn = checkbox ? checkbox.checked : true;
+            
+            if (isToggledOn) {
+                if (currentZoom < 12) {
+                    if (map.hasLayer(talhoesLayer)) map.removeLayer(talhoesLayer);
+                } else {
+                    if (!map.hasLayer(talhoesLayer)) map.addLayer(talhoesLayer);
+                }
+            }
+        }
+        // ──────────────────────────────────────────────────────────────
+
         // Talhões Viewport logic — usa grid espacial para O(k) onde k = talhões visíveis
         if (activeLabelGroups.TALHOES) {
             const toggleTalhoes = document.getElementById('toggle-labels-talhoes');
