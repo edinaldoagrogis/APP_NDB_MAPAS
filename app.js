@@ -741,9 +741,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
 
                             // 5. Análise de ervas daninhas
-                            if (isTalhao && window.openWeedAnalysisPanel) {
+                            if (isTalhao && window.openWeedAnalysisPanel && window.weedToolActive) {
                                 if (window.clearAllSelections) window.clearAllSelections();
                                 window.openWeedAnalysisPanel({ type: 'Feature', geometry: feature.geometry, properties: props }, props);
+                                L.DomEvent.stopPropagation(e);
+                                return;
                             }
 
                             // 6. Comportamento padrão: popup de informações
@@ -753,7 +755,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             
                             // Fundamental impedir propagação para o mapa, senão o popup fecha na mesma hora
-                            L.DomEvent.stopPropagation(e);
+                            if (e.originalEvent) {
+                                L.DomEvent.stopPropagation(e.originalEvent);
+                            } else {
+                                L.DomEvent.stopPropagation(e);
+                            }
                         }
                     });
                 }
