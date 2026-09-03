@@ -1950,6 +1950,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 return;
             }
             
+            // 4. Analisador de Talhão (Ignora popup, abre painel)
+            if (foundIsTalhao && window.analyzerActive && window.populateAnalyzer) {
+                window.selectedTalhaoLayer = foundLayer;
+                foundLayer.setStyle({ color: '#ffeb3b', weight: 3.5, opacity: 1, fillOpacity: 0.5 });
+                if (foundLayer.bringToFront) foundLayer.bringToFront();
+                
+                window.populateAnalyzer(foundProps, foundTitle);
+                return;
+            }
+            
             // 4. Comportamento Padrão: Seleciona e Mostra Popup
             if (foundIsTalhao) {
                 window.selectedTalhaoLayer = foundLayer;
@@ -3807,6 +3817,101 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 }
             });
         }
+    }, 1000);
+
+    // Analisador de Talhão Logic
+    setTimeout(() => {
+        const analyzerBtn = document.getElementById('analyzer-btn');
+        const analyzerPanel = document.getElementById('analyzer-panel');
+        const closeAnalyzerBtn = document.getElementById('close-analyzer-btn');
+        const minAnalyzerBtn = document.getElementById('minimize-analyzer-btn');
+        const maxAnalyzerBtn = document.getElementById('maximize-analyzer-btn');
+        const analyzerContent = document.getElementById('analyzer-content');
+        const analyzerPlaceholder = document.getElementById('analyzer-placeholder');
+        const analyzerData = document.getElementById('analyzer-data');
+        let isMaximized = false;
+        
+        window.analyzerActive = false;
+
+        if (analyzerBtn) {
+            analyzerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.analyzerActive = !window.analyzerActive;
+                if (window.analyzerActive) {
+                    analyzerPanel.style.display = 'flex';
+                    analyzerBtn.style.background = 'rgba(0, 200, 100, 0.4)';
+                    analyzerBtn.style.borderColor = '#00c864';
+                    
+                    // Fechar outros painéis bottom
+                    ['draw-panel', 'measure-result', 'route-panel', 'record-panel', 'clima-farm-panel'].forEach(id => {
+                        const p = document.getElementById(id);
+                        if (p) p.style.display = 'none';
+                    });
+                    if (window.climaFarmDeactivate) window.climaFarmDeactivate();
+                    window.routeSelectionMode = false;
+                    window.measureActive = false;
+                } else {
+                    analyzerPanel.style.display = 'none';
+                    analyzerBtn.style.background = 'rgba(5, 8, 7, 0.85)';
+                    analyzerBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+                    if (window.clearAllSelections) window.clearAllSelections();
+                }
+            });
+        }
+
+        if (closeAnalyzerBtn) {
+            closeAnalyzerBtn.addEventListener('click', () => {
+                window.analyzerActive = false;
+                analyzerPanel.style.display = 'none';
+                analyzerBtn.style.background = 'rgba(5, 8, 7, 0.85)';
+                analyzerBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+                if (window.clearAllSelections) window.clearAllSelections();
+            });
+        }
+
+        if (minAnalyzerBtn) {
+            minAnalyzerBtn.addEventListener('click', () => {
+                analyzerContent.style.display = analyzerContent.style.display === 'none' ? 'flex' : 'none';
+                if (analyzerContent.style.display === 'none') {
+                    analyzerPanel.style.height = 'auto';
+                }
+            });
+        }
+
+        if (maxAnalyzerBtn) {
+            maxAnalyzerBtn.addEventListener('click', () => {
+                isMaximized = !isMaximized;
+                if (isMaximized) {
+                    analyzerContent.style.maxHeight = '75vh';
+                } else {
+                    analyzerContent.style.maxHeight = '35vh';
+                }
+            });
+        }
+
+        window.populateAnalyzer = (props, title) => {
+            analyzerPlaceholder.style.display = 'none';
+            analyzerData.style.display = 'flex';
+            
+            let html = `<div style="font-weight: bold; color: #fff; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px;">${title}</div>`;
+            
+            const skipKeys = ['style', 'stroke', 'fill', 'opacity', 'fill-opacity'];
+            
+            html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+            for (let key in props) {
+                if (skipKeys.includes(key.toLowerCase())) continue;
+                html += `
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                        <div style="font-size: 10px; color: #a8b8b0; margin-bottom: 2px;">${key}</div>
+                        <div style="font-size: 12px; color: #fff; word-break: break-all;">${props[key]}</div>
+                    </div>
+                `;
+            }
+            html += `</div>`;
+            
+            analyzerData.innerHTML = html;
+        };
+
     }, 1000);
 
 })();
