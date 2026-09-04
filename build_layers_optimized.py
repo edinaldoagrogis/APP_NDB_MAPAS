@@ -14,7 +14,10 @@ def clean_properties(props, layer_type):
                     new_props['NOME_FAZ'] = str(v)
             if 'COD' in k_upper or 'ID' in k_upper:
                 if 'CODIGO' not in new_props:
-                    new_props['CODIGO'] = str(v)
+                    val_str = str(v)
+                    if val_str.endswith('.0'):
+                        val_str = val_str[:-2]
+                    new_props['CODIGO'] = val_str
             if 'AREA' in k_upper or 'HECTARES' in k_upper:
                 if 'AREA_TOTAL' not in new_props:
                     try:

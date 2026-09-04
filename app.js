@@ -622,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const areaVal = getProp(props, ['AREA_TOTAL', 'AREA_HA', 'AREA', 'HECTARES', 'DL AREA']);
                             const areaStr = areaVal ? parseFloat(areaVal).toFixed(2).replace('.', ',') : 'N/A';
                             
-                            const labelHtml = `<div style="text-align: center; line-height: 1.1; font-size: 9px; font-weight: bold;">
+                            const labelHtml = `<div style="text-align: center; line-height: 1.1; font-size: 7px; font-weight: bold;">
                                 ${title}<br>
                                 Cod.: ${cod}<br>
                                 Área Total= ${areaStr}
@@ -987,7 +987,7 @@ async function loadLayersDataAsync() {
     }
 
     const localUrl = new URL('layers_data.js', window.location.href).href;
-    const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/APP_NDB_MAPAS/layers_data.js';
+    const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.js';
     const targetUrl = window.location.protocol === 'file:' ? remoteUrl : localUrl;
     
     const script = document.createElement('script');
@@ -4109,7 +4109,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         btnUpdate.style.pointerEvents = 'none';
                         
                         // Busca o arquivo JSON remoto adicionando timestamp para quebrar cache
-                        const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/APP_NDB_MAPAS/layers_data.json';
+                        const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.json';
                         const response = await fetch(`${remoteUrl}?t=${new Date().getTime()}`);
                         
                         if (!response.ok) {
