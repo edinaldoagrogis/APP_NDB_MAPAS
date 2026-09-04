@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isToggledOn = checkbox ? checkbox.checked : true;
             
             if (isToggledOn) {
-                if (currentZoom < 12) {
+                if (currentZoom < 11) {
                     if (map.hasLayer(talhoesLayer)) map.removeLayer(talhoesLayer);
                 } else {
                     if (!map.hasLayer(talhoesLayer)) map.addLayer(talhoesLayer);
