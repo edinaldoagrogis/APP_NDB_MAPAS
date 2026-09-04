@@ -118,10 +118,27 @@ def build():
     linhas_colheita_paths.extend(glob.glob(os.path.join('CAMADAS VETORIAIS', 'LINHAS DE COLHEITA', '*.geojson')))
     
     opt_faz_data = optimize_geojson_paths(fazendas_paths, 'FAZENDAS')
-    opt_faz_json_str = json.dumps(opt_faz_data, separators=(',', ':')) if opt_faz_data['features'] else 'null'
-        
     opt_tal_data = optimize_geojson_paths(talhoes_paths, 'TALHOES')
     opt_tal_json_str = json.dumps(opt_tal_data, separators=(',', ':')) if opt_tal_data['features'] else 'null'
+
+    # Recalculate Fazenda Area_Total by summing Talhoes AREAS
+    if opt_faz_data['features'] and opt_tal_data['features']:
+        faz_area_sums = {}
+        for tal_feat in opt_tal_data['features']:
+            nome_faz = tal_feat['properties'].get('NOME_FAZ')
+            area = tal_feat['properties'].get('AREA', 0)
+            if nome_faz and isinstance(area, (int, float)):
+                nome_upper = nome_faz.strip().upper()
+                faz_area_sums[nome_upper] = faz_area_sums.get(nome_upper, 0) + area
+        
+        for faz_feat in opt_faz_data['features']:
+            nome_faz = faz_feat['properties'].get('NOME_FAZ')
+            if nome_faz:
+                nome_upper = nome_faz.strip().upper()
+                if nome_upper in faz_area_sums:
+                    faz_feat['properties']['AREA_TOTAL'] = round(faz_area_sums[nome_upper], 2)
+    
+    opt_faz_json_str = json.dumps(opt_faz_data, separators=(',', ':')) if opt_faz_data['features'] else 'null'
 
     opt_linhas_col_data = optimize_geojson_paths(linhas_colheita_paths, 'LINHAS DE COLHEITA')
     opt_linhas_col_json_str = "null"
