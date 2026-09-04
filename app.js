@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const geoJsonOptions = {
                 pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
-                smoothFactor: isLinhasColheita ? 1.5 : (isTalhao ? 1.0 : 1.0),
+                smoothFactor: isLinhasColheita ? 3.0 : (isTalhao ? 2.0 : 1.0),
                 style: styleFunc,
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
@@ -696,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const response = await fetch('./talhoes.fgb');
                             const buffer = await response.arrayBuffer();
                             
-                            geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
+                            geoJsonOptions.renderer = L.canvas({ padding: 0.25 });
                             mapLayer._realGeoJSON = L.geoJSON(null, geoJsonOptions);
                             
                             let count = 0;
@@ -736,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // LINHAS DE COLHEITA: FlatGeobuf + Canvas (Não precisam ser clicáveis com precisão)
                     mapLayer._isLazy = true;
-                    geoJsonOptions.renderer = L.canvas({ padding: 0.5 });
+                    geoJsonOptions.renderer = L.canvas({ padding: 0.25 });
                     mapLayer._lazyOptions = geoJsonOptions;
                     
                     mapLayer.on('add', async function() {
@@ -2604,22 +2604,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
 
         if (!navigator.onLine) {
-            console.warn('App offline. Desenhando rota reta.');
-            if (rotasNdbLayer) { map.removeLayer(rotasNdbLayer); }
-            rotasNdbLayer = L.polyline([
-                [routeOriginData.lat, routeOriginData.lng],
-                [routeDestData.lat, routeDestData.lng]
-            ], {color: '#e85d04', weight: 6, dashArray: '10, 10'}).addTo(map);
-            
-            map.fitBounds(rotasNdbLayer.getBounds(), { padding: [50, 50] });
-            
-            if (distText) {
-                const p1 = turf.point([routeOriginData.lng, routeOriginData.lat]);
-                const p2 = turf.point([routeDestData.lng, routeDestData.lat]);
-                const dist = turf.distance(p1, p2); // distance in km
-                distText.textContent = dist > 1 ? dist.toFixed(2) + ' km (Reta)' : Math.round(dist * 1000) + ' m (Reta)';
+            alert('A geração de rotas requer conexão com a internet.');
+            if (routeInfo) routeInfo.style.display = 'none';
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
             }
-            if (typeof window.toggleCompass === 'function') window.toggleCompass(true);
+            if (rotasNdbLayer) {
+                map.removeLayer(rotasNdbLayer);
+                rotasNdbLayer = null;
+            }
             return;
         }
 
@@ -2629,7 +2623,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 L.latLng(routeDestData.lat, routeDestData.lng)
             ],
             router: L.Routing.osrmv1({
-                timeout: 3000,
+                timeout: 5000,
                 profile: 'driving'
             }),
             routeWhileDragging: false,
@@ -2644,28 +2638,15 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }).addTo(map);
 
         routingControl.on('routingerror', function(e) {
-            console.warn('Erro na rota online. Usando rota offline (linha reta).', e);
-            if (rotasNdbLayer) { map.removeLayer(rotasNdbLayer); }
-            rotasNdbLayer = L.polyline([
-                [routeOriginData.lat, routeOriginData.lng],
-                [routeDestData.lat, routeDestData.lng]
-            ], {color: '#e85d04', weight: 6, dashArray: '10, 10'}).addTo(map);
-            
-            map.fitBounds(rotasNdbLayer.getBounds(), { padding: [50, 50] });
-            
-            if (distText) {
-                const p1 = turf.point([routeOriginData.lng, routeOriginData.lat]);
-                const p2 = turf.point([routeDestData.lng, routeDestData.lat]);
-                const dist = turf.distance(p1, p2); // distance in km
-                if (dist > 1) {
-                    distText.textContent = dist.toFixed(2) + ' km (Reta)';
-                } else {
-                    distText.textContent = Math.round(dist * 1000) + ' m (Reta)';
-                }
+            alert('Falha ao calcular rota. Verifique sua conexão com a internet.');
+            if (routeInfo) routeInfo.style.display = 'none';
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
             }
-            
-            if (typeof window.toggleCompass === 'function') {
-                window.toggleCompass(true);
+            if (rotasNdbLayer) {
+                map.removeLayer(rotasNdbLayer);
+                rotasNdbLayer = null;
             }
         });
 
@@ -2706,9 +2687,6 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }
         });
 
-        routingControl.on('routingerror', function() {
-            if (distText) distText.textContent = 'Erro ao calcular';
-        });
     }
 
     // GPS is auto-activated above now
