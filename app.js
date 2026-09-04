@@ -908,7 +908,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     map.addLayer(targetLayer);
                 } else {
                     map.removeLayer(targetLayer);
-                    
                     // Restore EQUIPES when VARIEDADES is unchecked
                     if (targetLayerName.toUpperCase().includes('VARIEDADE')) {
                         if (loadedLayers['EQUIPES']) {
@@ -931,15 +930,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }
 
-// --- CARREGAMENTO ASSÃNCRONO DOS DADOS ---
-function loadLayersDataAsync() {
-    console.log("Iniciando carregamento assÃ­ncrono de layers_data na thread principal...");
+// --- CARREGAMENTO ASSÍNCRONO DOS DADOS ---
+const dbPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open('AgrogisDB', 1);
+    request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('layers')) {
+            db.createObjectStore('layers');
+        }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+});
+
+async function saveImportedLayers(jsonStr) {
+    const db = await dbPromise;
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('layers', 'readwrite');
+        tx.objectStore('layers').put(jsonStr, 'layers_data');
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function getImportedLayers() {
+    const db = await dbPromise;
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('layers', 'readonly');
+        const req = tx.objectStore('layers').get('layers_data');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function loadLayersDataAsync() {
+    console.log("Iniciando carregamento assíncrono de layers_data...");
     
     const loadingEl = document.createElement('div');
     loadingEl.id = "background-loading-indicator";
     loadingEl.innerHTML = "Carregando dados do mapa...";
     loadingEl.style = "position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 12px; z-index: 1000; pointer-events: none;";
     document.body.appendChild(loadingEl);
+
+    try {
+        const importedDataStr = await getImportedLayers();
+        if (importedDataStr) {
+            console.log("Camadas importadas localizadas no IndexedDB!");
+            window.GEOPORTAL_LAYERS = JSON.parse(importedDataStr);
+            const indicator = document.getElementById("background-loading-indicator");
+            if (indicator) indicator.remove();
+            tryInitLayers();
+            return;
+        }
+    } catch(e) {
+        console.warn("Erro ao ler IndexedDB, tentando versão nativa...", e);
+    }
 
     const localUrl = new URL('layers_data.js', window.location.href).href;
     const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.js';
@@ -3999,6 +4044,50 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             
             analyzerData.innerHTML = html;
         };
+
+        // --- LÓGICA DE IMPORTAÇÃO DE CAMADAS ---
+        const btnImport = document.getElementById('tool-import-layers-btn');
+        const fileImport = document.getElementById('import-layers-file');
+        
+        if (btnImport && fileImport) {
+            btnImport.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileImport.click();
+            });
+            
+            fileImport.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (await window.agrogisConfirm(`Deseja importar e substituir as camadas do mapa com o arquivo "${file.name}"?\n\nIsso carregará as novas fazendas e talhões instantaneamente.`)) {
+                    try {
+                        const reader = new FileReader();
+                        reader.onload = async (event) => {
+                            const jsonStr = event.target.result;
+                            
+                            // Validação básica do JSON
+                            const parsed = JSON.parse(jsonStr);
+                            if (!parsed.FAZENDAS && !parsed.TALHOES) {
+                                alert("Arquivo inválido. O JSON deve conter 'FAZENDAS' ou 'TALHOES'.");
+                                return;
+                            }
+                            
+                            await saveImportedLayers(jsonStr);
+                            alert("Camadas importadas com sucesso! O aplicativo será reiniciado para aplicar as mudanças.");
+                            window.location.reload();
+                        };
+                        reader.readAsText(file);
+                    } catch(err) {
+                        console.error(err);
+                        alert("Erro ao ler ou salvar o arquivo: " + err.message);
+                    }
+                }
+                
+                // Limpa o input para poder importar o mesmo arquivo novamente se quiser
+                fileImport.value = '';
+            });
+        }
 
     }, 1000);
 

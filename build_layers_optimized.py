@@ -144,6 +144,19 @@ def build():
         print(f"Error creating FGB: {e}")
 
         
+    try:
+        with open('layers_data.json', 'w', encoding='utf-8') as out_json:
+            json_obj = {
+                "FAZENDAS": opt_faz_data if opt_faz_data['features'] else None,
+                "TALHOES": opt_tal_data if opt_tal_data['features'] else None,
+                "LINHAS DE COLHEITA": None,
+                "VARIEDADES": None
+            }
+            json.dump(json_obj, out_json)
+        print("Successfully created layers_data.json for importing!")
+    except Exception as e:
+        print(f"Error creating layers_data.json: {e}")
+
     with open('layers_data.js', 'w', encoding='utf-8') as out:
         out.write('const GEOPORTAL_LAYERS = {\n')
         out.write(f'  "FAZENDAS": {opt_faz_json_str},\n')
