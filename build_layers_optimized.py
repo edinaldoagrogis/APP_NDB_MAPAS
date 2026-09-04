@@ -124,12 +124,23 @@ def build():
     # Recalculate Fazenda Area_Total by summing Talhoes AREAS
     if opt_faz_data['features'] and opt_tal_data['features']:
         faz_area_sums = {}
+        seen_talhoes = set()
+        
         for tal_feat in opt_tal_data['features']:
             nome_faz = tal_feat['properties'].get('NOME_FAZ')
+            cod_talhao = tal_feat['properties'].get('COD_TALHAO')
             area = tal_feat['properties'].get('AREA', 0)
+            
             if nome_faz and isinstance(area, (int, float)):
                 nome_upper = nome_faz.strip().upper()
-                faz_area_sums[nome_upper] = faz_area_sums.get(nome_upper, 0) + area
+                
+                # Create a unique identifier for this talhão block
+                # If a multipolygon was split into many features, they usually share COD_TALHAO and AREA
+                tal_id = f"{nome_upper}_{cod_talhao}_{area}"
+                
+                if tal_id not in seen_talhoes:
+                    seen_talhoes.add(tal_id)
+                    faz_area_sums[nome_upper] = faz_area_sums.get(nome_upper, 0) + area
         
         for faz_feat in opt_faz_data['features']:
             nome_faz = faz_feat['properties'].get('NOME_FAZ')

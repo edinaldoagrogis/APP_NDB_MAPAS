@@ -582,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const geoJsonOptions = {
                 interactive: false, // Desativa os listeners padrão do Leaflet (acelera o Canvas 100x), pois usamos o Turf.js espacial
                 pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
-                smoothFactor: isLinhasColheita ? 3.0 : (isTalhao ? 2.0 : 1.0),
+                smoothFactor: isLinhasColheita ? 1.5 : (isTalhao ? 0.5 : 1.0),
                 style: styleFunc,
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
@@ -1870,7 +1870,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         
         if (matchCount > 0 && foundBounds.isValid()) {
             try {
-                map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5 });
+                map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5, maxZoom: 14 });
             } catch(err) {
                 console.error("Erro no zoom: ", err);
             }
@@ -2363,16 +2363,16 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const radius = e.accuracy / 2;
 
         if (!gpsMarker) {
-            // Pulsating GPS marker
-            gpsMarker = L.circleMarker(e.latlng, {
+            // Pulsating GPS marker using divIcon instead of circleMarker to prevent displacement on compass rotate
+            const gpsIcon = L.divIcon({
+                className: 'gps-pulse-marker',
+                html: '<div style="width: 16px; height: 16px; background: #2196F3; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+            gpsMarker = L.marker(e.latlng, {
                 pane: 'markerPane',
-                radius: 8,
-                fillColor: '#2196F3',
-                color: '#fff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.8,
-                className: 'pulse-marker' // Custom CSS class for pulse if defined
+                icon: gpsIcon
             }).addTo(map);
             
             gpsCircle = L.circle(e.latlng, radius, {
@@ -3856,9 +3856,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             
             if (matchCount > 0 && bounds.isValid()) {
                 if (matchCount > 1 || !foundLayer.getLatLng) {
-                    map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+                    map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5, maxZoom: 14 });
                 } else {
-                    map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
+                    map.flyTo(foundLayer.getLatLng(), 14, { duration: 1.5 });
                 }
             }
         }
