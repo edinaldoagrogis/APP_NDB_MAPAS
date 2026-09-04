@@ -7,7 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const map = L.map('map', {
         zoomControl: true,
         attributionControl: true,
-        preferCanvas: true, zoomAnimation: false, // zoomAnimation causes canvas freeze on heavy layers
+        preferCanvas: true, 
+        zoomAnimation: true, // Habilitado para suavidade (canvas freezing evitado por interactive: false nos layers)
+        fadeAnimation: true,
+        markerZoomAnimation: true,
+        wheelPxPerZoomLevel: 120, // Suaviza o zoom no desktop
         rotate: isTouchDevice,
         touchRotate: false // Disabled by default, toggled by compass
     }).setView([-17.8, -40.0], 7);
@@ -408,21 +412,29 @@ document.addEventListener('DOMContentLoaded', () => {
     map.on('moveend', debouncedUpdateLabelVisibility);
 
     // 2. Map Base Layers Setup
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    // Performance tileLayer options to prevent stuttering on mobile
+    const tileOptions = {
         maxZoom: 19,
+        updateWhenIdle: isTouchDevice, // Load tiles only when pan stops on mobile
+        updateWhenZooming: false,
+        keepBuffer: 3 // Keep offscreen tiles longer to reduce flashing
+    };
+
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        ...tileOptions,
         zIndex: 1,
         attribution: 'Tiles &copy; Esri'
     });
 
     const labelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+        ...tileOptions,
         attribution: '&copy; CartoDB',
-        subdomains: 'abcd',
-        maxZoom: 19
+        subdomains: 'abcd'
     });
 
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19
+        ...tileOptions,
+        attribution: '&copy; OpenStreetMap contributors'
     });
 
     // const satelliteGroup = L.layerGroup([satelliteLayer, labelsLayer]).addTo(map); // Will be created later
@@ -584,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             
             const geoJsonOptions = {
+                interactive: false, // Desativa os listeners padrão do Leaflet (acelera o Canvas 100x), pois usamos o Turf.js espacial
                 pane: isLinhasColheita ? 'harvestLinesPane' : 'overlayPane',
                 smoothFactor: isLinhasColheita ? 3.0 : (isTalhao ? 2.0 : 1.0),
                 style: styleFunc,
@@ -1088,6 +1101,7 @@ loadLayersDataAsync();
             myLayers[type].addData(featureCollection);
         } else {
             let options = {
+                interactive: false,
                 onEachFeature: (feature, layer) => {
                     if (feature.properties) {
                         const featureName = feature.properties.NOME || 'Sem Nome';
