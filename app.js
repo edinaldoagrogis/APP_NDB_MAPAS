@@ -21,23 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     map.createPane('harvestLinesPane');
     map.getPane('harvestLinesPane').style.zIndex = 450;
 
-    // Zoom performance: hide heavy vector layers during zoom, restore after
-    let _zoomEndTimer = null;
-    map.on('zoomstart', function() {
-        const overlayPane = map.getPane('overlayPane');
-        const harvestPane = map.getPane('harvestLinesPane');
-        if (overlayPane) overlayPane.style.opacity = '0';
-        if (harvestPane) harvestPane.style.opacity = '0';
-    });
-    map.on('zoomend', function() {
-        clearTimeout(_zoomEndTimer);
-        _zoomEndTimer = setTimeout(function() {
-            const overlayPane = map.getPane('overlayPane');
-            const harvestPane = map.getPane('harvestLinesPane');
-            if (overlayPane) overlayPane.style.opacity = '1';
-            if (harvestPane) harvestPane.style.opacity = '1';
-        }, 120);
-    });
+    // Ocultamento durante zoom removido conforme pedido pelo usuário. As camadas não vão mais piscar.
     
     // Fix map rendering issues when returning from other tools (bfcache)
     window.addEventListener('pageshow', (e) => {
