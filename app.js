@@ -987,7 +987,7 @@ async function loadLayersDataAsync() {
     }
 
     const localUrl = new URL('layers_data.js', window.location.href).href;
-    const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.js';
+    const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/APP_NDB_MAPAS/layers_data.js';
     const targetUrl = window.location.protocol === 'file:' ? remoteUrl : localUrl;
     
     const script = document.createElement('script');
@@ -4086,6 +4086,53 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 
                 // Limpa o input para poder importar o mesmo arquivo novamente se quiser
                 fileImport.value = '';
+            });
+        }
+        
+        // --- LÓGICA DE ATUALIZAÇÃO ONLINE ---
+        const btnUpdate = document.getElementById('tool-update-layers-btn');
+        if (btnUpdate) {
+            btnUpdate.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!navigator.onLine) {
+                    alert("Você precisa estar conectado à internet para baixar a atualização!");
+                    return;
+                }
+                
+                if (await window.agrogisConfirm("Deseja verificar e baixar a última versão das camadas do servidor (GitHub)?")) {
+                    try {
+                        const originalText = btnUpdate.innerHTML;
+                        btnUpdate.innerHTML = `<span style="font-size: 13px; font-weight: 500;">Baixando... (Aguarde)</span>`;
+                        btnUpdate.style.opacity = '0.5';
+                        btnUpdate.style.pointerEvents = 'none';
+                        
+                        // Busca o arquivo JSON remoto adicionando timestamp para quebrar cache
+                        const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/APP_NDB_MAPAS/layers_data.json';
+                        const response = await fetch(`${remoteUrl}?t=${new Date().getTime()}`);
+                        
+                        if (!response.ok) {
+                            throw new Error("Servidor retornou " + response.status);
+                        }
+                        
+                        const jsonStr = await response.text();
+                        const parsed = JSON.parse(jsonStr);
+                        if (!parsed.FAZENDAS && !parsed.TALHOES) {
+                            throw new Error("O arquivo baixado não contém as camadas necessárias.");
+                        }
+                        
+                        await saveImportedLayers(jsonStr);
+                        alert("Camadas baixadas com sucesso! O aplicativo será reiniciado para aplicar as mudanças.");
+                        window.location.reload();
+                    } catch(err) {
+                        console.error(err);
+                        alert("Erro ao baixar atualização: " + err.message + "\n\nVerifique se o arquivo layers_data.json já foi gerado no GitHub.");
+                        btnUpdate.innerHTML = `<span style="font-size: 13px; font-weight: 500;">Atualizar Camadas (Online)</span>`;
+                        btnUpdate.style.opacity = '1';
+                        btnUpdate.style.pointerEvents = 'auto';
+                    }
+                }
             });
         }
 
