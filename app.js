@@ -1761,51 +1761,73 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const query = e.target.value.toLowerCase().trim();
         if (!query) return;
 
-        let foundLayer = null;
-        let foundGroup = null;
+        const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const normalizedQuery = normalize(query);
+        
+        let foundBounds = L.latLngBounds();
+        let matchCount = 0;
+        let exactMatchFound = false;
 
-        const checkLayer = (layer, layerGroup, layerName) => {
-            if (foundLayer) return;
+        // Função para testar correspondência de nome
+        const isMatch = (nomeFaz) => {
+            if (!nomeFaz) return false;
+            const norm = normalize(nomeFaz);
+            if (norm === normalizedQuery) {
+                exactMatchFound = true;
+                return true;
+            }
+            if (!exactMatchFound && norm.includes(normalizedQuery)) {
+                return true;
+            }
+            return false;
+        };
 
+        const checkLayer = (layer, layerName) => {
             if (layer.feature) {
-                // Only search in Talhões layers as requested
-                const isTalhao = layerName && layerName.toUpperCase().includes('TALHO');
-                if (!isTalhao) return;
-
                 const props = layer.feature.properties || {};
-                const nomeFaz = props.NOME_FAZ;
+                const nomeFaz = props.NOME_FAZ || props.NOME || props['DL DESCFUNDOA'];
                 
-                if (!nomeFaz) return;
-                
-                const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-                
-                if (normalize(nomeFaz).includes(normalize(query))) {
-                    foundLayer = layer;
-                    foundGroup = layerGroup;
-                    // Yellow highlight removed as per user request
+                if (isMatch(nomeFaz)) {
+                    if (layer.getBounds && typeof layer.getBounds === 'function') {
+                        foundBounds.extend(layer.getBounds());
+                        matchCount++;
+                    } else if (layer.getLatLng && typeof layer.getLatLng === 'function') {
+                        foundBounds.extend(layer.getLatLng());
+                        matchCount++;
+                    }
                 }
             } else if (layer.eachLayer) {
-                layer.eachLayer(child => checkLayer(child, layerGroup, layerName));
+                layer.eachLayer(child => checkLayer(child, layerName));
             }
         };
 
+        // 1. Procurar nas Fazendas
         for (const layerName in loadedLayers) {
-            const layerGroup = loadedLayers[layerName];
-            if (layerGroup && layerGroup.eachLayer) {
-                layerGroup.eachLayer(child => checkLayer(child, layerGroup, layerName));
+            if (layerName.toUpperCase().includes('FAZENDAS')) {
+                const layerGroup = loadedLayers[layerName];
+                if (layerGroup && layerGroup.eachLayer) {
+                    layerGroup.eachLayer(child => checkLayer(child, layerName));
+                }
+            }
+        }
+
+        // 2. Se não encontrou nas Fazendas, procura nos Talhões
+        if (matchCount === 0) {
+            for (const layerName in loadedLayers) {
+                if (layerName.toUpperCase().includes('TALHO')) {
+                    const layerGroup = loadedLayers[layerName];
+                    if (layerGroup && layerGroup.eachLayer) {
+                        layerGroup.eachLayer(child => checkLayer(child, layerName));
+                    }
+                }
             }
         }
         
-        if (foundLayer) {
-            
+        if (matchCount > 0 && foundBounds.isValid()) {
             try {
-                if (foundLayer.getBounds && typeof foundLayer.getBounds === 'function') {
-                    map.flyToBounds(foundLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
-                } else if (foundLayer.getLatLng && typeof foundLayer.getLatLng === 'function') {
-                    map.flyTo(foundLayer.getLatLng(), 15, { duration: 1.5 });
-                }
-            } catch(e) {
-                alert("Erro no zoom: " + e.message);
+                map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5 });
+            } catch(err) {
+                console.error("Erro no zoom: ", err);
             }
             
             setTimeout(() => {
@@ -1814,7 +1836,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 if(typeof isExpanded !== 'undefined') isExpanded = false;
             }, 500);
         } else {
-            alert('Fazenda nao encontrada nas camadas: ' + query);
+            alert('Fazenda não encontrada nas camadas: ' + query);
         }
     }
 
@@ -2641,13 +2663,17 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 profile: 'driving'
             }),
             routeWhileDragging: false,
+            addWaypoints: false,
+            draggableWaypoints: false,
+            fitSelectedRoutes: false,
             language: 'pt-BR',
             show: false,
             showAlternatives: false,
             altLineOptions: { styles: [{opacity: 0, weight: 0}] },
             lineOptions: {
-                styles: [{color: '#e85d04', opacity: 0.8, weight: 6}],
-                missingRouteStyles: [{color: '#e85d04', opacity: 0.8, weight: 4, dashArray: '7,7'}]
+                addWaypoints: false,
+                styles: [{opacity: 0, weight: 0}], // Hide default line because we draw it manually
+                missingRouteStyles: [{opacity: 0, weight: 0}]
             }
         }).addTo(map);
 
