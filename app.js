@@ -1395,7 +1395,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         addLog(`Erro em ${farm.name}: ${detail}`, '#ff6666');
                         failCount++;
                     } else {
-                        const data = await response.json();
+                        let data;
+                        try {
+                            data = await response.json();
+                        } catch(e) {
+                            throw new Error("O arquivo lido não é um JSON válido. O GitHub enviou a página 404 HTML ou o arquivo .js. Certifique-se de que layers_data.json existe no repositório remoto.");
+                        }
                         if (data.success) {
                             const ha = data.total_infested_ha || 0;
                             const rebolCount = (data.reboleiras || []).length;
@@ -4067,7 +4072,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                             const jsonStr = event.target.result;
                             
                             // Validação básica do JSON
-                            const parsed = JSON.parse(jsonStr);
+                            let parsed;
+                            try {
+                                parsed = JSON.parse(jsonStr);
+                            } catch (e) {
+                                throw new Error("O arquivo lido não é um JSON válido. Verifique o conteúdo do arquivo.");
+                            }
                             if (!parsed.FAZENDAS && !parsed.TALHOES) {
                                 alert("Arquivo inválido. O JSON deve conter 'FAZENDAS' ou 'TALHOES'.");
                                 return;
@@ -4109,7 +4119,8 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         btnUpdate.style.pointerEvents = 'none';
                         
                         // Busca o arquivo JSON remoto adicionando timestamp para quebrar cache
-                        const remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.json';
+                        let remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/Agrogis_NDB/layers_data.json';
+                        remoteUrl = remoteUrl.replace(/\.js$/, '.json');
                         const response = await fetch(`${remoteUrl}?t=${new Date().getTime()}`);
                         
                         if (!response.ok) {
@@ -4117,7 +4128,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         }
                         
                         const jsonStr = await response.text();
-                        const parsed = JSON.parse(jsonStr);
+                        let parsed;
+                        try {
+                            parsed = JSON.parse(jsonStr);
+                        } catch (e) {
+                            throw new Error("O arquivo lido não é um JSON válido. O GitHub enviou a página 404 HTML ou o arquivo .js em vez do json. Verifique se o arquivo layers_data.json existe no repositório remoto.");
+                        }
                         if (!parsed.FAZENDAS && !parsed.TALHOES) {
                             throw new Error("O arquivo baixado não contém as camadas necessárias.");
                         }
