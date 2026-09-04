@@ -5,13 +5,23 @@ def clean_properties(props, layer_type):
     new_props = {}
     
     if layer_type == 'FAZENDAS':
-        # Para fazendas, apenas Name importa
+        # Para fazendas, precisamos de NOME, CODIGO e AREA_TOTAL
         for k, v in props.items():
             if v is None: continue
-            if 'NAME' in k.upper():
-                new_props['NAME'] = str(v)
-                return new_props
-        return props
+            k_upper = k.upper()
+            if 'NAME' in k_upper or 'NOME' in k_upper or 'FAZENDA' in k_upper:
+                if 'NOME_FAZ' not in new_props:
+                    new_props['NOME_FAZ'] = str(v)
+            if 'COD' in k_upper or 'ID' in k_upper:
+                if 'CODIGO' not in new_props:
+                    new_props['CODIGO'] = str(v)
+            if 'AREA' in k_upper or 'HECTARES' in k_upper:
+                if 'AREA_TOTAL' not in new_props:
+                    try:
+                        new_props['AREA_TOTAL'] = round(float(v), 2)
+                    except:
+                        pass
+        return new_props
         
     elif layer_type == 'TALHOES':
         for k, v in props.items():

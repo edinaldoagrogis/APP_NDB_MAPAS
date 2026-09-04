@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const areaVal = getProp(props, ['AREA_TOTAL', 'AREA_HA', 'AREA', 'HECTARES', 'DL AREA']);
                             const areaStr = areaVal ? parseFloat(areaVal).toFixed(2).replace('.', ',') : 'N/A';
                             
-                            const labelHtml = `<div style="text-align: center; line-height: 1.2; font-size: 11px; font-weight: bold;">
+                            const labelHtml = `<div style="text-align: center; line-height: 1.1; font-size: 9px; font-weight: bold;">
                                 ${title}<br>
                                 Cod.: ${cod}<br>
                                 Área Total= ${areaStr}
