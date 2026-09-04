@@ -633,7 +633,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (isFazenda) {
                         if (!window.labeledFazendas) window.labeledFazendas = new Set();
                         if (!window.labeledFazendas.has(title)) {
-                            layer.bindTooltip(title, {
+                            // Extrai código e área
+                            const cod = getProp(props, ['CODIGO', 'FAZENDA', 'COD_FAZENDA', 'COD', 'ID']) || 'N/A';
+                            const areaVal = getProp(props, ['AREA_TOTAL', 'AREA_HA', 'AREA', 'HECTARES', 'DL AREA']);
+                            const areaStr = areaVal ? parseFloat(areaVal).toFixed(2).replace('.', ',') : 'N/A';
+                            
+                            const labelHtml = `<div style="text-align: center; line-height: 1.2; font-size: 11px; font-weight: bold;">
+                                ${title}<br>
+                                Cod.: ${cod}<br>
+                                Área Total= ${areaStr}
+                            </div>`;
+                            
+                            layer.bindTooltip(labelHtml, {
                                 permanent: true,
                                 direction: 'center',
                                 className: 'fazenda-transparent-label'
