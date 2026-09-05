@@ -1548,3 +1548,9 @@ body.disable-map-hover div.draw-drag-marker {
     pointer-events: auto !important;
     z-index: 9999 !important;
 }
+
+div.measure-drag-marker,
+div.draw-drag-marker {
+    pointer-events: auto !important;
+    z-index: 9999 !important;
+}
