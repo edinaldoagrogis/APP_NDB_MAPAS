@@ -650,11 +650,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             const html = `
                                 <div class="talhao-complex-label" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
                                     <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                        ${corte ? `<div class="tc-corte" style="color: #ff0000; font-size: 8px; font-weight: 900; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">${corte}</div>` : ''}
-                                        <div class="tc-cod" style="font-size: 9px; font-weight: 900;">${cod}</div>
+                                        ${corte ? `<div class="tc-corte" style="color: #ff0000; font-size: 4px; font-weight: 900; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">${corte}</div>` : ''}
+                                        <div class="tc-cod" style="font-size: 4px; font-weight: 900;">${cod}</div>
                                     </div>
-                                    <div class="tc-area" style="font-size: 8px; font-weight: bold; margin-top: 1px;">${area}</div>
-                                    <div class="tc-var" style="font-size: 7.5px; font-weight: bold; opacity: 0.9;">${varName}</div>
+                                    <div class="tc-area" style="font-size: 4px; font-weight: bold; margin-top: 1px;">${area}</div>
+                                    <div class="tc-var" style="font-size: 4px; font-weight: bold; opacity: 0.9;">${varName}</div>
                                 </div>
                             `;
                             const labelItem = { latlng: layer.getBounds().getCenter(), html: html, marker: null, layer: layer };
@@ -1809,36 +1809,20 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const normalizedQuery = normalize(query);
         
-        let foundBounds = L.latLngBounds();
-        let matchCount = 0;
-        let exactMatchFound = false;
-
-        // Função para testar correspondência de nome
-        const isMatch = (nomeFaz) => {
-            if (!nomeFaz) return false;
-            const norm = normalize(nomeFaz);
-            if (norm === normalizedQuery) {
-                exactMatchFound = true;
-                return true;
-            }
-            if (!exactMatchFound && norm.includes(normalizedQuery)) {
-                return true;
-            }
-            return false;
-        };
+        let exactMatches = [];
+        let partialMatches = [];
 
         const checkLayer = (layer, layerName) => {
             if (layer.feature) {
                 const props = layer.feature.properties || {};
                 const nomeFaz = props.NOME_FAZ || props.NOME || props['DL DESCFUNDOA'];
                 
-                if (isMatch(nomeFaz)) {
-                    if (layer.getBounds && typeof layer.getBounds === 'function') {
-                        foundBounds.extend(layer.getBounds());
-                        matchCount++;
-                    } else if (layer.getLatLng && typeof layer.getLatLng === 'function') {
-                        foundBounds.extend(layer.getLatLng());
-                        matchCount++;
+                if (nomeFaz) {
+                    const norm = normalize(nomeFaz);
+                    if (norm === normalizedQuery) {
+                        exactMatches.push(layer);
+                    } else if (norm.includes(normalizedQuery)) {
+                        partialMatches.push(layer);
                     }
                 }
             } else if (layer.eachLayer) {
@@ -1857,7 +1841,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         }
 
         // 2. Se não encontrou nas Fazendas, procura nos Talhões
-        if (matchCount === 0) {
+        if (exactMatches.length === 0 && partialMatches.length === 0) {
             for (const layerName in loadedLayers) {
                 if (layerName.toUpperCase().includes('TALHO')) {
                     const layerGroup = loadedLayers[layerName];
@@ -1868,11 +1852,33 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             }
         }
         
-        if (matchCount > 0 && foundBounds.isValid()) {
-            try {
-                map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5, maxZoom: 14 });
-            } catch(err) {
-                console.error("Erro no zoom: ", err);
+        const bestMatches = exactMatches.length > 0 ? exactMatches : partialMatches;
+        
+        if (bestMatches.length > 0) {
+            let foundBounds = L.latLngBounds();
+            let hasValidBounds = false;
+            
+            bestMatches.forEach(layer => {
+                if (layer.getBounds && typeof layer.getBounds === 'function') {
+                    foundBounds.extend(layer.getBounds());
+                    hasValidBounds = true;
+                } else if (layer.getLatLng && typeof layer.getLatLng === 'function') {
+                    foundBounds.extend(layer.getLatLng());
+                    hasValidBounds = true;
+                }
+            });
+            
+            if (hasValidBounds && foundBounds.isValid()) {
+                try {
+                    // Zoom to 15 if it's a single point, else zoom to fit
+                    if (bestMatches.length === 1 && bestMatches[0].getLatLng) {
+                        map.flyTo(bestMatches[0].getLatLng(), 15, { duration: 1.5 });
+                    } else {
+                        map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5, maxZoom: 15 });
+                    }
+                } catch(err) {
+                    console.error("Erro no zoom: ", err);
+                }
             }
             
             setTimeout(() => {
