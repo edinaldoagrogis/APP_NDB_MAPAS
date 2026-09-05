@@ -2108,10 +2108,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     let measureActive = false;
     let measureFinished = false;
     let measurePoints = [];
-    let measureLines = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', pane: 'tooltipPane'}).addTo(map);
-    let measurePolygon = L.polygon([], {color: '#ff9f1c', weight: 3, fillColor: '#ffeb3b', fillOpacity: 0.6, pane: 'tooltipPane'}).addTo(map);
+    let measureLines = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10'}).addTo(map);
+    let measurePolygon = L.polygon([], {color: '#ff9f1c', weight: 3, fillColor: '#ffeb3b', fillOpacity: 0.6}).addTo(map);
     let measureMarkers = L.layerGroup().addTo(map);
-    let tempLine = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', opacity: 0.8, pane: 'tooltipPane'}).addTo(map);
+    let tempLine = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', opacity: 0.8}).addTo(map);
     
     const btnMeasure = document.getElementById('tool-measure-btn');
     const resultPanel = document.getElementById('measure-result');
@@ -2269,8 +2269,26 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
     function renderMeasureMarkers() {
         measureMarkers.clearLayers();
-        // Os pontos amarelos foram removidos conforme solicitado.
-        // O usuário agora visualiza apenas a linha/polígono da medição.
+        if (measurePoints.length > 0 && measurePoints.length <= 2 && !measureFinished) {
+            measurePoints.forEach((latlng, index) => {
+                const marker = L.marker(latlng, {
+                    draggable: true,
+                    icon: L.divIcon({
+                        className: 'measure-drag-marker',
+                        html: `<div style="width:14px; height:14px; background:#ff9f1c; border:2px solid #fff; border-radius:50%; box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>`,
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7]
+                    })
+                });
+                
+                marker.on('drag', (e) => {
+                    measurePoints[index] = e.target.getLatLng();
+                    updateMeasureDisplay();
+                });
+                
+                measureMarkers.addLayer(marker);
+            });
+        }
     }
 
     function finishMeasurement() {
@@ -2767,7 +2785,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             if (rotasNdbLayer) map.removeLayer(rotasNdbLayer);
             const coords = routes[0].coordinates;
             rotasNdbLayer = L.polyline(coords, {
-                color: '#e85d04', weight: 7, opacity: 0.95, pane: 'tooltipPane'
+                color: '#e85d04', weight: 7, opacity: 0.95
             }).addTo(map);
             
             // Hide the default routing control line (it's in overlayPane, below talhões)
@@ -2969,7 +2987,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             const latlng = e.latlng;
             currentPolygonPoints.push(latlng);
             
-            L.circleMarker(latlng, { radius: 5, fillColor: '#2ec4b6', color: '#000', weight: 1, fillOpacity: 1 }).addTo(drawMarkers);
+            renderDrawMarkers();
             
             currentPolygonLine.setLatLngs(currentPolygonPoints);
             if (currentPolygonPoints.length > 2) {
@@ -2982,6 +3000,35 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
         if (!drawActive || drawMode !== 'area' || currentPolygonPoints.length === 0) return;
         tempDrawLine.setLatLngs([...currentPolygonPoints, e.latlng]);
     });
+
+    
+    function renderDrawMarkers() {
+        drawMarkers.clearLayers();
+        if (drawMode === 'area') {
+            currentPolygonPoints.forEach((latlng, index) => {
+                const marker = L.marker(latlng, {
+                    draggable: true,
+                    icon: L.divIcon({
+                        className: 'draw-drag-marker',
+                        html: `<div style="width:14px; height:14px; background:#2ec4b6; border:2px solid #fff; border-radius:50%; box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>`,
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7]
+                    })
+                });
+                
+                marker.on('drag', (e) => {
+                    currentPolygonPoints[index] = e.target.getLatLng();
+                    currentPolygonLine.setLatLngs(currentPolygonPoints);
+                    if (currentPolygonPoints.length > 2) {
+                        currentPolygonFill.setLatLngs(currentPolygonPoints);
+                    }
+                });
+                
+                drawMarkers.addLayer(marker);
+            });
+        }
+    }
+
 
     btnFinishArea.addEventListener('click', () => {
         if (currentPolygonPoints.length < 3) {
