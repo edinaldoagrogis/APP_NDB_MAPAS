@@ -1536,3 +1536,14 @@ body.clima-farm-active #map .leaflet-interactive {
 
 /* Esconde labels pesadas durante a rotacao */
 .is-rotating .leaflet-tooltip-pane { display: none !important; }
+
+body.disable-map-hover .measure-drag-marker,
+body.disable-map-hover .draw-drag-marker {
+    pointer-events: auto !important;
+}
+
+body.disable-map-hover div.measure-drag-marker,
+body.disable-map-hover div.draw-drag-marker {
+    pointer-events: auto !important;
+    z-index: 9999 !important;
+}
