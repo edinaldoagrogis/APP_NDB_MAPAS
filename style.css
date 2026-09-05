@@ -1533,3 +1533,6 @@ body.clima-farm-active #map .leaflet-interactive {
 
 .custom-talhao-label-tooltip { background: transparent; border: none; box-shadow: none; pointer-events: none; padding: 0; } 
 .custom-talhao-label-tooltip::before { display: none; }
+
+/* Esconde labels pesadas durante a rotacao */
+.is-rotating .leaflet-tooltip-pane { display: none !important; }

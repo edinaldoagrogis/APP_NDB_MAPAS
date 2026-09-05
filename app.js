@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let isUnlocked = false;
             let rafId = null;
 
+            let rotateTimeout = null;
             if (typeof map.getBearing === 'function') {
                 map.on('rotate', function() {
                     if (rafId) cancelAnimationFrame(rafId);
@@ -87,6 +88,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         const bearing = map.getBearing();
                         icon.style.transform = `rotate(${bearing}deg) translateZ(0)`;
                     });
+                    
+                    const mapEl = document.getElementById('map');
+                    if (mapEl) {
+                        mapEl.classList.add('is-rotating');
+                        if (rotateTimeout) clearTimeout(rotateTimeout);
+                        rotateTimeout = setTimeout(() => {
+                            mapEl.classList.remove('is-rotating');
+                        }, 250);
+                    }
                 });
             }
 
