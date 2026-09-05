@@ -23,7 +23,7 @@
     <div class="container">
         <div class="header">
             <h1>Consulta de Limites do CAR</h1>
-            <a href="#" onclick="window.location.href='../index.html?force_reload=true'; return false;" class="back-link">← Voltar ao App</a>
+            <a href="#" onclick="if(window.parent && window.parent.document.getElementById('car-iframe')) { window.parent.document.getElementById('car-iframe').remove(); } else { window.location.href='../index.html'; }; return false;" class="back-link">← Voltar ao App</a>
         </div>
 
         <div class="dashboard-grid">

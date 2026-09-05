@@ -7,6 +7,28 @@ let allFazendas = [];
 
 // Initialize Map
 function initMap() {
+    const request = indexedDB.open('AgrogisDB', 1);
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('layers')) {
+            proceedInitMap();
+            return;
+        }
+        const tx = db.transaction('layers', 'readonly');
+        const store = tx.objectStore('layers');
+        const req = store.get('importedLayers');
+        req.onsuccess = (ev) => {
+            if (ev.target.result) {
+                window.GEOPORTAL_LAYERS = JSON.parse(ev.target.result);
+            }
+            proceedInitMap();
+        };
+        req.onerror = () => proceedInitMap();
+    };
+    request.onerror = () => proceedInitMap();
+}
+
+function proceedInitMap() {
     map = L.map('car-map', {
         zoomControl: true,
         maxZoom: 20
@@ -58,10 +80,19 @@ function loadBaseLayers() {
     // Extract Fazendas for search
     if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
         allFazendas = GEOPORTAL_LAYERS["FAZENDAS"].features.map(f => {
-            return {
-                name: f.properties.NAME || f.properties.Fazenda || 'Desconhecido',
-                coords: f.geometry.coordinates // [lon, lat]
-            };
+            const props = f.properties;
+            const name = props.NOME || props.nome || props.FAZENDA || props.Fazenda || props.NAME || 'Desconhecido';
+            let coords = null;
+            if (f.geometry.type === 'Point') {
+                coords = f.geometry.coordinates;
+            } else if (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon') {
+                // Approximate center from first coordinate array
+                let pts = f.geometry.type === 'Polygon' ? f.geometry.coordinates[0] : f.geometry.coordinates[0][0];
+                let lon = 0, lat = 0;
+                pts.forEach(p => { lon += p[0]; lat += p[1]; });
+                coords = [lon/pts.length, lat/pts.length];
+            }
+            return { name: name, coords: coords };
         }).filter(f => f.coords && f.coords.length >= 2);
     }
 
@@ -553,3 +584,4 @@ function renderCARFeature(feature) {
 
 // Inicializar na carga da página
 window.onload = initMap;
+

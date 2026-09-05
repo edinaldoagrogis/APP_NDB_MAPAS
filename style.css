@@ -1534,8 +1534,9 @@ body.clima-farm-active #map .leaflet-interactive {
 .custom-talhao-label-tooltip { background: transparent; border: none; box-shadow: none; pointer-events: none; padding: 0; } 
 .custom-talhao-label-tooltip::before { display: none; }
 
-/* Esconde labels pesadas durante a rotacao */
-.is-rotating .leaflet-tooltip-pane { display: none !important; }
+/* Esconde labels e vetores pesados durante a rotacao */
+.is-rotating .leaflet-tooltip-pane,
+.is-rotating .leaflet-overlay-pane { display: none !important; }
 
 body.disable-map-hover .measure-drag-marker,
 body.disable-map-hover .draw-drag-marker {
