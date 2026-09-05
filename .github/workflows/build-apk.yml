@@ -68,8 +68,17 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleDebug
 
+      - name: Gerar Link de Download (Bypass da Cota do GitHub)
+        run: |
+          echo "========================================================="
+          echo "BAIXE SEU APK POR AQUI (Link expira em poucos dias):"
+          curl -T android/app/build/outputs/apk/debug/app-debug.apk https://bashupload.com/agrogis-v216.apk
+          echo ""
+          echo "========================================================="
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: agrogis-ndb-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
