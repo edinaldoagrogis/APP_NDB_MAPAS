@@ -1884,9 +1884,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 try {
                     // Zoom to 15 if it's a single point, else zoom to fit
                     if (bestMatches.length === 1 && bestMatches[0].getLatLng) {
-                        map.flyTo(bestMatches[0].getLatLng(), 15, { duration: 1.5 });
+                        map.flyTo(bestMatches[0].getLatLng(), 16, { duration: 1.5 });
                     } else {
-                        map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5, maxZoom: 15 });
+                        map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5, maxZoom: 16 });
                     }
                 } catch(err) {
                     console.error("Erro no zoom: ", err);
@@ -3869,36 +3869,44 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             if (!query || !window.loadedLayers) return;
             
             let bounds = L.latLngBounds();
-            let matchCount = 0;
-            let foundLayer = null;
+            let exactBounds = L.latLngBounds();
+            let exactMatchCount = 0;
+            let partialMatchCount = 0;
+            let foundExactLayer = null;
+            let foundPartialLayer = null;
+
+            const normalize = (str) => String(str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+            const normQuery = normalize(query);
 
             const checkLayer = (layer) => {
                 if (layer.feature) {
                     const props = layer.feature.properties || {};
-                    const getProp = (props, possibleNames) => {
-                        const keys = Object.keys(props);
-                        for (const name of possibleNames) {
-                            const upperName = name.toUpperCase();
-                            const foundKey = keys.find(k => k.toUpperCase() === upperName);
-                            if (foundKey) return props[foundKey];
-                        }
-                        return '';
-                    };
-                    
-                    const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
                     const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'] || '';
                     const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'] || '';
                     
-                    let title = titleRaw || '';
+                    let title = rawName;
                     if (rawName && rawId) {
                         const cleanIdStr = String(rawId).split(',')[0].split('.')[0].trim();
                         if (cleanIdStr) title = `${cleanIdStr} - ${rawName}`;
                     }
                     
-                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-                    if (normalize(title).includes(normalize(query)) || normalize(rawName).includes(normalize(query)) || normalize(titleRaw).includes(normalize(query))) {
-                        matchCount++;
-                        foundLayer = layer;
+                    const normTitle = normalize(title);
+                    const normRawName = normalize(rawName);
+                    
+                    const isExact = normTitle === normQuery || normRawName === normQuery;
+                    const isPartial = normTitle.includes(normQuery) || normRawName.includes(normQuery);
+
+                    if (isExact) {
+                        exactMatchCount++;
+                        foundExactLayer = layer;
+                        if (layer.getBounds) {
+                            exactBounds.extend(layer.getBounds());
+                        } else if (layer.getLatLng) {
+                            exactBounds.extend(layer.getLatLng());
+                        }
+                    } else if (isPartial) {
+                        partialMatchCount++;
+                        foundPartialLayer = layer;
                         if (layer.getBounds) {
                             bounds.extend(layer.getBounds());
                         } else if (layer.getLatLng) {
@@ -3912,22 +3920,24 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
 
             for (const layerName in window.loadedLayers) {
                 if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
-                
                 const layerGroup = window.loadedLayers[layerName];
                 if (layerGroup && layerGroup.eachLayer) {
                     layerGroup.eachLayer(child => checkLayer(child));
                 }
             }
             
-            if (matchCount > 0 && bounds.isValid()) {
-                if (matchCount > 1 || !foundLayer.getLatLng) {
-                    map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5, maxZoom: 14 });
+            let finalBounds = exactMatchCount > 0 ? exactBounds : bounds;
+            let finalMatchCount = exactMatchCount > 0 ? exactMatchCount : partialMatchCount;
+            let finalFoundLayer = exactMatchCount > 0 ? foundExactLayer : foundPartialLayer;
+            
+            if (finalMatchCount > 0 && finalBounds.isValid()) {
+                if (finalMatchCount > 1 || !finalFoundLayer.getLatLng) {
+                    map.flyToBounds(finalBounds, { padding: [50, 50], duration: 1.5, maxZoom: 16 });
                 } else {
-                    map.flyTo(foundLayer.getLatLng(), 14, { duration: 1.5 });
+                    map.flyTo(finalFoundLayer.getLatLng(), 16, { duration: 1.5 });
                 }
             }
         }
-    }
     if (btnClose) {
         btnClose.addEventListener('click', deactivateWeedTool);
     }
