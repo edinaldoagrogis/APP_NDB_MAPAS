@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toggle labels based on zoom level and user preference
     const isMobile = window.innerWidth <= 768;
     const ZOOM_THRESHOLD = 13; // Fazendas (Appears closer)
-    const TALHOES_ZOOM_THRESHOLD = 13.5; // TalhÃµes (Appears closer)
+    const TALHOES_ZOOM_THRESHOLD = 14.5; // TalhÃµes (Appears closer)
     const EQUIPES_ZOOM_THRESHOLD = isMobile ? 10 : 8; // Equipes
     
     // Dynamic Layer Engine Stores
@@ -322,10 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fazendas logic
         const toggleFazendas = document.getElementById('toggle-labels-fazendas');
         const fazendasEnabled = toggleFazendas ? toggleFazendas.checked : true;
-        if (fazendasEnabled && map.getZoom() >= ZOOM_THRESHOLD) {
-            document.getElementById('map').classList.add('show-labels');
+        const tgTalhoes = document.getElementById('toggle-labels-talhoes');
+        const talhoesOn = tgTalhoes ? tgTalhoes.checked : true;
+        if (fazendasEnabled && map.getZoom() >= ZOOM_THRESHOLD && (!talhoesOn || map.getZoom() < TALHOES_ZOOM_THRESHOLD)) {
+            document.getElementById('map').classList.add('show-fazendas');
         } else {
-            document.getElementById('map').classList.remove('show-labels');
+            document.getElementById('map').classList.remove('show-fazendas');
         }
 
         // ─── MinZoom para Polígonos de Talhões (Otimização Extrema) ───
