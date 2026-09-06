@@ -3938,6 +3938,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 }
             }
         }
+    }
     if (btnClose) {
         btnClose.addEventListener('click', deactivateWeedTool);
     }
