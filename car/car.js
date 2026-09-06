@@ -11,7 +11,7 @@ function initMap() {
     request.onsuccess = (e) => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('layers')) {
-            proceedInitMap();
+            fetch('../layers_data.json').then(r => r.json()).then(data => { window.GEOPORTAL_LAYERS = data; proceedInitMap(); }).catch(e => proceedInitMap());
             return;
         }
         const tx = db.transaction('layers', 'readonly');
@@ -20,10 +20,12 @@ function initMap() {
         req.onsuccess = (ev) => {
             if (ev.target.result) {
                 window.GEOPORTAL_LAYERS = JSON.parse(ev.target.result);
+                proceedInitMap();
+            } else {
+                fetch('../layers_data.json').then(r => r.json()).then(data => { window.GEOPORTAL_LAYERS = data; proceedInitMap(); }).catch(e => proceedInitMap());
             }
-            proceedInitMap();
         };
-        req.onerror = () => proceedInitMap();
+        req.onerror = () => { fetch('../layers_data.json').then(r => r.json()).then(data => { window.GEOPORTAL_LAYERS = data; proceedInitMap(); }).catch(e => proceedInitMap()); };
     };
     request.onerror = () => proceedInitMap();
 }
@@ -81,7 +83,7 @@ function loadBaseLayers() {
     if (GEOPORTAL_LAYERS["FAZENDAS"] && GEOPORTAL_LAYERS["FAZENDAS"].features) {
         allFazendas = GEOPORTAL_LAYERS["FAZENDAS"].features.map(f => {
             const props = f.properties;
-            const name = props.NOME || props.nome || props.FAZENDA || props.Fazenda || props.NAME || 'Desconhecido';
+            const name = props.NOME_FAZ || props.NOME || props.nome || props.FAZENDA || props.Fazenda || props.NAME || 'Desconhecido';
             let coords = null;
             if (f.geometry.type === 'Point') {
                 coords = f.geometry.coordinates;
