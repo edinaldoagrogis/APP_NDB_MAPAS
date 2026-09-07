@@ -1783,11 +1783,14 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 const div = document.createElement('div');
                 div.textContent = item; // Plain text like CAR tool
                 
-                div.addEventListener('click', function(e) {
+                const selectItem = function(e) {
+                    e.preventDefault(); // Prevents input from losing focus and moving the dropdown
                     searchInput.value = item;
                     autocompleteList.style.display = 'none';
                     handleSearch({ target: searchInput });
-                });
+                };
+                div.addEventListener('mousedown', selectItem);
+                div.addEventListener('touchstart', selectItem);
                 autocompleteList.appendChild(div);
             }
         });
