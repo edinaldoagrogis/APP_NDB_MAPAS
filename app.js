@@ -1884,9 +1884,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 try {
                     // Zoom to 15 if it's a single point, else zoom to fit
                     if (bestMatches.length === 1 && bestMatches[0].getLatLng) {
-                        map.flyTo(bestMatches[0].getLatLng(), 16, { duration: 1.5 });
+                        map.flyTo(bestMatches[0].getLatLng(), 14, { duration: 1.5 });
                     } else {
-                        map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5, maxZoom: 16 });
+                        map.flyToBounds(foundBounds, { padding: [50, 50], duration: 1.5, maxZoom: 14 });
                     }
                 } catch(err) {
                     console.error("Erro no zoom: ", err);
@@ -2283,10 +2283,12 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                     })
                 });
                 
+                marker.on('dragstart', () => { window.isMeasureDragging = true; tempLine.setLatLngs([]); });
                 marker.on('drag', (e) => {
                     measurePoints[index] = e.target.getLatLng();
                     updateMeasureDisplay();
                 });
+                marker.on('dragend', () => { setTimeout(() => { window.isMeasureDragging = false; }, 100); });
                 
                 measureMarkers.addLayer(marker);
             });
@@ -2321,7 +2323,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     });
 
     map.on('mousemove', (e) => {
-        if (!measureActive || measureFinished || measurePoints.length === 0) return;
+        if (!measureActive || measureFinished || measurePoints.length === 0 || window.isMeasureDragging) return;
         const currentPoints = [...measurePoints, e.latlng];
         tempLine.setLatLngs(currentPoints);
     });
@@ -2999,7 +3001,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     });
 
     map.on('mousemove', (e) => {
-        if (!drawActive || drawMode !== 'area' || currentPolygonPoints.length === 0) return;
+        if (!drawActive || drawMode !== 'area' || currentPolygonPoints.length === 0 || window.isMeasureDragging) return;
         tempDrawLine.setLatLngs([...currentPolygonPoints, e.latlng]);
     });
 
@@ -3875,7 +3877,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             let foundExactLayer = null;
             let foundPartialLayer = null;
 
-            const normalize = (str) => String(str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+            const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             const normQuery = normalize(query);
 
             const checkLayer = (layer) => {
@@ -3932,9 +3934,9 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
             
             if (finalMatchCount > 0 && finalBounds.isValid()) {
                 if (finalMatchCount > 1 || !finalFoundLayer.getLatLng) {
-                    map.flyToBounds(finalBounds, { padding: [50, 50], duration: 1.5, maxZoom: 16 });
+                    map.flyToBounds(finalBounds, { padding: [50, 50], duration: 1.5, maxZoom: 14 });
                 } else {
-                    map.flyTo(finalFoundLayer.getLatLng(), 16, { duration: 1.5 });
+                    map.flyTo(finalFoundLayer.getLatLng(), 14, { duration: 1.5 });
                 }
             }
         }
