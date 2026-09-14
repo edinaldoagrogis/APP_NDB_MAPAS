@@ -326,6 +326,7 @@
                             <span style="font-size: 10px; color: var(--text-muted); text-transform: none; margin-left: -10px;">(Todos)</span>
                         </th>
                         <th>Nível de Acesso</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody id="users-body">
@@ -410,7 +411,7 @@
                 }
 
                 if (data.users.length === 0) {
-                    usersBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
+                    usersBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>';
                     document.getElementById('total-users').style.display = 'none';
                 } else {
                     document.getElementById('total-users').textContent = `Total: ${data.users.length} usuário${data.users.length > 1 ? 's' : ''}`;
@@ -445,6 +446,9 @@
                                     <option value="1" ${level == 1 ? 'selected' : ''}>Nível 01</option>
                                     <option value="2" ${level == 2 ? 'selected' : ''}>Nível 02</option>
                                 </select>
+                            </td>
+                            <td>
+                                <button onclick="deleteUser('${u.name}')" style="background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 4px; ${disabled ? 'opacity: 0.3; cursor: not-allowed;' : ''}" title="Excluir Usuário" ${disabled}>🗑️</button>
                             </td>
                         `;
                         usersBody.appendChild(tr);
@@ -585,6 +589,34 @@
             } catch (e) {
                 alert('Erro na conexão!');
                 loadUsers();
+            }
+        };
+
+        window.deleteUser = async function(username) {
+            if (!confirm(`ATENÇÃO: Tem certeza que deseja EXCLUIR PERMANENTEMENTE o usuário "${username}"?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch('https://app-ndb-mapas.vercel.app/api/deleteUser', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ username })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    showToast(`Usuário excluído com sucesso!`);
+                    loadUsers();
+                } else {
+                    alert('Falha ao excluir usuário: ' + (data.error || 'Erro desconhecido.'));
+                }
+            } catch (e) {
+                alert('Erro de conexão ao tentar excluir usuário.');
             }
         };
 
