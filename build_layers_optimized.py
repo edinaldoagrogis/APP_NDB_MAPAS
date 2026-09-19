@@ -166,8 +166,11 @@ def build():
                 json.dump(opt_linhas_col_data, tmp)
                 tmp_name = tmp.name
             
+            import geopandas as gpd
+            from shapely import force_2d
             gdf = gpd.read_file(tmp_name)
             gdf = gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty]
+            gdf.geometry = force_2d(gdf.geometry)
             gdf.to_file('linhas_colheita.fgb', driver='FlatGeobuf')
             os.remove(tmp_name)
             print("Successfully created linhas_colheita.fgb")
