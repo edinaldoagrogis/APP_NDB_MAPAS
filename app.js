@@ -4200,7 +4200,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         btnUpdate.style.pointerEvents = 'none';
                         
                         // Busca o arquivo JSON remoto adicionando timestamp para quebrar cache
-                        let remoteUrl = window.REMOTE_LAYERS_URL || 'https://edinaldoagrogis.github.io/APP_NDB_MAPAS/layers_data.json';
+                        let remoteUrl = window.REMOTE_LAYERS_URL || './layers_data.json';
                         remoteUrl = remoteUrl.replace(/\.js$/, '.json');
                         const response = await fetch(`${remoteUrl}?t=${new Date().getTime()}`);
                         
