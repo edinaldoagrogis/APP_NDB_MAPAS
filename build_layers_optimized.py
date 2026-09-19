@@ -171,6 +171,10 @@ def build():
             gdf = gpd.read_file(tmp_name)
             gdf = gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty]
             gdf.geometry = force_2d(gdf.geometry)
+            
+            # Simplify geometries to reduce file size (tolerance in degrees, ~50cm)
+            gdf.geometry = gdf.geometry.simplify(0.000005, preserve_topology=True)
+            
             gdf.to_file('linhas_colheita.fgb', driver='FlatGeobuf')
             os.remove(tmp_name)
             print("Successfully created linhas_colheita.fgb")
