@@ -1,0 +1,66 @@
+weedSearchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSearch(e); });
+    function handleSearch(e) {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query || !window.loadedLayers) return;
+            
+            let bounds = L.latLngBounds();
+            let matchCount = 0;
+            let foundLayer = null;
+
+            const checkLayer = (layer) => {
+                if (layer.feature) {
+                    const props = layer.feature.properties || {};
+                    const getProp = (props, possibleNames) => {
+                        const keys = Object.keys(props);
+                        for (const name of possibleNames) {
+                            const upperName = name.toUpperCase();
+                            const foundKey = keys.find(k => k.toUpperCase() === upperName);
+                            if (foundKey) return props[foundKey];
+                        }
+                        return '';
+                    };
+                    
+                    const titleRaw = getProp(props, ['NOME', 'NAME', 'FAZENDA', 'NOME_FAZ', 'NOMEPROPRI', 'DESCFUNDOA', 'TALHAO', 'ID', 'LOCAL', 'DESIGNACAO']);
+                    const rawName = props.NOME_FAZ || props['DL DESCFUNDOA'] || '';
+                    const rawId = props.FAZENDA || props.DL_FUNDOAGRIC || props['DL FUNDOAGRIC'] || '';
+                    
+                    let title = titleRaw || '';
+                    if (rawName && rawId) {
+                        const cleanIdStr = String(rawId).split(',')[0].split('.')[0].trim();
+                        if (cleanIdStr) title = `${cleanIdStr} - ${rawName}`;
+                    }
+                    
+                    const normalize = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+                    if (normalize(title).includes(normalize(query)) || normalize(rawName).includes(normalize(query)) || normalize(titleRaw).includes(normalize(query))) {
+                        matchCount++;
+                        foundLayer = layer;
+                        if (layer.getBounds) {
+                            bounds.extend(layer.getBounds());
+                        } else if (layer.getLatLng) {
+                            bounds.extend(layer.getLatLng());
+                        }
+                    }
+                } else if (layer.eachLayer) {
+                    layer.eachLayer(child => checkLayer(child));
+                }
+            };
+
+            for (const layerName in window.loadedLayers) {
+                if (!layerName.toUpperCase().includes('FAZENDA') && !layerName.toUpperCase().includes('TALHOES')) continue;
+                
+                const layerGroup = window.loadedLayers[layerName];
+                if (layerGroup && layerGroup.eachLayer) {
+                    layerGroup.eachLayer(child => checkLayer(child));
+                }
+            }
+            
+            if (matchCount > 0 && bounds.isValid()) {
+                if (matchCount > 1 || !foundLayer.getLatLng) {
+                    map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5, maxZoom: 14 });
+                } else {
+                    map.flyTo(foundLayer.getLatLng(), 14, { duration: 1.5 });
+                }
+            }
+        }
+    }
+    
