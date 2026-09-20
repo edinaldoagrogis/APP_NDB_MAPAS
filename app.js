@@ -964,6 +964,7 @@ async function saveImportedLayers(jsonStr) {
         tx.onerror = () => reject(tx.error);
     });
 }
+window.saveImportedLayers = saveImportedLayers;
 
 async function getImportedLayers() {
     const db = await dbPromise;
@@ -4164,7 +4165,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                                 return;
                             }
                             
-                            await saveImportedLayers(jsonStr);
+                            await window.saveImportedLayers(jsonStr);
                             alert("Camadas importadas com sucesso! O aplicativo será reiniciado para aplicar as mudanças.");
                             window.location.reload();
                         };
@@ -4219,7 +4220,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                             throw new Error("O arquivo baixado não contém as camadas necessárias.");
                         }
                         
-                        await saveImportedLayers(jsonStr);
+                        await window.saveImportedLayers(jsonStr);
                         alert("Camadas baixadas com sucesso! O aplicativo será reiniciado para aplicar as mudanças.");
                         window.location.reload();
                     } catch(err) {
