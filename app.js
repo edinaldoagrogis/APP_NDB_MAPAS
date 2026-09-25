@@ -416,10 +416,10 @@ document.addEventListener('DOMContentLoaded', () => {
         keepBuffer: 3 // Keep offscreen tiles longer to reduce flashing
     };
 
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         ...tileOptions,
         zIndex: 1,
-        attribution: 'Tiles &copy; Esri'
+        attribution: 'Map data &copy; Google'
     });
 
     const labelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
