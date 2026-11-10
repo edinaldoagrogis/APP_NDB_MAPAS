@@ -777,8 +777,21 @@ document.addEventListener('DOMContentLoaded', () => {
                                 let fgbFile = './linhas_colheita.fgb' + (fgbVersion ? `?t=${fgbVersion}` : '');
                                 const response = await fetch(fgbFile);
                                 const buffer = await response.arrayBuffer();
+                                let loadedCount = 0;
                                 for await (let feature of flatgeobuf.deserialize(new Uint8Array(buffer))) {
                                     this._realGeoJSON.addData(feature);
+                                    loadedCount++;
+                                }
+                                // Update subtitle count dynamically
+                                const ul = document.getElementById('dynamic-layer-list');
+                                if (ul) {
+                                    ul.querySelectorAll('.layer-item').forEach(item => {
+                                        const nameDiv = item.querySelector('.layer-name');
+                                        if (nameDiv && nameDiv.innerText.toUpperCase().includes('LINHAS DE COLHEITA')) {
+                                            const subtitle = item.querySelector('.layer-subtitle');
+                                            if (subtitle) subtitle.innerText = loadedCount + ' objetos';
+                                        }
+                                    });
                                 }
                                 if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
                             } catch (err) {
@@ -834,7 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
             li.className = 'layer-item';
             li.style.display = 'block'; // Override default flex to allow vertical stacking
             
-            const featureCount = (data && data.features && data.features.length) || (isLinhasColheita ? 10700 : 0);
+            const featureCount = (data && data.features && data.features.length) || (isLinhasColheita ? 145162 : 0);
             const subtitleText = featureCount === 1 ? '1 objeto' : featureCount + ' objetos';
             const avenzaIcon = `<div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); display: flex; justify-content: center; align-items: center; margin-right: 12px; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${baseColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg></div>`;
 

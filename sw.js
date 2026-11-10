@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v234';
+const CACHE_NAME = 'agrogis-v235';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
