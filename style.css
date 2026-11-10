@@ -61,6 +61,10 @@ body, html {
 
 /* Dark Theme Topbar */
 .topbar-light {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1107,11 +1111,18 @@ body.disable-map-hover .leaflet-interactive {
 
 /* UI Hidden State (Full Screen Map Mode) */
 .top-right-wrapper {
+    top: 112px !important;
     transition: opacity 0.3s ease, visibility 0.3s ease !important;
 }
 
+@media(max-width: 768px) {
+    .top-right-wrapper {
+        top: 110px !important;
+    }
+}
+
 .topbar-light {
-    transition: margin-top 0.3s ease, opacity 0.3s ease, visibility 0.3s ease !important;
+    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease !important;
 }
 
 body.ui-hidden .top-right-wrapper,
@@ -1122,7 +1133,7 @@ body.ui-hidden .leaflet-bottom.leaflet-right {
 }
 
 body.ui-hidden .topbar-light {
-    margin-top: -101px !important; /* height 100px + 1px border */
+    transform: translateY(-100%) !important;
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
