@@ -773,7 +773,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             this.addLayer(this._realGeoJSON);
                             
                             try {
-                                let fgbFile = './linhas_colheita.fgb';
+                                const fgbVersion = localStorage.getItem('agrogis_fgb_version') || '';
+                                let fgbFile = './linhas_colheita.fgb' + (fgbVersion ? `?t=${fgbVersion}` : '');
                                 const response = await fetch(fgbFile);
                                 const buffer = await response.arrayBuffer();
                                 for await (let feature of flatgeobuf.deserialize(new Uint8Array(buffer))) {
@@ -4201,9 +4202,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         btnUpdate.style.pointerEvents = 'none';
                         
                         // Busca o arquivo JSON remoto adicionando timestamp para quebrar cache
+                        const ts = new Date().getTime();
                         let remoteUrl = window.REMOTE_LAYERS_URL || './layers_data.json';
                         remoteUrl = remoteUrl.replace(/\.js$/, '.json');
-                        const response = await fetch(`${remoteUrl}?t=${new Date().getTime()}`);
+                        const response = await fetch(`${remoteUrl}?t=${ts}`, { cache: 'no-store' });
                         
                         if (!response.ok) {
                             throw new Error("Servidor retornou " + response.status);
@@ -4218,6 +4220,24 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                         }
                         if (!parsed.FAZENDAS && !parsed.TALHOES) {
                             throw new Error("O arquivo baixado não contém as camadas necessárias.");
+                        }
+
+                        // Atualiza também o arquivo linhas_colheita.fgb da nuvem para o cache local
+                        try {
+                            btnUpdate.innerHTML = `<span style="font-size: 13px; font-weight: 500;">Baixando Linhas... (Aguarde)</span>`;
+                            const fgbResp = await fetch(`./linhas_colheita.fgb?t=${ts}`, { cache: 'no-store' });
+                            if (fgbResp.ok) {
+                                localStorage.setItem('agrogis_fgb_version', String(ts));
+                                if ('caches' in window) {
+                                    const keys = await caches.keys();
+                                    for (const k of keys) {
+                                        const c = await caches.open(k);
+                                        await c.put('./linhas_colheita.fgb', fgbResp.clone());
+                                    }
+                                }
+                            }
+                        } catch (fgbErr) {
+                            console.warn("Aviso ao atualizar linhas_colheita.fgb:", fgbErr);
                         }
                         
                         await window.saveImportedLayers(jsonStr);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v233';
+const CACHE_NAME = 'agrogis-v234';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -229,6 +229,26 @@ self.addEventListener('fetch', event => {
     // ──────────────────────────────────────────────────────────────────────
 
     // Cache-First Strategy para todo o resto - Extrema velocidade na inicialização
+    if (url.searchParams.has('t')) {
+        event.respondWith(
+            fetch(event.request, { cache: 'no-store' }).then(response => {
+                if (response && response.status === 200) {
+                    const responseToCache = response.clone();
+                    const cleanUrl = url.origin + url.pathname;
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(cleanUrl, responseToCache);
+                    });
+                }
+                return response;
+            }).catch(async () => {
+                const cached = await caches.match(event.request, { ignoreSearch: true });
+                if (cached) return cached;
+                return new Response('', { status: 404, statusText: 'Offline' });
+            })
+        );
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
             if (cachedResponse) {
