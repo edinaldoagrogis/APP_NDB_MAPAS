@@ -774,9 +774,21 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             try {
                                 const fgbVersion = localStorage.getItem('agrogis_fgb_version') || '';
-                                let fgbFile = './linhas_colheita.fgb' + (fgbVersion ? `?t=${fgbVersion}` : '');
-                                const response = await fetch(fgbFile);
-                                const buffer = await response.arrayBuffer();
+                                let buffer = null;
+                                try {
+                                    const customFgb = await getImportedFgb();
+                                    if (customFgb) {
+                                        console.log('Carregando linhas_colheita.fgb do IndexedDB!');
+                                        buffer = customFgb;
+                                    }
+                                } catch (idbErr) {
+                                    console.warn('Erro ao ler FGB do IndexedDB:', idbErr);
+                                }
+                                if (!buffer) {
+                                    let fgbFile = './linhas_colheita.fgb' + (fgbVersion ? `?t=${fgbVersion}` : '');
+                                    const response = await fetch(fgbFile);
+                                    buffer = await response.arrayBuffer();
+                                }
                                 let loadedCount = 0;
                                 for await (let feature of flatgeobuf.deserialize(new Uint8Array(buffer))) {
                                     this._realGeoJSON.addData(feature);
@@ -989,6 +1001,28 @@ async function getImportedLayers() {
         req.onerror = () => reject(req.error);
     });
 }
+
+async function saveImportedFgb(arrayBuffer) {
+    const db = await dbPromise;
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('layers', 'readwrite');
+        tx.objectStore('layers').put(arrayBuffer, 'linhas_colheita_fgb');
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+window.saveImportedFgb = saveImportedFgb;
+
+async function getImportedFgb() {
+    const db = await dbPromise;
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('layers', 'readonly');
+        const req = tx.objectStore('layers').get('linhas_colheita_fgb');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+window.getImportedFgb = getImportedFgb;
 
 async function loadLayersDataAsync() {
     console.log("Iniciando carregamento assíncrono de layers_data...");
@@ -4235,17 +4269,23 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                             throw new Error("O arquivo baixado não contém as camadas necessárias.");
                         }
 
-                        // Atualiza também o arquivo linhas_colheita.fgb da nuvem para o cache local
+                        // Atualiza também o arquivo linhas_colheita.fgb da nuvem para o IndexedDB e cache local
                         try {
                             btnUpdate.innerHTML = `<span style="font-size: 13px; font-weight: 500;">Baixando Linhas... (Aguarde)</span>`;
-                            const fgbResp = await fetch(`./linhas_colheita.fgb?t=${ts}`, { cache: 'no-store' });
+                            const fgbRemoteUrl = 'https://edinaldoagrogis.github.io/APP_NDB_MAPAS/linhas_colheita.fgb';
+                            const fgbResp = await fetch(`${fgbRemoteUrl}?t=${ts}`, { cache: 'no-store' });
                             if (fgbResp.ok) {
                                 localStorage.setItem('agrogis_fgb_version', String(ts));
+                                const fgbClone = fgbResp.clone();
+                                const fgbBuf = await fgbResp.arrayBuffer();
+                                if (window.saveImportedFgb) {
+                                    await window.saveImportedFgb(fgbBuf);
+                                }
                                 if ('caches' in window) {
                                     const keys = await caches.keys();
                                     for (const k of keys) {
                                         const c = await caches.open(k);
-                                        await c.put('./linhas_colheita.fgb', fgbResp.clone());
+                                        await c.put('./linhas_colheita.fgb', fgbClone.clone());
                                     }
                                 }
                             }
