@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
     map.createPane('harvestLinesPane');
     map.getPane('harvestLinesPane').style.zIndex = 450;
 
+    // Create a custom pane for user custom layers (above talhões and harvest lines, inside rotatePane)
+    map.createPane('customFeaturesPane');
+    map.getPane('customFeaturesPane').style.zIndex = 460;
+
     // Ocultamento durante zoom removido conforme pedido pelo usuário. As camadas não vão mais piscar.
     
     // Fix map rendering issues when returning from other tools (bfcache)
@@ -1202,7 +1206,8 @@ loadLayersDataAsync();
             myLayers[type].addData(featureCollection);
         } else {
             let options = {
-                interactive: false,
+                pane: 'customFeaturesPane',
+                interactive: true,
                 onEachFeature: (feature, layer) => {
                     if (feature.properties) {
                         const featureName = feature.properties.NOME || 'Sem Nome';
@@ -1278,13 +1283,13 @@ loadLayersDataAsync();
             
             if (type === 'pontos') {
                 options.pointToLayer = (feature, latlng) => {
-                    return L.circleMarker(latlng, {
-                        radius: 10,
-                        fillColor: '#e71d36',
-                        color: '#fff',
-                        weight: 3,
-                        fillOpacity: 1,
-                        pane: 'tooltipPane'
+                    return L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'custom-point-marker',
+                            html: '<div style="width: 20px; height: 20px; background: #e71d36; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.6);"></div>',
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
                     });
                 };
             } else if (type === 'areas') {
@@ -1292,28 +1297,24 @@ loadLayersDataAsync();
                     color: '#2ec4b6',
                     weight: 2,
                     fillColor: '#2ec4b6',
-                    fillOpacity: 0.4,
-                    pane: 'tooltipPane'
+                    fillOpacity: 0.4
                 };
             } else if (type === 'medicao_area') {
                 options.style = {
                     color: '#2196f3',
                     weight: 2,
                     fillColor: '#2196f3',
-                    fillOpacity: 0.4,
-                    pane: 'tooltipPane'
+                    fillOpacity: 0.4
                 };
             } else if (type === 'rotas') {
                 options.style = {
                     color: '#e85d04',
-                    weight: 4,
-                    pane: 'tooltipPane'
+                    weight: 4
                 };
             } else if (type === 'medicao_distancia') {
                 options.style = {
                     color: '#9c27b0',
-                    weight: 4,
-                    pane: 'tooltipPane'
+                    weight: 4
                 };
             }
             
