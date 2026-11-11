@@ -18,11 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.map = map; // Expose globally for modules
 
     // Create a custom pane for harvest lines to always appear above other vector layers (zIndex > 400)
-    map.createPane('harvestLinesPane');
+    map.createPane('harvestLinesPane', map._rotatePane || map.getPane('rotatePane'));
     map.getPane('harvestLinesPane').style.zIndex = 450;
 
     // Create a custom pane for user custom layers (above talhões and harvest lines, inside rotatePane)
-    map.createPane('customFeaturesPane');
+    map.createPane('customFeaturesPane', map._rotatePane || map.getPane('rotatePane'));
     map.getPane('customFeaturesPane').style.zIndex = 460;
 
     // Ocultamento durante zoom removido conforme pedido pelo usuário. As camadas não vão mais piscar.
