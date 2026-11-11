@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrogis-v239';
+const CACHE_NAME = 'agrogis-v240';
 
 // Core assets to pre-cache when the Service Worker installs
 try {
@@ -152,13 +152,13 @@ self.addEventListener('fetch', event => {
 
     // Network-First para arquivos principais do app (index.html, auth.js, app.js)
     // Garante que atualizações apareçam imediatamente, sem depender de cache antigo
-    const alwaysFreshFiles = ['/', '/index.html', '/auth.js', '/app.js', '/style.css', '/sw.js'];
+    const alwaysFreshFiles = ['/', '/index.html', '/auth.js', '/app.js', '/style.css', '/sw.js', '/clima_farm.js', '/pathfinder.js'];
     if (alwaysFreshFiles.some(f => url.pathname === f || url.pathname.endsWith(f))) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5 seconds timeout
+        const timeoutId = setTimeout(() => controller.abort(), 4500); // 4.5 seconds timeout
 
         event.respondWith(
-            fetch(event.request, { signal: controller.signal }).then(async response => {
+            fetch(event.request, { signal: controller.signal, cache: 'no-store' }).then(async response => {
                 clearTimeout(timeoutId);
                 // Se a resposta for ruim (ex: portal cativo, 404, 500), tenta usar o cache
                 if (!response || !response.ok) {
@@ -171,7 +171,11 @@ self.addEventListener('fetch', event => {
                 
                 if (response && response.status === 200) {
                     const responseToCache = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
+                    const cleanUrl = url.origin + url.pathname;
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseToCache.clone());
+                        cache.put(cleanUrl, responseToCache);
+                    });
                 }
                 return response;
             }).catch(async () => {

@@ -1293,28 +1293,36 @@ loadLayersDataAsync();
                     });
                 };
             } else if (type === 'areas') {
+                options.renderer = L.canvas({ pane: 'customFeaturesPane', padding: 0.25 });
                 options.style = {
                     color: '#2ec4b6',
                     weight: 2,
                     fillColor: '#2ec4b6',
-                    fillOpacity: 0.4
+                    fillOpacity: 0.4,
+                    pane: 'customFeaturesPane'
                 };
             } else if (type === 'medicao_area') {
+                options.renderer = L.canvas({ pane: 'customFeaturesPane', padding: 0.25 });
                 options.style = {
                     color: '#2196f3',
                     weight: 2,
                     fillColor: '#2196f3',
-                    fillOpacity: 0.4
+                    fillOpacity: 0.4,
+                    pane: 'customFeaturesPane'
                 };
             } else if (type === 'rotas') {
+                options.renderer = L.canvas({ pane: 'customFeaturesPane', padding: 0.25 });
                 options.style = {
                     color: '#e85d04',
-                    weight: 4
+                    weight: 4,
+                    pane: 'customFeaturesPane'
                 };
             } else if (type === 'medicao_distancia') {
+                options.renderer = L.canvas({ pane: 'customFeaturesPane', padding: 0.25 });
                 options.style = {
                     color: '#9c27b0',
-                    weight: 4
+                    weight: 4,
+                    pane: 'customFeaturesPane'
                 };
             }
             
@@ -2163,10 +2171,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     let measureActive = false;
     let measureFinished = false;
     let measurePoints = [];
-    let measureLines = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10'}).addTo(map);
-    let measurePolygon = L.polygon([], {color: '#ff9f1c', weight: 3, fillColor: '#ffeb3b', fillOpacity: 0.6}).addTo(map);
+    let measureLines = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', pane: 'customFeaturesPane'}).addTo(map);
+    let measurePolygon = L.polygon([], {color: '#ff9f1c', weight: 3, fillColor: '#ffeb3b', fillOpacity: 0.6, pane: 'customFeaturesPane'}).addTo(map);
     let measureMarkers = L.layerGroup().addTo(map);
-    let tempLine = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', opacity: 0.8}).addTo(map);
+    let tempLine = L.polyline([], {color: '#ff9f1c', weight: 4, dashArray: '5, 10', opacity: 0.8, pane: 'customFeaturesPane'}).addTo(map);
     
     const btnMeasure = document.getElementById('tool-measure-btn');
     const resultPanel = document.getElementById('measure-result');
@@ -2838,11 +2846,11 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
                 }
             }
             
-            // Draw our own route line in tooltipPane to ensure it's ABOVE the talhões layer
+            // Draw our own route line in customFeaturesPane to ensure it's ABOVE the talhões layer and rotates properly
             if (rotasNdbLayer) map.removeLayer(rotasNdbLayer);
             const coords = routes[0].coordinates;
             rotasNdbLayer = L.polyline(coords, {
-                color: '#e85d04', weight: 7, opacity: 0.95
+                color: '#e85d04', weight: 7, opacity: 0.95, pane: 'customFeaturesPane'
             }).addTo(map);
             
             // Hide the default routing control line (it's in overlayPane, below talhões)
@@ -2877,10 +2885,10 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     let drawActive = false;
     let drawMode = null; // 'point' | 'area'
     let currentPolygonPoints = [];
-    let currentPolygonLine = L.polyline([], {color: '#2ec4b6', weight: 3, dashArray: '5, 10'}).addTo(map);
-    let currentPolygonFill = L.polygon([], {color: '#2ec4b6', weight: 2, fillColor: '#2ec4b6', fillOpacity: 0.2}).addTo(map);
+    let currentPolygonLine = L.polyline([], {color: '#2ec4b6', weight: 3, dashArray: '5, 10', pane: 'customFeaturesPane'}).addTo(map);
+    let currentPolygonFill = L.polygon([], {color: '#2ec4b6', weight: 2, fillColor: '#2ec4b6', fillOpacity: 0.2, pane: 'customFeaturesPane'}).addTo(map);
     let drawMarkers = L.layerGroup().addTo(map);
-    let tempDrawLine = L.polyline([], {color: '#2ec4b6', weight: 3, dashArray: '5, 10', opacity: 0.5}).addTo(map);
+    let tempDrawLine = L.polyline([], {color: '#2ec4b6', weight: 3, dashArray: '5, 10', opacity: 0.5, pane: 'customFeaturesPane'}).addTo(map);
 
     const btnDraw = document.getElementById('tool-draw-btn');
     const drawPanel = document.getElementById('draw-panel');
@@ -3132,7 +3140,7 @@ loadedLayers[type.toUpperCase()] = myLayers[type];
     let isRecording = false;
     let watchId = null;
     let recordPoints = [];
-    let recordLine = L.polyline([], {color: '#e85d04', weight: 4}).addTo(map);
+    let recordLine = L.polyline([], {color: '#e85d04', weight: 4, pane: 'customFeaturesPane'}).addTo(map);
     let recordStartTime = null;
     let recordTimerInterval = null;
 

@@ -1208,7 +1208,7 @@
     
     <!-- Custom JS App -->
     <script defer src="pathfinder.js"></script>
-    <script defer src="app.js?v=4.18"></script>
+    <script defer src="app.js?v=4.19"></script>
     <script defer src="app_info.js?v=1"></script>
     <script defer src="planting_lines.js"></script>
     <script defer src="clima_farm.js?v=1.2"></script>
@@ -1230,12 +1230,6 @@
 
                 
                 document.getElementById('btn-refresh-app').addEventListener('click', () => {
-                    const updatesEnabled = localStorage.getItem('agrogis_updates_enabled') === 'true';
-                    if (!updatesEnabled) {
-                        alert('Não há nenhuma atualização disponível no momento.');
-                        return;
-                    }
-
                     // Show updating overlay
                     let updateOverlay = document.getElementById('update-overlay');
                     if (!updateOverlay) {
